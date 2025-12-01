@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/app_routes.dart';
+import '../../utils/app_colors.dart';
+import '../../utils/app_style.dart';
+import '../../widgets/neumorphic_textfield.dart';
+import '../../widgets/neumorphic_button.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -19,14 +23,14 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _login() async {
     setState(() => _isLoading = true);
     try {
-      final response = await _supabase.signIn(
+      final res = await _supabase.signIn(
         emailCtrl.text.trim(),
         passCtrl.text.trim(),
       );
 
-      if (response.user != null) {
+      if (res.user != null) {
         Get.snackbar('Sukses', 'Berhasil login!');
-        Get.offAllNamed(AppRoutes.home);
+        Get.offAllNamed(AppRoutes.inbox);
       } else {
         Get.snackbar('Error', 'Email atau password salah.');
       }
@@ -40,31 +44,40 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextField(
-              controller: emailCtrl,
-              decoration: const InputDecoration(labelText: 'Email'),
-            ),
-            TextField(
-              controller: passCtrl,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: 'Password'),
-            ),
-            const SizedBox(height: 20),
-            _isLoading
-                ? const CircularProgressIndicator()
-                : ElevatedButton(onPressed: _login, child: const Text('Login')),
-            const SizedBox(height: 10),
-            TextButton(
-              onPressed: () => Get.toNamed(AppRoutes.register),
-              child: const Text("Belum punya akun? Daftar di sini"),
-            ),
-          ],
+      backgroundColor: AppColors.bg,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text("Login", style: AppStyle.title),
+              const SizedBox(height: 30),
+
+              NeumorphicTextField(controller: emailCtrl, hint: "Email"),
+              const SizedBox(height: 16),
+
+              NeumorphicTextField(
+                controller: passCtrl,
+                hint: "Password",
+                obscure: true,
+              ),
+              const SizedBox(height: 25),
+
+              _isLoading
+                  ? const CircularProgressIndicator()
+                  : NeumorphicButton(label: "Masuk", onTap: _login),
+
+              const SizedBox(height: 18),
+              GestureDetector(
+                onTap: () => Get.toNamed(AppRoutes.register),
+                child: const Text(
+                  "Belum punya akun? Daftar",
+                  style: AppStyle.normal,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

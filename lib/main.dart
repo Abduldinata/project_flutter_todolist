@@ -6,9 +6,14 @@ import 'utils/constants.dart';
 import 'utils/app_routes.dart';
 import 'utils/app_theme.dart';
 import 'controllers/theme_controller.dart';
+
+// screens
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
-import 'screens/home/main_menu_screen.dart';
+import 'screens/home/inbox_screen.dart';
+import 'screens/home/today_screen.dart';
+import 'screens/home/upcoming_screen.dart';
+import 'screens/home/filter_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,9 +38,15 @@ class MyApp extends StatelessWidget {
       themeMode: themeController.theme,
       initialRoute: AppRoutes.login,
       getPages: [
+        // AUTH
         GetPage(name: AppRoutes.login, page: () => const LoginScreen()),
         GetPage(name: AppRoutes.register, page: () => const RegisterScreen()),
-        GetPage(name: AppRoutes.home, page: () => const MainMenuScreen()),
+
+        // HOME PAGES (bottom nav)
+        GetPage(name: AppRoutes.inbox, page: () => const InboxScreen()),
+        GetPage(name: AppRoutes.today, page: () => const TodayScreen()),
+        GetPage(name: AppRoutes.upcoming, page: () => const UpcomingScreen()),
+        GetPage(name: AppRoutes.filter, page: () => const FilterScreen()),
       ],
     );
   }
