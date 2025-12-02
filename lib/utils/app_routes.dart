@@ -1,6 +1,10 @@
 class AppRoutes {
   static const login = '/login';
   static const register = '/register';
-  static const home = '/home';
-  static const addTask = '/addTask';
+
+  // halaman utama
+  static const inbox = '/inbox';
+  static const today = '/today';
+  static const upcoming = '/upcoming';
+  static const filter = '/filter';
 }
