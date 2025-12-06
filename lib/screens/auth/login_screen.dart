@@ -19,6 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final emailCtrl = TextEditingController();
   final passCtrl = TextEditingController();
   bool _isLoading = false;
+  bool _showPassword = false;
 
   Future<void> _login() async {
     setState(() => _isLoading = true);
@@ -57,11 +58,32 @@ class _LoginScreenState extends State<LoginScreen> {
               NeumorphicTextField(controller: emailCtrl, hint: "Email"),
               const SizedBox(height: 16),
 
-              NeumorphicTextField(
-                controller: passCtrl,
-                hint: "Password",
-                obscure: true,
+              Stack(
+                children: [
+                  NeumorphicTextField(
+                    controller: passCtrl,
+                    hint: "Password",
+                    obscure: !_showPassword,
+                  ),
+
+                  Positioned(
+                    right: 14,
+                    top: 0,
+                    bottom: 0,
+                    child: IconButton(
+                      icon: Icon(
+                        _showPassword ? Icons.visibility : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _showPassword = !_showPassword;
+                        });
+                      },
+                    ),
+                  ),
+                ],
               ),
+
               const SizedBox(height: 25),
 
               _isLoading
