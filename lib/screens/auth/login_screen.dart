@@ -46,7 +46,22 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bg,
-      body: SafeArea(
+      body:  Stack(
+    children: [
+      Positioned.fill(
+        child: Image.asset(
+          "assets/images/bg.png",
+          fit: BoxFit.cover,
+        ),
+      ),
+
+      Positioned.fill(
+        child: Container(
+          color: Colors.black.withOpacity(0.25),
+        ),
+      ),
+      
+      SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -102,6 +117,6 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
-    );
+      ],));
   }
 }
