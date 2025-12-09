@@ -4,8 +4,10 @@ import '../../utils/app_colors.dart';
 import '../../utils/app_style.dart';
 import '../../widgets/add_task_button.dart';
 import '../../widgets/bottom_nav.dart';
+import '../../widgets/task_tile.dart'; // ✅ Import TaskTile
 import '../../services/task_service.dart';
 import '../add_task/add_task_popup.dart';
+import '../edit_task/edit_task_screen.dart'; // ✅ Import edit screen
 
 class UpcomingScreen extends StatefulWidget {
   const UpcomingScreen({super.key});
@@ -16,19 +18,77 @@ class UpcomingScreen extends StatefulWidget {
 
 class _UpcomingScreenState extends State<UpcomingScreen> {
   final TaskService _taskService = TaskService();
-
-  List tasks = [];
+  List<Map<String, dynamic>> tasks = []; // ✅ Tipe eksplisit
   bool loading = true;
   int navIndex = 2;
 
   Future<void> loadTasks() async {
     setState(() => loading = true);
     try {
-      tasks = await _taskService.getUpcomingTasks();
+      final fetchedTasks = await _taskService.getUpcomingTasks();
+      setState(() => tasks = fetchedTasks);
     } catch (e) {
-      Get.snackbar("Error", "$e");
+      print("Error loading upcoming tasks: $e");
+      Get.snackbar(
+        "Error",
+        "Gagal memuat tasks: ${e.toString()}",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     }
     setState(() => loading = false);
+  }
+
+  Future<void> _toggleTaskCompletion(String taskId, bool currentValue) async {
+    try {
+      await _taskService.updateCompleted(taskId, !currentValue);
+      await loadTasks();
+    } catch (e) {
+      Get.snackbar(
+        "Error",
+        "Gagal update: ${e.toString()}",
+        backgroundColor: Colors.red,
+      );
+    }
+  }
+
+  Future<void> _deleteTask(String taskId, String title) async {
+    final confirm = await Get.dialog(
+      AlertDialog(
+        title: const Text("Hapus Task"),
+        content: Text("Yakin hapus '$title'?"),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text("Batal"),
+          ),
+          ElevatedButton(
+            onPressed: () => Get.back(result: true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text("Hapus", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await _taskService.deleteTask(taskId);
+        await loadTasks();
+        Get.snackbar(
+          "Success",
+          "Task berhasil dihapus",
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+      } catch (e) {
+        Get.snackbar(
+          "Error",
+          "Gagal menghapus: ${e.toString()}",
+          backgroundColor: Colors.red,
+        );
+      }
+    }
   }
 
   @override
@@ -42,7 +102,7 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
     final now = DateTime.now();
     final weekDates = List.generate(
       6,
-      (i) => now.add(Duration(days: i + 1)), // besok dan seterusnya
+      (i) => now.add(Duration(days: i + 1)),
     );
 
     return Scaffold(
@@ -56,7 +116,7 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
               const Text("Upcoming", style: AppStyle.title),
               const SizedBox(height: 10),
 
-              // Bar tanggal kecil (mirip wireframe)
+              // Week dates bar
               SizedBox(
                 height: 40,
                 child: ListView.separated(
@@ -84,7 +144,22 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
                           ),
                         ],
                       ),
-                      child: Text(d.day.toString(), style: AppStyle.normal),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            d.day.toString(),
+                            style: AppStyle.normal,
+                          ),
+                          Text(
+                            _monthShort(d.month),
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
                     );
                   },
                 ),
@@ -94,108 +169,16 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
               Text("Tugas yang akan datang", style: AppStyle.subtitle),
               const SizedBox(height: 12),
 
+              // Task List
               Expanded(
-                child: loading
-                    ? const Center(child: CircularProgressIndicator())
-                    : tasks.isEmpty
-                    ? const Center(
-                        child: Text(
-                          "Belum ada tugas upcoming",
-                          style: AppStyle.smallGray,
-                        ),
-                      )
-                    : ListView.builder(
-                        physics: const BouncingScrollPhysics(),
-                        itemCount: tasks.length,
-                        itemBuilder: (_, i) {
-                          final t = tasks[i];
-                          final created = DateTime.tryParse(
-                            t['created_at']?.toString() ?? '',
-                          );
-                          final createdStr = created == null
-                              ? ''
-                              : "${created.day} ${_month(created.month)}";
-
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 14,
-                              horizontal: 16,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.bg,
-                              borderRadius: BorderRadius.circular(18),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Colors.white,
-                                  offset: Offset(-4, -4),
-                                  blurRadius: 8,
-                                ),
-                                BoxShadow(
-                                  color: Color(0xFFBEBEBE),
-                                  offset: Offset(6, 6),
-                                  blurRadius: 12,
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Checkbox(
-                                  value: t['is_done'] ?? false,
-                                  onChanged: (v) async {
-                                    await _taskService.updateCompleted(
-                                      t['id'].toString(),
-                                      v!,
-                                    );
-                                    loadTasks();
-                                  },
-                                ),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        t['title'] ?? '',
-                                        style: AppStyle.normal.copyWith(
-                                          decoration: (t['is_done'] ?? false)
-                                              ? TextDecoration.lineThrough
-                                              : null,
-                                        ),
-                                      ),
-                                      if (createdStr.isNotEmpty)
-                                        Text(
-                                          createdStr,
-                                          style: AppStyle.smallGray,
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                                GestureDetector(
-                                  onLongPress: () async {
-                                    await _taskService.deleteTask(
-                                      t['id'].toString(),
-                                    );
-                                    loadTasks();
-                                    Get.snackbar(
-                                      "Delete",
-                                      "Task upcoming dihapus",
-                                    );
-                                  },
-                                  child: const Icon(Icons.more_vert),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
+                child: _buildTaskList(),
               ),
             ],
           ),
         ),
       ),
 
+      // FIXED: Floating Action Button
       floatingActionButton: AddTaskButton(
         onTap: () async {
           final result = await Navigator.push(
@@ -203,14 +186,29 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
             MaterialPageRoute(builder: (ctx) => const AddTaskPopup()),
           );
 
-          if (result != null) {
-            await _taskService.insertTask(
-              result['text'],
-              // kalau kamu tidak pakai kolom date di DB,
-              // cukup simpan description atau abaikan tanggal
-              result['date'],
-            );
-            loadTasks();
+          if (result != null && result['text'] != null && result['date'] != null) {
+            try {
+              // ✅ PARAMETER YANG BENAR:
+              await _taskService.insertTask(
+                title: result['text'].toString(),
+                date: result['date'] as DateTime,
+                description: result['description']?.toString(),
+                priority: result['priority']?.toString(),
+              );
+              await loadTasks();
+              Get.snackbar(
+                "Success",
+                "Task berhasil ditambahkan",
+                backgroundColor: Colors.green,
+                colorText: Colors.white,
+              );
+            } catch (e) {
+              Get.snackbar(
+                "Error",
+                "Gagal menambahkan task: ${e.toString()}",
+                backgroundColor: Colors.red,
+              );
+            }
           }
         },
       ),
@@ -228,20 +226,68 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
     );
   }
 
+  Widget _buildTaskList() {
+    if (loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (tasks.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.calendar_today_outlined,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              "Belum ada tugas upcoming",
+              style: AppStyle.smallGray,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "Tambah task dengan tanggal besok atau seterusnya",
+              style: AppStyle.smallGray.copyWith(fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      physics: const BouncingScrollPhysics(),
+      itemCount: tasks.length,
+      itemBuilder: (_, index) {
+        final task = tasks[index];
+        
+        return TaskTile(
+          task: task,
+          onToggleCompletion: (taskId, currentValue) => 
+              _toggleTaskCompletion(taskId, currentValue),
+          onDelete: (taskId, title) => _deleteTask(taskId, title),
+          // ✅ JANGAN OVERRIDE dengan snackbar
+          // onTap: () => Get.snackbar("Task Detail", "Coming soon..."),
+        );
+      },
+    );
+  }
+
+  // Helper functions
   String _month(int m) {
     const months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "Mei",
-      "Jun",
-      "Jul",
-      "Agu",
-      "Sep",
-      "Okt",
-      "Nov",
-      "Des",
+      "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+      "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+    ];
+    return months[m - 1];
+  }
+
+  String _monthShort(int m) {
+    const months = [
+      "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
+      "Jul", "Agu", "Sep", "Okt", "Nov", "Des"
     ];
     return months[m - 1];
   }
