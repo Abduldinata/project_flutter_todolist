@@ -48,7 +48,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Get.snackbar(
           'Berhasil',
           'Login berhasil! Selamat datang ${response.user!.email}',
-          backgroundColor: AppColors.success,
+          backgroundColor: AppColors.success.withAlpha((0.85 * 255).round()),
           colorText: Colors.white,
           duration: const Duration(seconds: 2),
         );
