@@ -50,7 +50,7 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: isSelected
-            ? Neu.pressed.copyWith(color: accentColor.withOpacity(0.8)) // Efek tertekan dan berwarna jika terpilih
+            ? Neu.pressed.copyWith(color: accentColor.withAlpha(128)) // Efek tertekan dan berwarna jika terpilih
             : Neu.convex, // Efek terangkat jika tidak terpilih
         child: Text(
           label,
@@ -66,7 +66,7 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bg.withOpacity(0.9), // Menggunakan AppColors.bg Anda
+      backgroundColor: AppColors.bg.withAlpha(128), // Menggunakan AppColors.bg Anda
       body: Center(
         child: Container(
           width: 330,
@@ -198,7 +198,7 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
                           // Memberikan sedikit warna pada tombol Save (seperti di screenshot Anda)
                           ...Neu.convex.boxShadow!,
                           BoxShadow(
-                            color: AppColors.blue.withOpacity(0.3),
+                            color: AppColors.blue.withAlpha(128),
                             offset: const Offset(0, 4),
                             blurRadius: 10,
                           ),
