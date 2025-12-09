@@ -233,7 +233,7 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
                         boxShadow: [
                           ...Neu.convex.boxShadow!,
                           BoxShadow(
-                            color: AppColors.blue.withOpacity(0.3),
+                            color: AppColors.blue.withAlpha(128),
                             offset: const Offset(0, 4),
                             blurRadius: 10,
                           ),

@@ -14,7 +14,7 @@ class Neu {
         blurRadius: 10,
       ),
       BoxShadow(
-        color: AppColors.text.withOpacity(0.2), // Bayangan gelap di bawah/kanan
+        color: AppColors.text.withAlpha(128), // Bayangan gelap di bawah/kanan
         offset: const Offset(6, 6),
         blurRadius: 10,
       ),
@@ -27,7 +27,7 @@ class Neu {
     borderRadius: BorderRadius.circular(15),
     boxShadow: [
       BoxShadow(
-        color: AppColors.text.withOpacity(0.2), // Bayangan gelap di atas/kiri
+        color: AppColors.text.withAlpha(128), // Bayangan gelap di atas/kiri
         offset: const Offset(-4, -4),
         blurRadius: 8,
       ),
@@ -46,13 +46,13 @@ class Neu {
     boxShadow: [
       // Bayangan dimasukkan (inverse shadow)
       BoxShadow(
-        color: AppColors.text.withOpacity(0.1),
+        color: AppColors.text.withAlpha(128),
         offset: const Offset(4, 4),
         blurRadius: 8,
         spreadRadius: -1,
       ),
       BoxShadow(
-        color: Colors.white.withOpacity(0.9),
+        color: Colors.white.withAlpha(128),
         offset: const Offset(-4, -4),
         blurRadius: 8,
         spreadRadius: -1,

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../utils/app_colors.dart';
-import '../../utils/app_style.dart';
-import '../../utils/app_routes.dart';
 import '../../services/supabase_service.dart';
+import '../../utils/app_routes.dart';
+import '../../utils/app_style.dart';
+import '../../utils/app_colors.dart';
+import '../../utils/neumorphic_decoration.dart';
+import '../../widgets/neumorphic_textfield.dart';
+import '../../widgets/neumorphic_button.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -13,179 +16,230 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final SupabaseService _supabase = SupabaseService();
+  final _usernameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  final _service = SupabaseService();
+  bool _isLoading = false;
 
-  final usernameCtrl = TextEditingController();
-  final emailCtrl = TextEditingController();
-  final passCtrl = TextEditingController();
-  final confirmCtrl = TextEditingController();
-
-  bool loading = false;
-
-  @override
-  void dispose() {
-    usernameCtrl.dispose();
-    emailCtrl.dispose();
-    passCtrl.dispose();
-    confirmCtrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _register() async {
-    final username = usernameCtrl.text.trim();
-    final email = emailCtrl.text.trim();
-    final password = passCtrl.text.trim();
-    final confirm = confirmCtrl.text.trim();
-
-    if (username.isEmpty ||
-        email.isEmpty ||
-        password.isEmpty ||
-        confirm.isEmpty) {
-      Get.snackbar("Validasi", "Semua field harus diisi!");
-      return;
-    }
-    if (!email.contains("@")) {
-      Get.snackbar("Validasi", "Format email tidak valid");
-      return;
-    }
-    if (password.length < 6) {
-      Get.snackbar("Validasi", "Password minimal 6 karakter");
-      return;
-    }
-    if (password != confirm) {
-      Get.snackbar("Validasi", "Konfirmasi password tidak sesuai");
+  Future<void> _handleRegister() async {
+    // Validasi input
+    if (_usernameController.text.trim().isEmpty) {
+      _showError('Username harus diisi');
       return;
     }
 
-    setState(() => loading = true);
+    if (_emailController.text.trim().isEmpty) {
+      _showError('Email harus diisi');
+      return;
+    }
+
+    if (!GetUtils.isEmail(_emailController.text.trim())) {
+      _showError('Format email tidak valid');
+      return;
+    }
+
+    if (_passwordController.text.length < 6) {
+      _showError('Password minimal 6 karakter');
+      return;
+    }
+
+    if (_passwordController.text != _confirmPasswordController.text) {
+      _showError('Password dan konfirmasi password tidak sama');
+      return;
+    }
+
+    setState(() => _isLoading = true);
 
     try {
-      /// ‼ WAJIB 3 param karena SupabaseService kamu seperti ini
-      final res = await _supabase.signUp(email, password, username);
+      final response = await _service.signUp(
+        _emailController.text.trim(),
+        _passwordController.text,
+        _usernameController.text.trim(),
+      );
 
-      if (res.user == null) {
-        Get.snackbar("Gagal", "Registrasi gagal");
-        return;
+      if (response.user != null) {
+        Get.snackbar(
+          'Berhasil',
+          'Registrasi berhasil! Silakan cek email untuk verifikasi',
+          backgroundColor: AppColors.success,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 3),
+        );
+
+        await Future.delayed(const Duration(milliseconds: 500));
+        Get.offAllNamed(AppRoutes.login);
       }
-
-      /// ⛔ Profile TIDAK di-insert manual — trigger sudah jalan
-      Get.snackbar(
-        "Sukses",
-        "Akun berhasil dibuat, silakan login",
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-      );
-
-      Get.offAllNamed(AppRoutes.login);
     } catch (e) {
-      Get.snackbar(
-        "Error",
-        e.toString(),
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+      String errorMessage = _parseError(e.toString());
+      _showError(errorMessage);
     } finally {
-      setState(() => loading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
-  Widget _neuField(
-    TextEditingController c,
-    String hint, {
-    bool obscure = false,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18),
-      decoration: BoxDecoration(
-        color: AppColors.bg,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: const [
-          BoxShadow(color: Colors.white, offset: Offset(-4, -4), blurRadius: 8),
-          BoxShadow(
-            color: Color(0xFFBEBEBE),
-            offset: Offset(4, 4),
-            blurRadius: 10,
-          ),
-        ],
-      ),
-      child: TextField(
-        controller: c,
-        obscureText: obscure,
-        decoration: InputDecoration(border: InputBorder.none, hintText: hint),
-      ),
+  String _parseError(String error) {
+    // Network errors
+    if (error.contains('SocketException') ||
+        error.contains('Failed host lookup') ||
+        error.contains('Network is unreachable')) {
+      return '❌ Tidak ada koneksi internet\n\nPastikan:\n• WiFi atau data seluler aktif\n• Koneksi internet stabil';
+    }
+
+    // Timeout errors
+    if (error.contains('TimeoutException') || error.contains('timed out')) {
+      return '⏱️ Koneksi timeout\n\nKoneksi terlalu lambat atau server tidak merespons';
+    }
+
+    // Auth errors
+    if (error.contains('User already registered') ||
+        error.contains('already been registered')) {
+      return '👤 Email sudah terdaftar\n\nGunakan email lain atau silakan login';
+    }
+
+    if (error.contains('Password should be at least')) {
+      return '🔐 Password terlalu pendek\n\nPassword minimal 6 karakter';
+    }
+
+    if (error.contains('Unable to validate email address')) {
+      return '📧 Format email tidak valid\n\nPeriksa kembali email Anda';
+    }
+
+    // Generic error
+    return '⚠️ Registrasi gagal\n\n${error.length > 100 ? "${error.substring(0, 100)}..." : error}';
+  }
+
+  void _showError(String message) {
+    Get.snackbar(
+      'Error',
+      message,
+      backgroundColor: AppColors.danger,
+      colorText: Colors.white,
+      duration: const Duration(seconds: 5),
+      margin: const EdgeInsets.all(16),
+      snackPosition: SnackPosition.TOP,
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bg,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(26),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text("Register", style: AppStyle.title),
-                const SizedBox(height: 28),
-
-                _neuField(usernameCtrl, "Username"),
-                const SizedBox(height: 18),
-
-                _neuField(emailCtrl, "Email"),
-                const SizedBox(height: 18),
-
-                _neuField(passCtrl, "Password", obscure: true),
-                const SizedBox(height: 18),
-
-                _neuField(confirmCtrl, "Konfirmasi Password", obscure: true),
-                const SizedBox(height: 28),
-
-                loading
-                    ? const Center(child: CircularProgressIndicator())
-                    : GestureDetector(
-                        onTap: _register,
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: AppColors.bg,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Colors.white,
-                                offset: Offset(-4, -4),
-                                blurRadius: 6,
-                              ),
-                              BoxShadow(
-                                color: Color(0xFFBEBEBE),
-                                offset: Offset(6, 6),
-                                blurRadius: 12,
-                              ),
-                            ],
-                          ),
-                          child: Text("Daftar", style: AppStyle.button),
-                        ),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset('assets/images/bg.png', fit: BoxFit.cover),
+          ),
+          // optional overlay untuk meningkatkan kontras teks
+          Positioned.fill(
+            child: Container(color: Colors.black.withOpacity(0.25)),
+          ),
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Logo
+                    Container(
+                      width: 100,
+                      height: 100,
+                      decoration: Neu.concave,
+                      child: const Icon(
+                        Icons.person_add_rounded,
+                        size: 60,
+                        color: AppColors.blue,
                       ),
-
-                const SizedBox(height: 22),
-
-                Center(
-                  child: GestureDetector(
-                    onTap: () => Get.offAllNamed(AppRoutes.login),
-                    child: Text(
-                      "Sudah punya akun? Login",
-                      style: AppStyle.link,
                     ),
-                  ),
+                    const SizedBox(height: 30),
+
+                    // Title
+                    Text('Daftar', style: AppStyle.title),
+                    const SizedBox(height: 10),
+                    Text('Buat akun baru', style: AppStyle.smallGray),
+                    const SizedBox(height: 40),
+
+                    // Username Field
+                    NeumorphicTextField(
+                      controller: _usernameController,
+                      hint: 'Username',
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Email Field
+                    NeumorphicTextField(
+                      controller: _emailController,
+                      hint: 'Email',
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Password Field
+                    NeumorphicTextField(
+                      controller: _passwordController,
+                      hint: 'Password (min. 6 karakter)',
+                      obscure: true,
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Confirm Password Field
+                    NeumorphicTextField(
+                      controller: _confirmPasswordController,
+                      hint: 'Konfirmasi Password',
+                      obscure: true,
+                    ),
+                    const SizedBox(height: 40),
+
+                    // Register Button
+                    _isLoading
+                        ? Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: Neu.convex,
+                            child: const CircularProgressIndicator(
+                              color: AppColors.blue,
+                            ),
+                          )
+                        : NeumorphicButton(
+                            label: 'Daftar',
+                            onTap: _handleRegister,
+                          ),
+                    const SizedBox(height: 30),
+
+                    // Login Link
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text('Sudah punya akun? ', style: AppStyle.smallGray),
+                        GestureDetector(
+                          onTap: () => Get.back(),
+                          child: Text(
+                            'Masuk',
+                            style: AppStyle.link.copyWith(
+                              color: AppColors.blue,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
   }
 }
