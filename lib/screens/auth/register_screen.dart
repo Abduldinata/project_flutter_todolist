@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../widgets/neumorphic_dialog.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/app_routes.dart';
 import '../../utils/app_style.dart';
@@ -60,15 +61,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
 
       if (response.user != null) {
-        Get.snackbar(
-          'Berhasil',
-          'Registrasi berhasil! Silakan cek email untuk verifikasi',
-          backgroundColor: AppColors.success,
-          colorText: Colors.white,
-          duration: const Duration(seconds: 3),
+        NeumorphicDialog.show(
+          title: 'Berhasil',
+          message: 'Registrasi berhasil! Silakan cek email untuk verifikasi',
+          type: DialogType.success,
         );
 
-        await Future.delayed(const Duration(milliseconds: 500));
+        await Future.delayed(const Duration(milliseconds: 1500));
         Get.offAllNamed(AppRoutes.login);
       }
     } catch (e) {
@@ -113,14 +112,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void _showError(String message) {
-    Get.snackbar(
-      'Error',
-      message,
-      backgroundColor: AppColors.danger,
-      colorText: Colors.white,
-      duration: const Duration(seconds: 5),
-      margin: const EdgeInsets.all(16),
-      snackPosition: SnackPosition.TOP,
+    NeumorphicDialog.show(
+      title: 'Error',
+      message: message,
+      type: DialogType.error,
     );
   }
 
@@ -159,9 +154,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 30),
 
                     // Title
-                    Text('Daftar', style: AppStyle.title),
+                    Text('Register', style: AppStyle.title),
                     const SizedBox(height: 10),
-                    Text('Buat akun baru', style: AppStyle.smallGray),
+                    Text('Create an account', style: AppStyle.smallGray),
                     const SizedBox(height: 40),
 
                     // Username Field
@@ -181,7 +176,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     // Password Field
                     NeumorphicTextField(
                       controller: _passwordController,
-                      hint: 'Password (min. 6 karakter)',
+                      hint: 'Password (min. 6 characters)',
                       obscure: true,
                     ),
                     const SizedBox(height: 20),
@@ -189,7 +184,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     // Confirm Password Field
                     NeumorphicTextField(
                       controller: _confirmPasswordController,
-                      hint: 'Konfirmasi Password',
+                      hint: 'Confirm Password',
                       obscure: true,
                     ),
                     const SizedBox(height: 40),
@@ -204,7 +199,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                           )
                         : NeumorphicButton(
-                            label: 'Daftar',
+                            label: 'Sign Up',
                             onTap: _handleRegister,
                           ),
                     const SizedBox(height: 30),
@@ -213,11 +208,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text('Sudah punya akun? ', style: AppStyle.smallGray),
+                        Text('Already have an account? ', style: AppStyle.smallGray),
                         GestureDetector(
                           onTap: () => Get.back(),
                           child: Text(
-                            'Masuk',
+                            'Login',
                             style: AppStyle.link.copyWith(
                               color: AppColors.blue,
                               fontWeight: FontWeight.bold,
