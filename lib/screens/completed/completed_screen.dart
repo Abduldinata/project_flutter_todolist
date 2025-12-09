@@ -1,7 +1,6 @@
 // screens/completed/completed_screen.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:to_do_list_project/screens/task_detail/task_detail_screen.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/app_style.dart';
 import '../../widgets/task_tile.dart';
@@ -32,7 +31,7 @@ Future<void> loadTasks() async {
     
     setState(() => tasks = fetchedTasks);
   } catch (e) {
-    print("Error loading completed tasks: $e");
+    debugPrint("Error loading completed tasks: $e");
     Get.snackbar(
       "Error",
       "Gagal memuat tasks: ${e.toString()}",

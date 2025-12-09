@@ -39,7 +39,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         }
       }
     } catch (e) {
-      print("Error refreshing task: $e");
+      debugPrint("Error refreshing task: $e");
     }
   }
 
@@ -80,7 +80,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       try {
         taskDate = DateTime.parse("${dateStr}T00:00:00Z");
       } catch (e) {
-        print("Error parsing date: $e");
+        debugPrint("Error parsing date: $e");
       }
     }
 

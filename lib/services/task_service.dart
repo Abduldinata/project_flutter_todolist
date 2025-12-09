@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/foundation.dart';
 
 class TaskService {
   final client = Supabase.instance.client;
@@ -116,7 +117,7 @@ Future<Map<String, dynamic>?> getTaskById(String taskId) async {
     
     return response as Map<String, dynamic>?;
   } catch (e) {
-    print("Error getting task by ID: $e");
+    debugPrint("Error getting task by ID: $e");
     return null;
   }
 }

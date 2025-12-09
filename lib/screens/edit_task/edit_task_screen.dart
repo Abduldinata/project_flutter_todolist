@@ -51,7 +51,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
 
     // Parse priority
     final priorityStr =
-        widget.task['priority']?.toString()?.toLowerCase() ?? 'medium';
+        widget.task['priority']?.toString().toLowerCase() ?? 'medium';
     _selectedPriority = _stringToPriority(priorityStr);
   }
 

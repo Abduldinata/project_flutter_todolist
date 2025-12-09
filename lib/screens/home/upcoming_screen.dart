@@ -28,7 +28,7 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
       final fetchedTasks = await _taskService.getUpcomingTasks();
       setState(() => tasks = fetchedTasks);
     } catch (e) {
-      print("Error loading upcoming tasks: $e");
+      debugPrint("Error loading upcoming tasks: $e");
       Get.snackbar(
         "Error",
         "Gagal memuat tasks: ${e.toString()}",

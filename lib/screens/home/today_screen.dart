@@ -26,10 +26,10 @@ class _TodayScreenState extends State<TodayScreen> {
     setState(() => loading = true);
     try {
       final fetchedTasks = await _taskService.getTasksByDate(DateTime.now());
-      print("DEBUG Tasks: ${fetchedTasks.length} items"); // Debug
+      debugPrint("DEBUG Tasks: ${fetchedTasks.length} items"); // Debug
       setState(() => tasks = fetchedTasks);
     } catch (e) {
-      print("Error loading tasks: $e");
+      debugPrint("Error loading tasks: $e");
       Get.snackbar(
         "Error",
         "Gagal memuat tasks: ${e.toString()}",

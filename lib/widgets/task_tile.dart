@@ -34,7 +34,7 @@ class TaskTile extends StatelessWidget {
           onTap ??
           () {
             // ✅ DEFAULT: Navigate to TaskDetailScreen
-            print(
+            debugPrint(
               "DEBUG: Navigating to TaskDetailScreen for task: ${task['id']}",
             );
             Get.to(() => TaskDetailScreen(task: task));

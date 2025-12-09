@@ -54,7 +54,7 @@ class _SearchPopupState extends State<SearchPopup> {
         hasSearched = true;
       });
     } catch (e) {
-      print("Error searching tasks: $e");
+      debugPrint("Error searching tasks: $e");
       setState(() => searching = false);
       Get.snackbar(
         "Error",
