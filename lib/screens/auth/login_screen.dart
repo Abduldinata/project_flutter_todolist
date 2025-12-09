@@ -118,89 +118,101 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bg,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Logo atau Icon
-                Container(
-                  width: 100,
-                  height: 100,
-                  decoration: Neu.concave,
-                  child: const Icon(
-                    Icons.checklist_rounded,
-                    size: 60,
-                    color: AppColors.blue,
-                  ),
-                ),
-                const SizedBox(height: 30),
-
-                // Title
-                Text('Login', style: AppStyle.title),
-                const SizedBox(height: 10),
-                Text('Masuk ke akun Anda', style: AppStyle.smallGray),
-                const SizedBox(height: 40),
-
-                // Email Field
-                NeumorphicTextField(
-                  controller: _emailController,
-                  hint: 'Email',
-                ),
-                const SizedBox(height: 20),
-
-                // Password Field
-                NeumorphicTextField(
-                  controller: _passwordController,
-                  hint: 'Password',
-                  obscure: !_showPassword,
-                  suffix: IconButton(
-                    onPressed: () =>
-                        setState(() => _showPassword = !_showPassword),
-                    icon: Icon(
-                      _showPassword ? Icons.visibility_off : Icons.visibility,
-                      color: AppColors.text.withAlpha((0.6 * 255).round()),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 40),
-
-                // Login Button
-                _isLoading
-                    ? Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: Neu.convex,
-                        child: const CircularProgressIndicator(
-                          color: AppColors.blue,
-                        ),
-                      )
-                    : NeumorphicButton(label: 'Masuk', onTap: _handleLogin),
-                const SizedBox(height: 30),
-
-                // Register Link
-                Row(
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset('assets/images/bg.png', fit: BoxFit.cover),
+          ),
+          // optional overlay untuk meningkatkan kontras teks
+          Positioned.fill(
+            child: Container(color: Colors.black.withOpacity(0.25)),
+          ),
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('Belum punya akun? ', style: AppStyle.smallGray),
-                    GestureDetector(
-                      onTap: () => Get.toNamed(AppRoutes.register),
-                      child: Text(
-                        'Daftar',
-                        style: AppStyle.link.copyWith(
-                          color: AppColors.blue,
-                          fontWeight: FontWeight.bold,
+                    // Logo atau Icon
+                    Container(
+                      width: 100,
+                      height: 100,
+                      decoration: Neu.concave,
+                      child: const Icon(
+                        Icons.checklist_rounded,
+                        size: 60,
+                        color: AppColors.blue,
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+
+                    // Title
+                    Text('Login', style: AppStyle.title),
+                    const SizedBox(height: 10),
+                    Text('Masuk ke akun Anda', style: AppStyle.smallGray),
+                    const SizedBox(height: 40),
+
+                    // Email Field
+                    NeumorphicTextField(
+                      controller: _emailController,
+                      hint: 'Email',
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Password Field
+                    NeumorphicTextField(
+                      controller: _passwordController,
+                      hint: 'Password',
+                      obscure: !_showPassword,
+                      suffix: IconButton(
+                        onPressed: () =>
+                            setState(() => _showPassword = !_showPassword),
+                        icon: Icon(
+                          _showPassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          color: AppColors.text.withAlpha((0.6 * 255).round()),
                         ),
                       ),
                     ),
+                    const SizedBox(height: 40),
+
+                    // Login Button
+                    _isLoading
+                        ? Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: Neu.convex,
+                            child: const CircularProgressIndicator(
+                              color: AppColors.blue,
+                            ),
+                          )
+                        : NeumorphicButton(label: 'Masuk', onTap: _handleLogin),
+                    const SizedBox(height: 30),
+
+                    // Register Link
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text('Belum punya akun? ', style: AppStyle.smallGray),
+                        GestureDetector(
+                          onTap: () => Get.toNamed(AppRoutes.register),
+                          child: Text(
+                            'Daftar',
+                            style: AppStyle.link.copyWith(
+                              color: AppColors.blue,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
