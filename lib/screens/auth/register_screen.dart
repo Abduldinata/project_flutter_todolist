@@ -127,96 +127,109 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bg,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Logo
-                Container(
-                  width: 100,
-                  height: 100,
-                  decoration: Neu.concave,
-                  child: const Icon(
-                    Icons.person_add_rounded,
-                    size: 60,
-                    color: AppColors.blue,
-                  ),
-                ),
-                const SizedBox(height: 30),
-
-                // Title
-                Text('Daftar', style: AppStyle.title),
-                const SizedBox(height: 10),
-                Text('Buat akun baru', style: AppStyle.smallGray),
-                const SizedBox(height: 40),
-
-                // Username Field
-                NeumorphicTextField(
-                  controller: _usernameController,
-                  hint: 'Username',
-                ),
-                const SizedBox(height: 20),
-
-                // Email Field
-                NeumorphicTextField(
-                  controller: _emailController,
-                  hint: 'Email',
-                ),
-                const SizedBox(height: 20),
-
-                // Password Field
-                NeumorphicTextField(
-                  controller: _passwordController,
-                  hint: 'Password (min. 6 karakter)',
-                  obscure: true,
-                ),
-                const SizedBox(height: 20),
-
-                // Confirm Password Field
-                NeumorphicTextField(
-                  controller: _confirmPasswordController,
-                  hint: 'Konfirmasi Password',
-                  obscure: true,
-                ),
-                const SizedBox(height: 40),
-
-                // Register Button
-                _isLoading
-                    ? Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: Neu.convex,
-                        child: const CircularProgressIndicator(
-                          color: AppColors.blue,
-                        ),
-                      )
-                    : NeumorphicButton(label: 'Daftar', onTap: _handleRegister),
-                const SizedBox(height: 30),
-
-                // Login Link
-                Row(
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset('assets/images/bg.png', fit: BoxFit.cover),
+          ),
+          // optional overlay untuk meningkatkan kontras teks
+          Positioned.fill(
+            child: Container(color: Colors.black.withOpacity(0.25)),
+          ),
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('Sudah punya akun? ', style: AppStyle.smallGray),
-                    GestureDetector(
-                      onTap: () => Get.back(),
-                      child: Text(
-                        'Masuk',
-                        style: AppStyle.link.copyWith(
-                          color: AppColors.blue,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    // Logo
+                    Container(
+                      width: 100,
+                      height: 100,
+                      decoration: Neu.concave,
+                      child: const Icon(
+                        Icons.person_add_rounded,
+                        size: 60,
+                        color: AppColors.blue,
                       ),
+                    ),
+                    const SizedBox(height: 30),
+
+                    // Title
+                    Text('Daftar', style: AppStyle.title),
+                    const SizedBox(height: 10),
+                    Text('Buat akun baru', style: AppStyle.smallGray),
+                    const SizedBox(height: 40),
+
+                    // Username Field
+                    NeumorphicTextField(
+                      controller: _usernameController,
+                      hint: 'Username',
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Email Field
+                    NeumorphicTextField(
+                      controller: _emailController,
+                      hint: 'Email',
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Password Field
+                    NeumorphicTextField(
+                      controller: _passwordController,
+                      hint: 'Password (min. 6 karakter)',
+                      obscure: true,
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Confirm Password Field
+                    NeumorphicTextField(
+                      controller: _confirmPasswordController,
+                      hint: 'Konfirmasi Password',
+                      obscure: true,
+                    ),
+                    const SizedBox(height: 40),
+
+                    // Register Button
+                    _isLoading
+                        ? Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: Neu.convex,
+                            child: const CircularProgressIndicator(
+                              color: AppColors.blue,
+                            ),
+                          )
+                        : NeumorphicButton(
+                            label: 'Daftar',
+                            onTap: _handleRegister,
+                          ),
+                    const SizedBox(height: 30),
+
+                    // Login Link
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text('Sudah punya akun? ', style: AppStyle.smallGray),
+                        GestureDetector(
+                          onTap: () => Get.back(),
+                          child: Text(
+                            'Masuk',
+                            style: AppStyle.link.copyWith(
+                              color: AppColors.blue,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
