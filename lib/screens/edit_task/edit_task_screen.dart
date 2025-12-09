@@ -10,7 +10,7 @@ enum Priority { high, medium, low }
 
 class EditTaskScreen extends StatefulWidget {
   final Map<String, dynamic> task;
-  
+
   const EditTaskScreen({super.key, required this.task});
 
   @override
@@ -28,11 +28,15 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
   @override
   void initState() {
     super.initState();
-    
+
     // Initialize controllers dengan data task
-    _titleCtrl = TextEditingController(text: widget.task['title']?.toString() ?? '');
-    _descCtrl = TextEditingController(text: widget.task['description']?.toString() ?? '');
-    
+    _titleCtrl = TextEditingController(
+      text: widget.task['title']?.toString() ?? '',
+    );
+    _descCtrl = TextEditingController(
+      text: widget.task['description']?.toString() ?? '',
+    );
+
     // Parse date
     try {
       final dateStr = widget.task['date']?.toString();
@@ -44,9 +48,10 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
     } catch (e) {
       _selectedDate = DateTime.now();
     }
-    
+
     // Parse priority
-    final priorityStr = widget.task['priority']?.toString()?.toLowerCase() ?? 'medium';
+    final priorityStr =
+        widget.task['priority']?.toString()?.toLowerCase() ?? 'medium';
     _selectedPriority = _stringToPriority(priorityStr);
   }
 
@@ -107,7 +112,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
   Widget _buildPriorityButton(Priority priority, String label) {
     bool isSelected = _selectedPriority == priority;
     Color accentColor;
-    
+
     switch (priority) {
       case Priority.high:
         accentColor = Colors.red.shade600;
@@ -125,7 +130,9 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: isSelected
-            ? Neu.pressed.copyWith(color: accentColor.withOpacity(0.8))
+            ? Neu.pressed.copyWith(
+                color: accentColor.withAlpha((0.8 * 255).round()),
+              )
             : Neu.convex,
         child: Text(
           label,
@@ -243,7 +250,10 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                                   "Tanggal: ${_formatDate(_selectedDate)}",
                                   style: AppStyle.normal,
                                 ),
-                                Icon(Icons.calendar_today_outlined, color: AppColors.text),
+                                Icon(
+                                  Icons.calendar_today_outlined,
+                                  color: AppColors.text,
+                                ),
                               ],
                             ),
                           ),
@@ -263,7 +273,10 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                                   horizontal: 26,
                                 ),
                                 decoration: Neu.convex,
-                                child: const Text("Batal", style: AppStyle.normal),
+                                child: const Text(
+                                  "Batal",
+                                  style: AppStyle.normal,
+                                ),
                               ),
                             ),
 
@@ -279,7 +292,9 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                                   boxShadow: [
                                     ...Neu.convex.boxShadow!,
                                     BoxShadow(
-                                      color: AppColors.blue.withOpacity(0.3),
+                                      color: AppColors.blue.withAlpha(
+                                        (0.3 * 255).round(),
+                                      ),
                                       offset: const Offset(0, 4),
                                       blurRadius: 10,
                                     ),

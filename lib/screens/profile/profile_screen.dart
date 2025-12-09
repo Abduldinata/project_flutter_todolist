@@ -142,7 +142,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             children: [
               const SizedBox(height: 6),
-              const Text("Profile", style: AppStyle.title),
+              // Back button (icon only)
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: () => Get.back(),
+                    icon: const Icon(Icons.arrow_back),
+                    color: AppColors.text,
+                    tooltip: 'Kembali',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              const Center(child: Text("Profile", style: AppStyle.title)),
               const SizedBox(height: 30),
 
               // AVATAR

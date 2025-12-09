@@ -276,14 +276,6 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
   }
 
   // Helper functions
-  String _month(int m) {
-    const months = [
-      "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-      "Juli", "Agustus", "September", "Oktober", "November", "Desember"
-    ];
-    return months[m - 1];
-  }
-
   String _monthShort(int m) {
     const months = [
       "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",

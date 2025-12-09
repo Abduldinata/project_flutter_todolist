@@ -29,7 +29,7 @@ class _InboxScreenState extends State<InboxScreen> {
       final fetchedTasks = await _taskService.getAllTasks();
       setState(() => allTasks = fetchedTasks);
     } catch (e) {
-      print("Error loading inbox tasks: $e");
+      debugPrint("Error loading inbox tasks: $e");
       Get.snackbar(
         "Error",
         "Gagal memuat tasks: ${e.toString()}",
@@ -89,20 +89,26 @@ class _InboxScreenState extends State<InboxScreen> {
   Widget build(BuildContext context) {
     // ✅ KALKULASI DATA DI SINI (sebelum return)
     final now = DateTime.now();
-    final todayFormatted = 
+    final todayFormatted =
         "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
-    
-    final todayTasks = allTasks.where((task) => 
-        task['date'] == todayFormatted && (task['is_done'] ?? false) == false
-    ).toList();
-    
-    final historyTasks = allTasks.where((task) => 
-        (task['is_done'] ?? false) == true
-    ).toList();
-    
-    final otherTasks = allTasks.where((task) => 
-        !todayTasks.contains(task) && !historyTasks.contains(task)
-    ).toList();
+
+    final todayTasks = allTasks
+        .where(
+          (task) =>
+              task['date'] == todayFormatted &&
+              (task['is_done'] ?? false) == false,
+        )
+        .toList();
+
+    final historyTasks = allTasks
+        .where((task) => (task['is_done'] ?? false) == true)
+        .toList();
+
+    final otherTasks = allTasks
+        .where(
+          (task) => !todayTasks.contains(task) && !historyTasks.contains(task),
+        )
+        .toList();
 
     return Scaffold(
       backgroundColor: AppColors.bg,
@@ -147,9 +153,7 @@ class _InboxScreenState extends State<InboxScreen> {
               // Loading indicator
               if (loading)
                 const Expanded(
-                  child: Center(
-                    child: CircularProgressIndicator(),
-                  ),
+                  child: Center(child: CircularProgressIndicator()),
                 )
               else if (allTasks.isEmpty)
                 // Empty state
@@ -164,10 +168,7 @@ class _InboxScreenState extends State<InboxScreen> {
                           color: Colors.grey[400],
                         ),
                         const SizedBox(height: 16),
-                        const Text(
-                          "Inbox kosong",
-                          style: AppStyle.smallGray,
-                        ),
+                        const Text("Inbox kosong", style: AppStyle.smallGray),
                         const SizedBox(height: 8),
                         Text(
                           "Tambahkan task pertama kamu",
@@ -188,33 +189,42 @@ class _InboxScreenState extends State<InboxScreen> {
                         // Today Section
                         if (todayTasks.isNotEmpty) ...[
                           _buildSectionHeader("Hari Ini", todayTasks.length),
-                          ...todayTasks.map((task) => TaskTile(
-                            task: task,
-                            onToggleCompletion: _toggleTaskCompletion,
-                            onDelete: _deleteTask,
-                          )).toList(),
+                          ...todayTasks.map(
+                            (task) => TaskTile(
+                              task: task,
+                              onToggleCompletion: _toggleTaskCompletion,
+                              onDelete: _deleteTask,
+                            ),
+                          ),
                           const SizedBox(height: 24),
                         ],
 
                         // History/Completed Section
                         if (historyTasks.isNotEmpty) ...[
-                          _buildSectionHeader("History (Selesai)", historyTasks.length),
-                          ...historyTasks.map((task) => TaskTile(
-                            task: task,
-                            onToggleCompletion: _toggleTaskCompletion,
-                            onDelete: _deleteTask,
-                          )).toList(),
+                          _buildSectionHeader(
+                            "History (Selesai)",
+                            historyTasks.length,
+                          ),
+                          ...historyTasks.map(
+                            (task) => TaskTile(
+                              task: task,
+                              onToggleCompletion: _toggleTaskCompletion,
+                              onDelete: _deleteTask,
+                            ),
+                          ),
                           const SizedBox(height: 24),
                         ],
 
                         // Upcoming/Other Tasks
                         if (otherTasks.isNotEmpty) ...[
                           _buildSectionHeader("Lainnya", otherTasks.length),
-                          ...otherTasks.map((task) => TaskTile(
-                            task: task,
-                            onToggleCompletion: _toggleTaskCompletion,
-                            onDelete: _deleteTask,
-                          )).toList(),
+                          ...otherTasks.map(
+                            (task) => TaskTile(
+                              task: task,
+                              onToggleCompletion: _toggleTaskCompletion,
+                              onDelete: _deleteTask,
+                            ),
+                          ),
                         ],
                       ],
                     ),
@@ -232,7 +242,9 @@ class _InboxScreenState extends State<InboxScreen> {
             MaterialPageRoute(builder: (ctx) => const AddTaskPopup()),
           );
 
-          if (result != null && result['text'] != null && result['date'] != null) {
+          if (result != null &&
+              result['text'] != null &&
+              result['date'] != null) {
             try {
               await _taskService.insertTask(
                 title: result['text'].toString(),
@@ -281,7 +293,7 @@ class _InboxScreenState extends State<InboxScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
-              color: AppColors.blue.withOpacity(0.1),
+              color: AppColors.blue.withAlpha((0.1 * 255).round()),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(

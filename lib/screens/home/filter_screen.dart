@@ -19,7 +19,7 @@ class _FilterScreenState extends State<FilterScreen> {
   List<Map<String, dynamic>> filteredTasks = [];
   bool loading = true;
   int navIndex = 3;
-  
+
   // Filter state
   bool filterByPriority = false;
   String selectedPriority = 'medium'; // high, medium, low
@@ -33,18 +33,19 @@ class _FilterScreenState extends State<FilterScreen> {
     setState(() => loading = true);
     try {
       final allTasks = await _taskService.getAllTasks();
-      
+
       // Apply filters
       List<Map<String, dynamic>> result = allTasks;
-      
+
       // Filter by priority
       if (filterByPriority) {
         result = result.where((task) {
-          final taskPriority = task['priority']?.toString().toLowerCase() ?? 'medium';
+          final taskPriority =
+              task['priority']?.toString().toLowerCase() ?? 'medium';
           return taskPriority == selectedPriority.toLowerCase();
         }).toList();
       }
-      
+
       // Filter by status
       if (filterByStatus) {
         result = result.where((task) {
@@ -52,39 +53,43 @@ class _FilterScreenState extends State<FilterScreen> {
           return showCompleted ? isDone : !isDone;
         }).toList();
       }
-      
+
       // Filter by date range
       if (filterByDate && selectedStartDate != null) {
         result = result.where((task) {
           final taskDateStr = task['date']?.toString();
           if (taskDateStr == null) return false;
-          
+
           try {
             final taskDate = DateTime.parse("${taskDateStr}T00:00:00Z");
-            
+
             if (selectedEndDate != null) {
               // Date range filter
-              return taskDate.isAfter(selectedStartDate!.subtract(const Duration(days: 1))) &&
-                     taskDate.isBefore(selectedEndDate!.add(const Duration(days: 1)));
+              return taskDate.isAfter(
+                    selectedStartDate!.subtract(const Duration(days: 1)),
+                  ) &&
+                  taskDate.isBefore(
+                    selectedEndDate!.add(const Duration(days: 1)),
+                  );
             } else {
               // Single date filter
               return taskDate.year == selectedStartDate!.year &&
-                     taskDate.month == selectedStartDate!.month &&
-                     taskDate.day == selectedStartDate!.day;
+                  taskDate.month == selectedStartDate!.month &&
+                  taskDate.day == selectedStartDate!.day;
             }
           } catch (e) {
             return false;
           }
         }).toList();
       }
-      
+
       setState(() => filteredTasks = result);
     } catch (e) {
-      print("Error loading filtered tasks: $e");
+      debugPrint("Error loading filtered tasks: $e");
       Get.snackbar(
         "Error",
         "Gagal memuat tasks: ${e.toString()}",
-        backgroundColor: Colors.red,
+        backgroundColor: Colors.red.withAlpha((0.9 * 255).round()),
         colorText: Colors.white,
       );
     }
@@ -176,7 +181,7 @@ class _FilterScreenState extends State<FilterScreen> {
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.blue.withOpacity(0.1),
+                          color: AppColors.blue.withAlpha((0.1 * 255).round()),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
@@ -213,14 +218,17 @@ class _FilterScreenState extends State<FilterScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text("Filter by Priority", style: AppStyle.subtitle),
+                                Text(
+                                  "Filter by Priority",
+                                  style: AppStyle.subtitle,
+                                ),
                                 Switch(
                                   value: filterByPriority,
                                   onChanged: (value) {
                                     setState(() => filterByPriority = value);
                                     if (value) _applyFilters();
                                   },
-                                  activeColor: AppColors.blue,
+                                  activeThumbColor: AppColors.blue,
                                 ),
                               ],
                             ),
@@ -243,14 +251,17 @@ class _FilterScreenState extends State<FilterScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text("Filter by Status", style: AppStyle.subtitle),
+                                Text(
+                                  "Filter by Status",
+                                  style: AppStyle.subtitle,
+                                ),
                                 Switch(
                                   value: filterByStatus,
                                   onChanged: (value) {
                                     setState(() => filterByStatus = value);
                                     if (value) _applyFilters();
                                   },
-                                  activeColor: AppColors.blue,
+                                  activeThumbColor: AppColors.blue,
                                 ),
                               ],
                             ),
@@ -279,14 +290,17 @@ class _FilterScreenState extends State<FilterScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text("Filter by Date", style: AppStyle.subtitle),
+                                Text(
+                                  "Filter by Date",
+                                  style: AppStyle.subtitle,
+                                ),
                                 Switch(
                                   value: filterByDate,
                                   onChanged: (value) {
                                     setState(() => filterByDate = value);
                                     if (value) _applyFilters();
                                   },
-                                  activeColor: AppColors.blue,
+                                  activeThumbColor: AppColors.blue,
                                 ),
                               ],
                             ),
@@ -336,7 +350,9 @@ class _FilterScreenState extends State<FilterScreen> {
                                     const SizedBox(height: 8),
                                     Text(
                                       "Try adjusting your filter criteria",
-                                      style: AppStyle.smallGray.copyWith(fontSize: 12),
+                                      style: AppStyle.smallGray.copyWith(
+                                        fontSize: 12,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -344,14 +360,16 @@ class _FilterScreenState extends State<FilterScreen> {
                             else if (loading)
                               const Center(child: CircularProgressIndicator())
                             else
-                              ...filteredTasks.map((task) => Padding(
-                                padding: const EdgeInsets.only(bottom: 8),
-                                child: TaskTile(
-                                  task: task,
-                                  onToggleCompletion: _toggleTaskCompletion,
-                                  onDelete: _deleteTask,
+                              ...filteredTasks.map(
+                                (task) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: TaskTile(
+                                    task: task,
+                                    onToggleCompletion: _toggleTaskCompletion,
+                                    onDelete: _deleteTask,
+                                  ),
                                 ),
-                              )).toList(),
+                              ),
                           ],
                         ),
                       ),
@@ -378,47 +396,47 @@ class _FilterScreenState extends State<FilterScreen> {
     );
   }
 
- Widget _buildPriorityOptions() {
-  // ✅ DEFINISIKAN TIPE DATA YANG JELAS
-  final List<Map<String, dynamic>> priorities = [
-    {'value': 'high', 'label': 'Tinggi', 'color': Colors.red},
-    {'value': 'medium', 'label': 'Sedang', 'color': Colors.orange},
-    {'value': 'low', 'label': 'Rendah', 'color': Colors.green},
-  ];
+  Widget _buildPriorityOptions() {
+    // ✅ DEFINISIKAN TIPE DATA YANG JELAS
+    final List<Map<String, dynamic>> priorities = [
+      {'value': 'high', 'label': 'Tinggi', 'color': Colors.red},
+      {'value': 'medium', 'label': 'Sedang', 'color': Colors.orange},
+      {'value': 'low', 'label': 'Rendah', 'color': Colors.green},
+    ];
 
-  return Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: priorities.map((priority) {
-      final isSelected = selectedPriority == priority['value'];
-      // ✅ CAST KE TIPE YANG BENAR
-      final Color color = priority['color'] as Color;
-      final String value = priority['value'] as String;
-      final String label = priority['label'] as String;
-      
-      return GestureDetector(
-        onTap: () {
-          setState(() => selectedPriority = value);
-          _applyFilters();
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: isSelected
-              ? Neu.pressed.copyWith(
-                  color: color.withOpacity(0.8),
-                )
-              : Neu.convex,
-          child: Text(
-            label,
-            style: AppStyle.normal.copyWith(
-              color: isSelected ? Colors.white : AppColors.text,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: priorities.map((priority) {
+        final isSelected = selectedPriority == priority['value'];
+        // ✅ CAST KE TIPE YANG BENAR
+        final Color color = priority['color'] as Color;
+        final String value = priority['value'] as String;
+        final String label = priority['label'] as String;
+
+        return GestureDetector(
+          onTap: () {
+            setState(() => selectedPriority = value);
+            _applyFilters();
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: isSelected
+                ? Neu.pressed.copyWith(
+                    color: color.withAlpha((0.8 * 255).round()),
+                  )
+                : Neu.convex,
+            child: Text(
+              label,
+              style: AppStyle.normal.copyWith(
+                color: isSelected ? Colors.white : AppColors.text,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
             ),
           ),
-        ),
-      );
-    }).toList(),
-  );
-}
+        );
+      }).toList(),
+    );
+  }
 
   Widget _buildStatusOption(String label, bool isCompleted) {
     final isSelected = showCompleted == isCompleted;
@@ -431,7 +449,9 @@ class _FilterScreenState extends State<FilterScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: isSelected
             ? Neu.pressed.copyWith(
-                color: isCompleted ? Colors.green.withOpacity(0.8) : Colors.orange.withOpacity(0.8),
+                color: isCompleted
+                    ? Colors.green.withAlpha((0.8 * 255).round())
+                    : Colors.orange.withAlpha((0.8 * 255).round()),
               )
             : Neu.convex,
         child: Text(
@@ -478,7 +498,9 @@ class _FilterScreenState extends State<FilterScreen> {
                 ),
                 Icon(
                   Icons.calendar_today_outlined,
-                  color: selectedStartDate == null ? Colors.grey : AppColors.text,
+                  color: selectedStartDate == null
+                      ? Colors.grey
+                      : AppColors.text,
                 ),
               ],
             ),
@@ -490,7 +512,8 @@ class _FilterScreenState extends State<FilterScreen> {
           onTap: () async {
             DateTime? picked = await showDatePicker(
               context: context,
-              initialDate: selectedEndDate ?? (selectedStartDate ?? DateTime.now()),
+              initialDate:
+                  selectedEndDate ?? (selectedStartDate ?? DateTime.now()),
               firstDate: selectedStartDate ?? DateTime(2000),
               lastDate: DateTime(2100),
             );

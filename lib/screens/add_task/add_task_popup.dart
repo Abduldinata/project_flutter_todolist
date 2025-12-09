@@ -62,7 +62,9 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: isSelected
-            ? Neu.pressed.copyWith(color: accentColor.withOpacity(0.8))
+            ? Neu.pressed.copyWith(
+                color: accentColor.withAlpha((0.8 * 255).round()),
+              )
             : Neu.convex,
         child: Text(
           label,
@@ -77,10 +79,7 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
   }
 
@@ -107,7 +106,7 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bg.withOpacity(0.9),
+      backgroundColor: AppColors.bg.withAlpha((0.9 * 255).round()),
       body: Center(
         child: Container(
           width: 330,
@@ -169,7 +168,9 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
                   DateTime? picked = await showDatePicker(
                     context: context,
                     initialDate: selectedDate ?? DateTime.now(),
-                    firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                    firstDate: DateTime.now().subtract(
+                      const Duration(days: 365),
+                    ),
                     lastDate: DateTime.now().add(const Duration(days: 365)),
                   );
                   if (picked != null) {
@@ -191,12 +192,16 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
                             ? "Pilih Tanggal Jatuh Tempo*"
                             : "Jatuh Tempo: ${_formatDate(selectedDate!)}",
                         style: AppStyle.normal.copyWith(
-                          color: selectedDate == null ? Colors.grey : AppColors.text,
+                          color: selectedDate == null
+                              ? Colors.grey
+                              : AppColors.text,
                         ),
                       ),
                       Icon(
-                        Icons.calendar_today_outlined, 
-                        color: selectedDate == null ? Colors.grey : AppColors.text
+                        Icons.calendar_today_outlined,
+                        color: selectedDate == null
+                            ? Colors.grey
+                            : AppColors.text,
                       ),
                     ],
                   ),
@@ -242,8 +247,8 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
                       child: Text(
                         "Simpan",
                         style: AppStyle.normal.copyWith(
-                          color: AppColors.blue, 
-                          fontWeight: FontWeight.bold
+                          color: AppColors.blue,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),

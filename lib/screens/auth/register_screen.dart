@@ -134,7 +134,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
           // optional overlay untuk meningkatkan kontras teks
           Positioned.fill(
-            child: Container(color: Colors.black.withOpacity(0.25)),
+            child: Container(
+              color: Colors.black.withAlpha((0.25 * 255).round()),
+            ),
           ),
           SafeArea(
             child: Center(

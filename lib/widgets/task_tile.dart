@@ -29,13 +29,17 @@ class TaskTile extends StatelessWidget {
     final description = task['description']?.toString();
     final date = task['date']?.toString();
 
-      return GestureDetector(
-        onTap: onTap ?? () {
-          // ✅ DEFAULT: Navigate to TaskDetailScreen
-          print("DEBUG: Navigating to TaskDetailScreen for task: ${task['id']}");
-          Get.to(() => TaskDetailScreen(task: task));
-        },
-        child: Container(
+    return GestureDetector(
+      onTap:
+          onTap ??
+          () {
+            // ✅ DEFAULT: Navigate to TaskDetailScreen
+            print(
+              "DEBUG: Navigating to TaskDetailScreen for task: ${task['id']}",
+            );
+            Get.to(() => TaskDetailScreen(task: task));
+          },
+      child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         decoration: Neu.concave,
         child: Padding(
@@ -52,25 +56,21 @@ class TaskTile extends StatelessWidget {
                 child: Container(
                   width: 28,
                   height: 28,
-                  decoration: isDone 
+                  decoration: isDone
                       ? Neu.pressed.copyWith(
-                          color: AppColors.blue.withOpacity(0.8),
+                          color: AppColors.blue.withAlpha((0.8 * 255).round()),
                         )
                       : Neu.convex,
                   child: Center(
                     child: isDone
-                        ? const Icon(
-                            Icons.check,
-                            size: 18,
-                            color: Colors.white,
-                          )
+                        ? const Icon(Icons.check, size: 18, color: Colors.white)
                         : null,
                   ),
                 ),
               ),
-              
+
               const SizedBox(width: 16),
-              
+
               // Task Content
               Expanded(
                 child: Column(
@@ -84,7 +84,7 @@ class TaskTile extends StatelessWidget {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    
+
                     if (description != null && description.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
@@ -94,11 +94,13 @@ class TaskTile extends StatelessWidget {
                               : description,
                           style: AppStyle.smallGray.copyWith(
                             fontSize: 12,
-                            decoration: isDone ? TextDecoration.lineThrough : null,
+                            decoration: isDone
+                                ? TextDecoration.lineThrough
+                                : null,
                           ),
                         ),
                       ),
-                    
+
                     if (date != null && date.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 6),
@@ -120,7 +122,7 @@ class TaskTile extends StatelessWidget {
                   ],
                 ),
               ),
-              
+
               // More Options Button
               PopupMenuButton<String>(
                 icon: Icon(Icons.more_vert, color: Colors.grey[600]),
@@ -152,7 +154,10 @@ class TaskTile extends StatelessWidget {
                       children: [
                         Icon(Icons.delete, size: 20, color: Colors.red),
                         const SizedBox(width: 8),
-                        const Text("Hapus", style: TextStyle(color: Colors.red)),
+                        const Text(
+                          "Hapus",
+                          style: TextStyle(color: Colors.red),
+                        ),
                       ],
                     ),
                   ),

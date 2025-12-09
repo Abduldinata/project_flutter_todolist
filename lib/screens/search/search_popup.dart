@@ -16,7 +16,7 @@ class SearchPopup extends StatefulWidget {
 class _SearchPopupState extends State<SearchPopup> {
   final TextEditingController _searchCtrl = TextEditingController();
   final TaskService _taskService = TaskService();
-  
+
   List<Map<String, dynamic>> searchResults = [];
   bool searching = false;
   bool hasSearched = false;
@@ -38,15 +38,14 @@ class _SearchPopupState extends State<SearchPopup> {
 
     try {
       final allTasks = await _taskService.getAllTasks();
-      
+
       // Case-insensitive search in title and description
       final results = allTasks.where((task) {
         final title = task['title']?.toString().toLowerCase() ?? '';
         final description = task['description']?.toString().toLowerCase() ?? '';
         final searchLower = query.toLowerCase();
-        
-        return title.contains(searchLower) || 
-               description.contains(searchLower);
+
+        return title.contains(searchLower) || description.contains(searchLower);
       }).toList();
 
       setState(() {
@@ -157,7 +156,7 @@ class _SearchPopupState extends State<SearchPopup> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Search Bar
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -175,11 +174,14 @@ class _SearchPopupState extends State<SearchPopup> {
                             ),
                             onChanged: (value) {
                               // Debounce search
-                              Future.delayed(const Duration(milliseconds: 300), () {
-                                if (_searchCtrl.text == value) {
-                                  _performSearch(value);
-                                }
-                              });
+                              Future.delayed(
+                                const Duration(milliseconds: 300),
+                                () {
+                                  if (_searchCtrl.text == value) {
+                                    _performSearch(value);
+                                  }
+                                },
+                              );
                             },
                             onSubmitted: _performSearch,
                           ),
@@ -204,7 +206,7 @@ class _SearchPopupState extends State<SearchPopup> {
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: AppColors.bg.withOpacity(0.9),
+                  color: AppColors.bg.withAlpha((0.9 * 255).round()),
                   borderRadius: const BorderRadius.only(
                     bottomLeft: Radius.circular(16),
                     bottomRight: Radius.circular(16),
@@ -221,9 +223,7 @@ class _SearchPopupState extends State<SearchPopup> {
 
   Widget _buildSearchResults() {
     if (searching) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (!hasSearched) {
@@ -231,16 +231,9 @@ class _SearchPopupState extends State<SearchPopup> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.search_outlined,
-              size: 64,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.search_outlined, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
-            const Text(
-              "Cari task kamu",
-              style: AppStyle.smallGray,
-            ),
+            const Text("Cari task kamu", style: AppStyle.smallGray),
             const SizedBox(height: 8),
             Text(
               "Ketik di search bar untuk mencari task",
@@ -257,16 +250,9 @@ class _SearchPopupState extends State<SearchPopup> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.search_off_outlined,
-              size: 64,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.search_off_outlined, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
-            Text(
-              "Tidak ditemukan",
-              style: AppStyle.smallGray,
-            ),
+            Text("Tidak ditemukan", style: AppStyle.smallGray),
             const SizedBox(height: 8),
             Text(
               _searchCtrl.text.isNotEmpty
