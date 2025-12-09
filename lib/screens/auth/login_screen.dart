@@ -120,13 +120,24 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: AppColors.bg,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text("Login", style: AppStyle.title),
-              const SizedBox(height: 30),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Logo atau Icon
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: Neu.concave,
+                  child: const Icon(
+                    Icons.checklist_rounded,
+                    size: 60,
+                    color: AppColors.blue,
+                  ),
+                ),
+                const SizedBox(height: 30),
 
                 // Title
                 Text('Login', style: AppStyle.title),
@@ -141,12 +152,21 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 20),
 
-              NeumorphicTextField(
-                controller: passCtrl,
-                hint: "Password",
-                obscure: true,
-              ),
-              const SizedBox(height: 25),
+                // Password Field
+                NeumorphicTextField(
+                  controller: _passwordController,
+                  hint: 'Password',
+                  obscure: !_showPassword,
+                  suffix: IconButton(
+                    onPressed: () =>
+                        setState(() => _showPassword = !_showPassword),
+                    icon: Icon(
+                      _showPassword ? Icons.visibility_off : Icons.visibility,
+                      color: AppColors.text.withAlpha((0.6 * 255).round()),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 40),
 
                 // Login Button
                 _isLoading
@@ -182,7 +202,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
-      ],));
+    );
   }
 
   @override

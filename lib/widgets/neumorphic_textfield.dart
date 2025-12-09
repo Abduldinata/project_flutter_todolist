@@ -6,12 +6,14 @@ class NeumorphicTextField extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
   final bool obscure;
+  final Widget? suffix;
 
   const NeumorphicTextField({
     super.key,
     required this.controller,
     required this.hint,
     this.obscure = false,
+    this.suffix,
   });
 
   @override
@@ -26,6 +28,7 @@ class NeumorphicTextField extends StatelessWidget {
           hintText: hint,
           hintStyle: AppStyle.smallGray,
           border: InputBorder.none,
+          suffixIcon: suffix,
         ),
       ),
     );
