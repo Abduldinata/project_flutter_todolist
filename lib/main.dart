@@ -36,6 +36,8 @@ class MyApp extends StatelessWidget {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: themeController.theme,
+      defaultTransition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
       initialRoute: AppRoutes.login,
       getPages: [
         // AUTH
