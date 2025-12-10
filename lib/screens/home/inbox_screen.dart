@@ -79,6 +79,23 @@ class _InboxScreenState extends State<InboxScreen> {
     }
   }
 
+  // Helper untuk cek apakah task hari ini
+  bool _isTodayTask(Map<String, dynamic> task) {
+    try {
+      final taskDateStr = task['date']?.toString() ?? '';
+      if (taskDateStr.isEmpty) return false;
+      
+      final taskDate = DateTime.parse(taskDateStr.split('T')[0]);
+      final now = DateTime.now();
+      
+      return taskDate.year == now.year &&
+             taskDate.month == now.month &&
+             taskDate.day == now.day;
+    } catch (e) {
+      return false;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -87,17 +104,9 @@ class _InboxScreenState extends State<InboxScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ KALKULASI DATA DI SINI (sebelum return)
-    final now = DateTime.now();
-    final todayFormatted =
-        "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
-
+    // Filter tasks berdasarkan kategori
     final todayTasks = allTasks
-        .where(
-          (task) =>
-              task['date'] == todayFormatted &&
-              (task['is_done'] ?? false) == false,
-        )
+        .where((task) => _isTodayTask(task) && (task['is_done'] ?? false) == false)
         .toList();
 
     final historyTasks = allTasks
@@ -105,9 +114,7 @@ class _InboxScreenState extends State<InboxScreen> {
         .toList();
 
     final otherTasks = allTasks
-        .where(
-          (task) => !todayTasks.contains(task) && !historyTasks.contains(task),
-        )
+        .where((task) => !_isTodayTask(task) && (task['is_done'] ?? false) == false)
         .toList();
 
     return Scaffold(
@@ -194,6 +201,8 @@ class _InboxScreenState extends State<InboxScreen> {
                               task: task,
                               onToggleCompletion: _toggleTaskCompletion,
                               onDelete: _deleteTask,
+                              showDate: false,     // ❌ Tidak tampilkan tanggal (sudah jelas hari ini)
+                              compactMode: false,  // ✅ Tampilkan deskripsi normal
                             ),
                           ),
                           const SizedBox(height: 24),
@@ -210,6 +219,8 @@ class _InboxScreenState extends State<InboxScreen> {
                               task: task,
                               onToggleCompletion: _toggleTaskCompletion,
                               onDelete: _deleteTask,
+                              showDate: true,      // ✅ Tampilkan tanggal selesai
+                              compactMode: true,   // ✅ Mode ringkas untuk history
                             ),
                           ),
                           const SizedBox(height: 24),
@@ -223,6 +234,8 @@ class _InboxScreenState extends State<InboxScreen> {
                               task: task,
                               onToggleCompletion: _toggleTaskCompletion,
                               onDelete: _deleteTask,
+                              showDate: true,      // ✅ Tampilkan tanggal (penting untuk konteks)
+                              compactMode: false,  // ✅ Tampilkan deskripsi normal
                             ),
                           ),
                         ],
