@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../widgets/neumorphic_dialog.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/app_routes.dart';
 import '../../utils/app_style.dart';
@@ -45,16 +46,14 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (response.user != null) {
-        Get.snackbar(
-          'Berhasil',
-          'Login berhasil! Selamat datang ${response.user!.email}',
-          backgroundColor: AppColors.success.withAlpha((0.85 * 255).round()),
-          colorText: Colors.white,
-          duration: const Duration(seconds: 2),
+        NeumorphicDialog.show(
+          title: 'Berhasil',
+          message: 'Login berhasil! Selamat datang ${response.user!.email}',
+          type: DialogType.success,
         );
 
         // Tunggu sebentar agar user bisa lihat pesan sukses
-        await Future.delayed(const Duration(milliseconds: 500));
+        await Future.delayed(const Duration(milliseconds: 1500));
         Get.offAllNamed(AppRoutes.inbox);
       }
     } catch (e) {
@@ -104,14 +103,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _showError(String message) {
-    Get.snackbar(
-      'Error',
-      message,
-      backgroundColor: AppColors.danger,
-      colorText: Colors.white,
-      duration: const Duration(seconds: 5),
-      margin: const EdgeInsets.all(16),
-      snackPosition: SnackPosition.TOP,
+    NeumorphicDialog.show(
+      title: 'Error',
+      message: message,
+      type: DialogType.error,
     );
   }
 
@@ -189,18 +184,18 @@ class _LoginScreenState extends State<LoginScreen> {
                               color: AppColors.blue,
                             ),
                           )
-                        : NeumorphicButton(label: 'Masuk', onTap: _handleLogin),
+                        : NeumorphicButton(label: 'Login', onTap: _handleLogin),
                     const SizedBox(height: 30),
 
                     // Register Link
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text('Belum punya akun? ', style: AppStyle.smallGray),
+                        Text('Don\'t have an account? ', style: AppStyle.smallGray),
                         GestureDetector(
                           onTap: () => Get.toNamed(AppRoutes.register),
                           child: Text(
-                            'Daftar',
+                            'Sign Up',
                             style: AppStyle.link.copyWith(
                               color: AppColors.blue,
                               fontWeight: FontWeight.bold,
