@@ -4,10 +4,10 @@ import '../../utils/app_colors.dart';
 import '../../utils/app_style.dart';
 import '../../widgets/add_task_button.dart';
 import '../../widgets/bottom_nav.dart';
-import '../../widgets/task_tile.dart'; // ✅ Import TaskTile
+import '../../widgets/task_tile.dart';
 import '../../services/task_service.dart';
 import '../add_task/add_task_popup.dart';
-import '../edit_task/edit_task_screen.dart'; // ✅ Import edit screen
+import '../edit_task/edit_task_screen.dart';
 
 class UpcomingScreen extends StatefulWidget {
   const UpcomingScreen({super.key});
@@ -18,7 +18,8 @@ class UpcomingScreen extends StatefulWidget {
 
 class _UpcomingScreenState extends State<UpcomingScreen> {
   final TaskService _taskService = TaskService();
-  List<Map<String, dynamic>> tasks = []; // ✅ Tipe eksplisit
+  List<Map<String, dynamic>> tasks = [];
+  List<DateTime> upcomingDates = []; // ✅ Daftar tanggal unik dari tasks
   bool loading = true;
   int navIndex = 2;
 
@@ -26,7 +27,11 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
     setState(() => loading = true);
     try {
       final fetchedTasks = await _taskService.getUpcomingTasks();
-      setState(() => tasks = fetchedTasks);
+      setState(() {
+        tasks = fetchedTasks;
+        // ✅ Ekstrak tanggal unik dari tasks
+        _extractUniqueDates(fetchedTasks);
+      });
     } catch (e) {
       debugPrint("Error loading upcoming tasks: $e");
       Get.snackbar(
@@ -37,6 +42,33 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
       );
     }
     setState(() => loading = false);
+  }
+
+  // ✅ Method untuk ekstrak tanggal unik dari tasks
+  void _extractUniqueDates(List<Map<String, dynamic>> taskList) {
+    final Set<String> dateStrings = {};
+    final List<DateTime> dates = [];
+
+    for (final task in taskList) {
+      final dateStr = task['date']?.toString();
+      if (dateStr != null && dateStr.isNotEmpty) {
+        // Hanya tambah tanggal yang belum ada
+        if (!dateStrings.contains(dateStr)) {
+          dateStrings.add(dateStr);
+          try {
+            // Parse string ke DateTime
+            final date = DateTime.parse(dateStr.split('T')[0]);
+            dates.add(date);
+          } catch (e) {
+            debugPrint("Error parsing date: $dateStr");
+          }
+        }
+      }
+    }
+
+    // ✅ Urutkan dari tanggal terdekat ke terjauh
+    dates.sort((a, b) => a.compareTo(b));
+    setState(() => upcomingDates = dates);
   }
 
   Future<void> _toggleTaskCompletion(String taskId, bool currentValue) async {
@@ -99,12 +131,6 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final weekDates = List.generate(
-      6,
-      (i) => now.add(Duration(days: i + 1)),
-    );
-
     return Scaffold(
       backgroundColor: AppColors.bg,
       body: SafeArea(
@@ -116,56 +142,58 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
               const Text("Upcoming", style: AppStyle.title),
               const SizedBox(height: 10),
 
-              // Week dates bar
-              SizedBox(
-                height: 40,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: weekDates.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 10),
-                  itemBuilder: (_, i) {
-                    final d = weekDates[i];
-                    return Container(
-                      width: 40,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: AppColors.bg,
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.white,
-                            offset: Offset(-3, -3),
-                            blurRadius: 6,
-                          ),
-                          BoxShadow(
-                            color: Color(0xFFBEBEBE),
-                            offset: Offset(4, 4),
-                            blurRadius: 8,
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            d.day.toString(),
-                            style: AppStyle.normal,
-                          ),
-                          Text(
-                            _monthShort(d.month),
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: Colors.grey,
+              // ✅ DYNAMIC DATES BAR - Hanya tampilkan jika ada upcomingDates
+              if (upcomingDates.isNotEmpty) ...[
+                SizedBox(
+                  height: 40,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: upcomingDates.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 10),
+                    itemBuilder: (_, i) {
+                      final d = upcomingDates[i];
+                      return Container(
+                        width: 40,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: AppColors.bg,
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.white,
+                              offset: Offset(-3, -3),
+                              blurRadius: 6,
                             ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+                            BoxShadow(
+                              color: Color(0xFFBEBEBE),
+                              offset: Offset(4, 4),
+                              blurRadius: 8,
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              d.day.toString(),
+                              style: AppStyle.normal,
+                            ),
+                            Text(
+                              _monthShort(d.month),
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              ),
+                const SizedBox(height: 24),
+              ],
 
-              const SizedBox(height: 24),
               Text("Tugas yang akan datang", style: AppStyle.subtitle),
               const SizedBox(height: 12),
 
@@ -178,7 +206,6 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
         ),
       ),
 
-      // FIXED: Floating Action Button
       floatingActionButton: AddTaskButton(
         onTap: () async {
           final result = await Navigator.push(
@@ -188,7 +215,6 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
 
           if (result != null && result['text'] != null && result['date'] != null) {
             try {
-              // ✅ PARAMETER YANG BENAR:
               await _taskService.insertTask(
                 title: result['text'].toString(),
                 date: result['date'] as DateTime,
@@ -268,8 +294,8 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
           onToggleCompletion: (taskId, currentValue) => 
               _toggleTaskCompletion(taskId, currentValue),
           onDelete: (taskId, title) => _deleteTask(taskId, title),
-          // ✅ JANGAN OVERRIDE dengan snackbar
-          // onTap: () => Get.snackbar("Task Detail", "Coming soon..."),
+          showDate: true,
+          compactMode: false,
         );
       },
     );
