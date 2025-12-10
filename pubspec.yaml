@@ -30,6 +30,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  google_sign_in: ^6.2.1
   supabase_flutter: ^2.3.4
   get: ^4.6.6
   get_storage: ^2.1.1
@@ -68,6 +69,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/bg.png
+    - assets/images/icon_google.png
     - lib/assets/icon.png
 
   # To add assets to your application, add an assets section, like this:
