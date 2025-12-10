@@ -1,24 +1,28 @@
-// widgets/task_tile.dart - Update onTap handler
+// widgets/task_tile.dart - VERSI DENGAN PARAMETER showDate
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:to_do_list_project/screens/edit_task/edit_task_screen.dart';
 import '../utils/app_colors.dart';
 import '../utils/app_style.dart';
 import '../utils/neumorphic_decoration.dart';
-import '../screens/task_detail/task_detail_screen.dart'; // ✅ IMPORT
+import '../screens/task_detail/task_detail_screen.dart';
 
 class TaskTile extends StatelessWidget {
   final Map<String, dynamic> task;
   final Function(String taskId, bool currentValue) onToggleCompletion;
   final Function(String taskId, String title) onDelete;
-  final VoidCallback? onTap; // ✅ Bisa null
+  final VoidCallback? onTap;
+  final bool showDate; // ✅ PARAMETER BARU
+  final bool compactMode; // ✅ PARAMETER BARU
 
   const TaskTile({
     super.key,
     required this.task,
     required this.onToggleCompletion,
     required this.onDelete,
-    this.onTap, // ✅ Optional
+    this.onTap,
+    this.showDate = true, // ✅ DEFAULT: true
+    this.compactMode = false, // ✅ DEFAULT: false
   });
 
   @override
@@ -30,15 +34,9 @@ class TaskTile extends StatelessWidget {
     final date = task['date']?.toString();
 
     return GestureDetector(
-      onTap:
-          onTap ??
-          () {
-            // ✅ DEFAULT: Navigate to TaskDetailScreen
-            debugPrint(
-              "DEBUG: Navigating to TaskDetailScreen for task: ${task['id']}",
-            );
-            Get.to(() => TaskDetailScreen(task: task));
-          },
+      onTap: onTap ?? () {
+        Get.to(() => TaskDetailScreen(task: task));
+      },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         decoration: Neu.concave,
@@ -85,7 +83,8 @@ class TaskTile extends StatelessWidget {
                       ),
                     ),
 
-                    if (description != null && description.isNotEmpty)
+                    // ✅ DESKRIPSI: Tampilkan jika tidak compactMode
+                    if (description != null && description.isNotEmpty && !compactMode)
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
                         child: Text(
@@ -101,7 +100,8 @@ class TaskTile extends StatelessWidget {
                         ),
                       ),
 
-                    if (date != null && date.isNotEmpty)
+                    // ✅ TANGGAL: Hanya tampilkan jika showDate = true
+                    if (date != null && date.isNotEmpty && showDate)
                       Padding(
                         padding: const EdgeInsets.only(top: 6),
                         child: Row(
@@ -123,7 +123,7 @@ class TaskTile extends StatelessWidget {
                 ),
               ),
 
-              // More Options Button
+              // More Options Button (sama seperti sebelumnya)
               PopupMenuButton<String>(
                 icon: Icon(Icons.more_vert, color: Colors.grey[600]),
                 itemBuilder: (context) => [
@@ -164,15 +164,9 @@ class TaskTile extends StatelessWidget {
                 ],
                 onSelected: (value) {
                   if (value == 'detail') {
-                    // ✅ Navigate ke detail
                     Get.to(() => TaskDetailScreen(task: task));
                   } else if (value == 'edit') {
-                    // Navigate ke edit
-                    Get.to(() => EditTaskScreen(task: task))?.then((updated) {
-                      if (updated == true) {
-                        // Refresh jika perlu
-                      }
-                    });
+                    Get.to(() => EditTaskScreen(task: task));
                   } else if (value == 'delete') {
                     onDelete(taskId, title);
                   }
