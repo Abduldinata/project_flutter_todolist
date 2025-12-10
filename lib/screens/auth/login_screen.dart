@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../../widgets/neumorphic_dialog.dart';
 import '../../services/supabase_service.dart';
@@ -8,6 +9,7 @@ import '../../utils/app_colors.dart';
 import '../../utils/neumorphic_decoration.dart';
 import '../../widgets/neumorphic_textfield.dart';
 import '../../widgets/neumorphic_button.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -22,6 +24,25 @@ class _LoginScreenState extends State<LoginScreen> {
   final _service = SupabaseService();
   bool _isLoading = false;
   bool _showPassword = false;
+  bool _isGoogleLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Listen for auth state changes (untuk web OAuth redirect)
+    Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      final session = data.session;
+      if (session != null && mounted) {
+        // User berhasil login via OAuth redirect
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (Get.currentRoute == AppRoutes.login) {
+            Get.offAllNamed(AppRoutes.inbox);
+          }
+        });
+      }
+    });
+  }
 
   Future<void> _handleLogin() async {
     // Validasi input
@@ -52,7 +73,6 @@ class _LoginScreenState extends State<LoginScreen> {
           type: DialogType.success,
         );
 
-        // Tunggu sebentar agar user bisa lihat pesan sukses
         await Future.delayed(const Duration(milliseconds: 1500));
         Get.offAllNamed(AppRoutes.inbox);
       }
@@ -62,6 +82,40 @@ class _LoginScreenState extends State<LoginScreen> {
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isGoogleLoading = true);
+
+    try {
+      if (kIsWeb) {
+        // Untuk web, gunakan OAuth flow (akan redirect)
+        await _service.signInWithGoogle();
+        // OAuth flow akan redirect, jadi loading tetap aktif
+        // State change listener akan handle navigation setelah redirect
+      } else {
+        // Untuk mobile, gunakan Google Sign-In package
+        final response = await _service.signInWithGoogle();
+
+        if (response.user != null) {
+          NeumorphicDialog.show(
+            title: 'Berhasil',
+            message: 'Login dengan Google berhasil!',
+            type: DialogType.success,
+          );
+
+          await Future.delayed(const Duration(milliseconds: 1500));
+          Get.offAllNamed(AppRoutes.inbox);
+        }
+      }
+    } catch (e) {
+      String errorMessage = _parseGoogleError(e.toString());
+      _showError(errorMessage);
+
+      if (mounted) {
+        setState(() => _isGoogleLoading = false);
       }
     }
   }
@@ -102,6 +156,30 @@ class _LoginScreenState extends State<LoginScreen> {
     return '⚠️ Login gagal\n\n${error.length > 100 ? "${error.substring(0, 100)}..." : error}';
   }
 
+  String _parseGoogleError(String error) {
+    if (error.contains('sign in cancelled') || error.contains('canceled')) {
+      return 'Login dengan Google dibatalkan';
+    }
+
+    if (error.contains('popup_closed')) {
+      return 'Popup login Google ditutup sebelum selesai';
+    }
+
+    if (error.contains('redirect_uri_mismatch')) {
+      return '⚠️ Konfigurasi Google OAuth salah\n\nRedirect URI tidak sesuai. Hubungi developer.';
+    }
+
+    if (error.contains('network error') || error.contains('SocketException')) {
+      return '❌ Tidak ada koneksi internet\n\nPastikan koneksi internet aktif untuk login dengan Google';
+    }
+
+    if (error.contains('sign_in_failed') || error.contains('SIGN_IN_FAILED')) {
+      return '⚠️ Gagal login dengan Google\n\nPastikan:\n• Google Play Services terinstall (Android)\n• Akun Google tersedia di device';
+    }
+
+    return '⚠️ Gagal login dengan Google\n\n$error';
+  }
+
   void _showError(String message) {
     NeumorphicDialog.show(
       title: 'Error',
@@ -118,7 +196,6 @@ class _LoginScreenState extends State<LoginScreen> {
           Positioned.fill(
             child: Image.asset('assets/images/bg.png', fit: BoxFit.cover),
           ),
-          // optional overlay untuk meningkatkan kontras teks
           Positioned.fill(
             child: Container(
               color: Colors.black.withAlpha((0.25 * 255).round()),
@@ -184,18 +261,97 @@ class _LoginScreenState extends State<LoginScreen> {
                               color: AppColors.blue,
                             ),
                           )
-                        : NeumorphicButton(label: 'Login', onTap: _handleLogin),
+                        : NeumorphicButton(
+                            label: 'Login dengan Email',
+                            onTap: _handleLogin,
+                          ),
+
+                    const SizedBox(height: 20),
+
+                    // OR Divider
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Divider(
+                            color: AppColors.text.withAlpha(
+                              (0.3 * 255).round(),
+                            ),
+                            thickness: 1,
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Text('atau', style: AppStyle.smallGray),
+                        ),
+                        Expanded(
+                          child: Divider(
+                            color: AppColors.text.withAlpha(
+                              (0.3 * 255).round(),
+                            ),
+                            thickness: 1,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Google Sign In Button
+                    _isGoogleLoading
+                        ? Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: Neu.convex,
+                            child: const CircularProgressIndicator(
+                              color: AppColors.blue,
+                            ),
+                          )
+                        : Container(
+                            decoration: Neu.convex,
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(15),
+                                onTap: _handleGoogleSignIn,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                    horizontal: 24,
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Image.asset(
+                                        'assets/images/icon_google.png',
+                                        width: 24,
+                                        height: 24,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Text(
+                                        'Login dengan Google',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: AppColors.text,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+
                     const SizedBox(height: 30),
 
                     // Register Link
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text('Don\'t have an account? ', style: AppStyle.smallGray),
+                        Text('Belum punya akun? ', style: AppStyle.smallGray),
                         GestureDetector(
                           onTap: () => Get.toNamed(AppRoutes.register),
                           child: Text(
-                            'Sign Up',
+                            'Daftar',
                             style: AppStyle.link.copyWith(
                               color: AppColors.blue,
                               fontWeight: FontWeight.bold,
