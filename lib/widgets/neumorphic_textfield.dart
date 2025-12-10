@@ -7,6 +7,8 @@ class NeumorphicTextField extends StatelessWidget {
   final String hint;
   final bool obscure;
   final Widget? suffix;
+  final TextInputAction? textInputAction;
+  final Function(String)? onSubmitted;
 
   const NeumorphicTextField({
     super.key,
@@ -14,6 +16,8 @@ class NeumorphicTextField extends StatelessWidget {
     required this.hint,
     this.obscure = false,
     this.suffix,
+    this.textInputAction, // Tambahkan ini
+    this.onSubmitted,
   });
 
   @override
@@ -24,6 +28,8 @@ class NeumorphicTextField extends StatelessWidget {
       child: TextField(
         controller: controller,
         obscureText: obscure,
+        textInputAction: textInputAction,
+        onSubmitted: onSubmitted,
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: AppStyle.smallGray,
