@@ -1,5 +1,5 @@
-import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
 class ThemeController extends GetxController {
@@ -13,6 +13,7 @@ class ThemeController extends GetxController {
     isDarkMode.value = _loadTheme();
   }
 
+  /// Dipakai di GetMaterialApp.themeMode
   ThemeMode get theme => _loadTheme() ? ThemeMode.dark : ThemeMode.light;
 
   bool _loadTheme() => _box.read(_key) ?? false;

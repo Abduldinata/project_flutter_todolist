@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../utils/app_colors.dart';
+import '../theme/colors.dart';
 import '../utils/app_style.dart';
 import '../utils/neumorphic_decoration.dart';
 import 'neumorphic_button.dart';

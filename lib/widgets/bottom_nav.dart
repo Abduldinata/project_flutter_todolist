@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../utils/app_colors.dart';
+import '../theme/colors.dart';
 
 class BottomNav extends StatelessWidget {
   final int index;

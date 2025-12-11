@@ -8,7 +8,7 @@ import '../../widgets/neumorphic_dialog.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/app_routes.dart';
 import '../../utils/app_style.dart';
-import '../../utils/app_colors.dart';
+import '../../theme/colors.dart';
 import '../../utils/neumorphic_decoration.dart';
 import '../../widgets/neumorphic_textfield.dart';
 import '../../widgets/neumorphic_button.dart';

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../utils/app_colors.dart';
+import '../../theme/colors.dart';
 import '../../utils/app_style.dart';
 import '../../utils/neumorphic_decoration.dart';
-import '../../controllers/theme_controller.dart';
+import '../../theme/theme_controller.dart';
 import '../../widgets/bottom_nav.dart';
 import '../../widgets/task_tile.dart';
 import '../../services/task_service.dart';
@@ -163,8 +163,9 @@ class _FilterScreenState extends State<FilterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20),
@@ -174,7 +175,12 @@ class _FilterScreenState extends State<FilterScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text("Filter Tasks", style: AppStyle.title),
+                  Text(
+                    "Filter Tasks",
+                    style: AppStyle.title.copyWith(
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
                   if (_hasActiveFilters())
                     GestureDetector(
                       onTap: _resetFilters,
@@ -200,7 +206,11 @@ class _FilterScreenState extends State<FilterScreen> {
               const SizedBox(height: 4),
               Text(
                 "Filter tasks berdasarkan kriteria",
-                style: AppStyle.smallGray,
+                style: AppStyle.smallGray.copyWith(
+                  color: theme.colorScheme.onSurface.withAlpha(
+                    (0.7 * 255).round(),
+                  ),
+                ),
               ),
               const SizedBox(height: 20),
 
@@ -214,7 +224,9 @@ class _FilterScreenState extends State<FilterScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         margin: const EdgeInsets.only(bottom: 16),
-                        decoration: Neu.concave,
+                        decoration: Neu.concave.copyWith(
+                          color: theme.colorScheme.surface,
+                        ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -230,7 +242,14 @@ class _FilterScreenState extends State<FilterScreen> {
                                   ),
                                 ),
                                 const SizedBox(width: 12),
-                                Text("Dark Mode", style: AppStyle.subtitle),
+                                Text(
+                                  "Dark Mode",
+                                  style: AppStyle.subtitle.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface, // mengikuti mode
+                                  ),
+                                ),
                               ],
                             ),
                             Obx(
@@ -250,7 +269,9 @@ class _FilterScreenState extends State<FilterScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         margin: const EdgeInsets.only(bottom: 16),
-                        decoration: Neu.concave,
+                        decoration: Neu.concave.copyWith(
+                          color: theme.colorScheme.surface,
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -259,7 +280,11 @@ class _FilterScreenState extends State<FilterScreen> {
                               children: [
                                 Text(
                                   "Filter by Priority",
-                                  style: AppStyle.subtitle,
+                                  style: AppStyle.subtitle.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface, // ikut dark/light
+                                  ),
                                 ),
                                 Switch(
                                   value: filterByPriority,
@@ -267,7 +292,12 @@ class _FilterScreenState extends State<FilterScreen> {
                                     setState(() => filterByPriority = value);
                                     if (value) _applyFilters();
                                   },
-                                  activeThumbColor: AppColors.blue,
+                                  activeThumbColor: Theme.of(
+                                    context,
+                                  ).colorScheme.primary,
+                                  activeTrackColor: Theme.of(
+                                    context,
+                                  ).colorScheme.primary.withValues(alpha: 0.4),
                                 ),
                               ],
                             ),
@@ -283,7 +313,9 @@ class _FilterScreenState extends State<FilterScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         margin: const EdgeInsets.only(bottom: 16),
-                        decoration: Neu.concave,
+                        decoration: Neu.concave.copyWith(
+                          color: theme.colorScheme.surface,
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -322,7 +354,9 @@ class _FilterScreenState extends State<FilterScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         margin: const EdgeInsets.only(bottom: 16),
-                        decoration: Neu.concave,
+                        decoration: Neu.concave.copyWith(
+                          color: theme.colorScheme.surface,
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -354,7 +388,9 @@ class _FilterScreenState extends State<FilterScreen> {
                       // Results Section
                       Container(
                         padding: const EdgeInsets.all(16),
-                        decoration: Neu.concave,
+                        decoration: Neu.concave.copyWith(
+                          color: theme.colorScheme.surface,
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -436,6 +472,7 @@ class _FilterScreenState extends State<FilterScreen> {
   }
 
   Widget _buildPriorityOptions() {
+    final theme = Theme.of(context);
     final List<Map<String, dynamic>> priorities = [
       {'value': 'high', 'label': 'Tinggi', 'color': Colors.red},
       {'value': 'medium', 'label': 'Sedang', 'color': Colors.orange},
@@ -465,8 +502,9 @@ class _FilterScreenState extends State<FilterScreen> {
             child: Text(
               label,
               style: AppStyle.normal.copyWith(
-                color: isSelected ? Colors.white : AppColors.text,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                color: isSelected
+                    ? theme.colorScheme.onPrimary
+                    : theme.colorScheme.onSurface,
               ),
             ),
           ),
@@ -476,6 +514,7 @@ class _FilterScreenState extends State<FilterScreen> {
   }
 
   Widget _buildStatusOption(String label, bool isCompleted) {
+    final theme = Theme.of(context);
     final isSelected = showCompleted == isCompleted;
     return GestureDetector(
       onTap: () {
@@ -494,7 +533,9 @@ class _FilterScreenState extends State<FilterScreen> {
         child: Text(
           label,
           style: AppStyle.normal.copyWith(
-            color: isSelected ? Colors.white : AppColors.text,
+            color: isSelected
+                ? theme.colorScheme.onPrimary
+                : theme.colorScheme.onSurface,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
@@ -503,6 +544,7 @@ class _FilterScreenState extends State<FilterScreen> {
   }
 
   Widget _buildDateFilters() {
+    final theme = Theme.of(context);
     return Column(
       children: [
         // Start Date
@@ -523,7 +565,7 @@ class _FilterScreenState extends State<FilterScreen> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             margin: const EdgeInsets.only(bottom: 12),
-            decoration: Neu.convex,
+            decoration: Neu.convex.copyWith(color: theme.colorScheme.surface),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -536,8 +578,8 @@ class _FilterScreenState extends State<FilterScreen> {
                 Icon(
                   Icons.calendar_today_outlined,
                   color: selectedStartDate == null
-                      ? Colors.grey
-                      : AppColors.text,
+                      ? theme.disabledColor
+                      : theme.colorScheme.onSurface,
                 ),
               ],
             ),
@@ -562,7 +604,7 @@ class _FilterScreenState extends State<FilterScreen> {
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-            decoration: Neu.convex,
+            decoration: Neu.convex.copyWith(color: theme.colorScheme.surface),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -574,7 +616,9 @@ class _FilterScreenState extends State<FilterScreen> {
                 ),
                 Icon(
                   Icons.calendar_today_outlined,
-                  color: selectedEndDate == null ? Colors.grey : AppColors.text,
+                  color: selectedEndDate == null
+                      ? theme.disabledColor
+                      : theme.colorScheme.onSurface,
                 ),
               ],
             ),

@@ -7,7 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../models/profile_model.dart';
 import '../../services/supabase_service.dart';
-import '../../utils/app_colors.dart';
+import '../../theme/colors.dart';
 import '../../utils/app_style.dart';
 import '../../utils/neumorphic_decoration.dart';
 import '../../utils/app_routes.dart';

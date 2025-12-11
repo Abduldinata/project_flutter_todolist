@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../utils/app_colors.dart';
+import '../../theme/colors.dart';
 import '../../utils/app_style.dart';
 import '../../widgets/add_task_button.dart';
 import '../../widgets/bottom_nav.dart';
