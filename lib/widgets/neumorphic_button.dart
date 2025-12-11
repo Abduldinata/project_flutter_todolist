@@ -11,14 +11,26 @@ class NeumorphicButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 26),
-        decoration: Neu.convex,
+        decoration: isDark
+            ? BoxDecoration(
+                color: const Color(0xFF2C2C2C),
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(color: Colors.grey[800]!),
+              )
+            : Neu.convex,
         child: Text(
           label,
-          style: AppStyle.normal.copyWith(color: AppColors.blue),
+          style: AppStyle.normal.copyWith(
+            color: AppColors.blue,
+            fontWeight: FontWeight.w600,
+          ),
+          textAlign: TextAlign.center,
         ),
       ),
     );

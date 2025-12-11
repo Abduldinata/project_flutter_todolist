@@ -1,4 +1,3 @@
-// widgets/task_tile.dart - VERSI DENGAN PARAMETER showDate
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:to_do_list_project/screens/edit_task/edit_task_screen.dart';
@@ -12,8 +11,8 @@ class TaskTile extends StatelessWidget {
   final Function(String taskId, bool currentValue) onToggleCompletion;
   final Function(String taskId, String title) onDelete;
   final VoidCallback? onTap;
-  final bool showDate; // ✅ PARAMETER BARU
-  final bool compactMode; // ✅ PARAMETER BARU
+  final bool showDate;
+  final bool compactMode;
 
   const TaskTile({
     super.key,
@@ -21,12 +20,13 @@ class TaskTile extends StatelessWidget {
     required this.onToggleCompletion,
     required this.onDelete,
     this.onTap,
-    this.showDate = true, // ✅ DEFAULT: true
-    this.compactMode = false, // ✅ DEFAULT: false
+    this.showDate = true,
+    this.compactMode = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final taskId = task['id']?.toString() ?? '';
     final title = task['title']?.toString() ?? 'No Title';
     final isDone = task['is_done'] ?? false;
@@ -34,12 +34,20 @@ class TaskTile extends StatelessWidget {
     final date = task['date']?.toString();
 
     return GestureDetector(
-      onTap: onTap ?? () {
-        Get.to(() => TaskDetailScreen(task: task));
-      },
+      onTap:
+          onTap ??
+          () {
+            Get.to(() => TaskDetailScreen(task: task));
+          },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
-        decoration: Neu.concave,
+        decoration: isDark
+            ? BoxDecoration(
+                color: const Color(0xFF2C2C2C),
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(color: Colors.grey[800]!),
+              )
+            : Neu.concave,
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
           child: Row(
@@ -55,10 +63,27 @@ class TaskTile extends StatelessWidget {
                   width: 28,
                   height: 28,
                   decoration: isDone
-                      ? Neu.pressed.copyWith(
+                      ? BoxDecoration(
                           color: AppColors.blue.withAlpha((0.8 * 255).round()),
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: isDark
+                              ? [
+                                  BoxShadow(
+                                    color: Colors.black.withAlpha(
+                                      (0.5 * 255).round(),
+                                    ),
+                                    blurRadius: 4,
+                                  ),
+                                ]
+                              : Neu.pressed.boxShadow,
                         )
-                      : Neu.convex,
+                      : (isDark
+                            ? BoxDecoration(
+                                color: const Color(0xFF1E1E1E),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.grey[700]!),
+                              )
+                            : Neu.convex),
                   child: Center(
                     child: isDone
                         ? const Icon(Icons.check, size: 18, color: Colors.white)
@@ -78,13 +103,16 @@ class TaskTile extends StatelessWidget {
                       title,
                       style: AppStyle.normal.copyWith(
                         decoration: isDone ? TextDecoration.lineThrough : null,
-                        color: isDone ? Colors.grey : AppColors.text,
+                        color: isDone
+                            ? Colors.grey
+                            : (isDark ? Colors.white : AppColors.text),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
 
-                    // ✅ DESKRIPSI: Tampilkan jika tidak compactMode
-                    if (description != null && description.isNotEmpty && !compactMode)
+                    if (description != null &&
+                        description.isNotEmpty &&
+                        !compactMode)
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
                         child: Text(
@@ -93,6 +121,7 @@ class TaskTile extends StatelessWidget {
                               : description,
                           style: AppStyle.smallGray.copyWith(
                             fontSize: 12,
+                            color: isDark ? Colors.grey[400] : Colors.grey,
                             decoration: isDone
                                 ? TextDecoration.lineThrough
                                 : null,
@@ -100,7 +129,6 @@ class TaskTile extends StatelessWidget {
                         ),
                       ),
 
-                    // ✅ TANGGAL: Hanya tampilkan jika showDate = true
                     if (date != null && date.isNotEmpty && showDate)
                       Padding(
                         padding: const EdgeInsets.only(top: 6),
@@ -109,12 +137,17 @@ class TaskTile extends StatelessWidget {
                             Icon(
                               Icons.calendar_today,
                               size: 12,
-                              color: Colors.grey[600],
+                              color: isDark
+                                  ? Colors.grey[500]
+                                  : Colors.grey[600],
                             ),
                             const SizedBox(width: 4),
                             Text(
                               _formatDate(date),
-                              style: AppStyle.smallGray.copyWith(fontSize: 11),
+                              style: AppStyle.smallGray.copyWith(
+                                fontSize: 11,
+                                color: isDark ? Colors.grey[500] : Colors.grey,
+                              ),
                             ),
                           ],
                         ),
@@ -123,17 +156,30 @@ class TaskTile extends StatelessWidget {
                 ),
               ),
 
-              // More Options Button (sama seperti sebelumnya)
+              // More Options Button
               PopupMenuButton<String>(
-                icon: Icon(Icons.more_vert, color: Colors.grey[600]),
+                icon: Icon(
+                  Icons.more_vert,
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                ),
+                color: isDark ? const Color(0xFF2C2C2C) : Colors.white,
                 itemBuilder: (context) => [
                   PopupMenuItem(
                     value: 'detail',
                     child: Row(
                       children: [
-                        Icon(Icons.visibility, size: 20, color: AppColors.text),
+                        Icon(
+                          Icons.visibility,
+                          size: 20,
+                          color: isDark ? Colors.white : AppColors.text,
+                        ),
                         const SizedBox(width: 8),
-                        const Text("Lihat Detail"),
+                        Text(
+                          "Lihat Detail",
+                          style: TextStyle(
+                            color: isDark ? Colors.white : AppColors.text,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -141,9 +187,18 @@ class TaskTile extends StatelessWidget {
                     value: 'edit',
                     child: Row(
                       children: [
-                        Icon(Icons.edit, size: 20, color: AppColors.text),
+                        Icon(
+                          Icons.edit,
+                          size: 20,
+                          color: isDark ? Colors.white : AppColors.text,
+                        ),
                         const SizedBox(width: 8),
-                        const Text("Edit"),
+                        Text(
+                          "Edit",
+                          style: TextStyle(
+                            color: isDark ? Colors.white : AppColors.text,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -152,7 +207,7 @@ class TaskTile extends StatelessWidget {
                     value: 'delete',
                     child: Row(
                       children: [
-                        Icon(Icons.delete, size: 20, color: Colors.red),
+                        const Icon(Icons.delete, size: 20, color: Colors.red),
                         const SizedBox(width: 8),
                         const Text(
                           "Hapus",

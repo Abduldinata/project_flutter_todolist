@@ -30,26 +30,30 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'To-Do List App',
-      theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
-      themeMode: themeController.theme,
-      defaultTransition: Transition.fadeIn,
-      transitionDuration: const Duration(milliseconds: 300),
-      initialRoute: AppRoutes.login,
-      getPages: [
-        // AUTH
-        GetPage(name: AppRoutes.login, page: () => const LoginScreen()),
-        GetPage(name: AppRoutes.register, page: () => const RegisterScreen()),
+    return Obx(
+      () => GetMaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'To-Do List App',
+        theme: AppTheme.light,
+        darkTheme: AppTheme.dark,
+        themeMode: themeController.isDarkMode.value
+            ? ThemeMode.dark
+            : ThemeMode.light,
+        defaultTransition: Transition.fadeIn,
+        transitionDuration: const Duration(milliseconds: 300),
+        initialRoute: AppRoutes.login,
+        getPages: [
+          // AUTH
+          GetPage(name: AppRoutes.login, page: () => const LoginScreen()),
+          GetPage(name: AppRoutes.register, page: () => const RegisterScreen()),
 
-        // HOME PAGES (bottom nav)
-        GetPage(name: AppRoutes.inbox, page: () => const InboxScreen()),
-        GetPage(name: AppRoutes.today, page: () => const TodayScreen()),
-        GetPage(name: AppRoutes.upcoming, page: () => const UpcomingScreen()),
-        GetPage(name: AppRoutes.filter, page: () => const FilterScreen()),
-      ],
+          // HOME PAGES (bottom nav)
+          GetPage(name: AppRoutes.inbox, page: () => const InboxScreen()),
+          GetPage(name: AppRoutes.today, page: () => const TodayScreen()),
+          GetPage(name: AppRoutes.upcoming, page: () => const UpcomingScreen()),
+          GetPage(name: AppRoutes.filter, page: () => const FilterScreen()),
+        ],
+      ),
     );
   }
 }

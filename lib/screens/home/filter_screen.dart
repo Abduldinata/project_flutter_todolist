@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/app_style.dart';
 import '../../utils/neumorphic_decoration.dart';
+import '../../controllers/theme_controller.dart';
 import '../../widgets/bottom_nav.dart';
 import '../../widgets/task_tile.dart';
 import '../../services/task_service.dart';
@@ -16,6 +17,8 @@ class FilterScreen extends StatefulWidget {
 
 class _FilterScreenState extends State<FilterScreen> {
   final TaskService _taskService = TaskService();
+  final ThemeController _themeController = Get.find<ThemeController>();
+
   List<Map<String, dynamic>> filteredTasks = [];
   bool loading = true;
   int navIndex = 3;
@@ -207,6 +210,42 @@ class _FilterScreenState extends State<FilterScreen> {
                   physics: const BouncingScrollPhysics(),
                   child: Column(
                     children: [
+                      // Theme Toggle Card
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: Neu.concave,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Obx(
+                                  () => Icon(
+                                    _themeController.isDarkMode.value
+                                        ? Icons.dark_mode
+                                        : Icons.light_mode,
+                                    color: AppColors.blue,
+                                    size: 24,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text("Dark Mode", style: AppStyle.subtitle),
+                              ],
+                            ),
+                            Obx(
+                              () => Switch(
+                                value: _themeController.isDarkMode.value,
+                                onChanged: (value) {
+                                  _themeController.toggleTheme();
+                                },
+                                activeThumbColor: AppColors.blue,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
                       // Priority Filter Card
                       Container(
                         padding: const EdgeInsets.all(16),
@@ -397,7 +436,6 @@ class _FilterScreenState extends State<FilterScreen> {
   }
 
   Widget _buildPriorityOptions() {
-    // ✅ DEFINISIKAN TIPE DATA YANG JELAS
     final List<Map<String, dynamic>> priorities = [
       {'value': 'high', 'label': 'Tinggi', 'color': Colors.red},
       {'value': 'medium', 'label': 'Sedang', 'color': Colors.orange},
@@ -408,7 +446,6 @@ class _FilterScreenState extends State<FilterScreen> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: priorities.map((priority) {
         final isSelected = selectedPriority == priority['value'];
-        // ✅ CAST KE TIPE YANG BENAR
         final Color color = priority['color'] as Color;
         final String value = priority['value'] as String;
         final String label = priority['label'] as String;
