@@ -39,9 +39,7 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        manifestPlaceholders += [
-            'appAuthRedirectScheme': 'io.supabase.flutter'
-        ]
+        manifestPlaceholders["appAuthRedirectScheme"] = "io.supabase.flutter"
     }
 
     // --- BLOK SIGNING CONFIG ---

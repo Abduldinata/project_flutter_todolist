@@ -7,140 +7,71 @@ import 'package:flutter/foundation.dart';
 
 class SupabaseService {
   final SupabaseClient _client = Supabase.instance.client;
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: ['email', 'profile'],
-    // Untuk web, clientId harus diset
-    clientId: kIsWeb
-        ? '465634447182-gkgen1p8fj7bottaj291ip1g9c23fhkp.apps.googleusercontent.com' // Ganti dengan Web Client ID Anda
-        : null, // Untuk Android/iOS, tidak perlu clientId
-  );
+
+  // ⚠️ DIAMBIL DARI FILE JSON ANDA (Tipe: Web Application)
+  // Ini digunakan sebagai 'clientId' di Web, dan 'serverClientId' di Android.
+  static const String _webClientId =
+      '465634447182-gkgen1p8fj7bottaj291ip1g9c23fhkp.apps.googleusercontent.com';
+
+  late final GoogleSignIn _googleSignIn;
+
+  SupabaseService() {
+    _googleSignIn = GoogleSignIn(
+      scopes: ['email', 'profile'],
+      serverClientId: _webClientId, // Wajib untuk Android
+    );
+  }
 
   // ===============================
-  // 🔹 GOOGLE SIGN IN (FIXED)
+  // 🚀 GOOGLE SIGN IN (FIXED)
   // ===============================
 
   Future<AuthResponse> signInWithGoogle() async {
     try {
-      // For WEB: Use Supabase OAuth flow (recommended)
-      if (kIsWeb) {
-        final response = await _client.auth.signInWithOAuth(
-          OAuthProvider.google,
-          redirectTo: kIsWeb ? Uri.base.toString() : null,
-        );
+      // --- FLOW MOBILE (Native) ---
 
-        if (!response) {
-          throw Exception('Failed to initiate Google sign-in');
-        }
-
-        // Return empty response as the actual auth happens via redirect
-        // The session will be available after redirect
-        return AuthResponse(
-          session: _client.auth.currentSession,
-          user: _client.auth.currentUser,
-        );
-      }
-
-      // For MOBILE: Use Google Sign-In package
-      // 1. Trigger Google Sign In flow
+      // 1. Trigger Google Sign In Native
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
-      // User cancelled the sign-in
       if (googleUser == null) {
-        throw Exception('sign in cancelled');
+        throw 'Login dibatalkan oleh user';
       }
 
-      // 2. Obtain auth details from request
+      // 2. Ambil token dari Google
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
 
-      // Check if we got the tokens
-      if (googleAuth.idToken == null) {
-        throw Exception('Failed to get ID token from Google');
+      final accessToken = googleAuth.accessToken;
+      final idToken = googleAuth.idToken;
+
+      if (idToken == null) {
+        throw 'Tidak dapat mengambil ID Token dari Google. Pastikan Web Client ID benar.';
       }
 
-      // 3. Sign in with Supabase using OAuth
+      // 3. Tukar token Google dengan Session Supabase
       final AuthResponse response = await _client.auth.signInWithIdToken(
         provider: OAuthProvider.google,
-        idToken: googleAuth.idToken!,
-        accessToken: googleAuth.accessToken,
-      );
-
-      // 4. Check if sign in was successful
-      if (response.user == null) {
-        throw Exception('Failed to sign in with Supabase');
-      }
-
-      // 5. Create or update profile
-      await _createOrUpdateProfileFromGoogle(
-        response.user!.id,
-        googleUser.email,
-        googleUser.displayName ?? googleUser.email.split('@')[0],
-        googleUser.photoUrl,
+        idToken: idToken,
+        accessToken: accessToken,
       );
 
       return response;
-    } on Exception catch (e) {
-      // Re-throw exceptions as-is
+    } catch (e) {
       rethrow;
-    } catch (e) {
-      // Wrap other errors in Exception
-      throw Exception('Google sign-in error: $e');
-    }
-  }
-
-  Future<void> _createOrUpdateProfileFromGoogle(
-    String userId,
-    String email,
-    String username,
-    String? avatarUrl,
-  ) async {
-    try {
-      // Check if profile exists
-      final existingProfile = await _client
-          .from('profiles')
-          .select()
-          .eq('id', userId)
-          .maybeSingle();
-
-      final now = DateTime.now().toIso8601String();
-
-      if (existingProfile == null) {
-        // Create new profile
-        await _client.from('profiles').insert({
-          'id': userId,
-          'email': email,
-          'username': username,
-          'avatar_url': avatarUrl,
-          'created_at': now,
-          'updated_at': now,
-        });
-      } else {
-        // Update existing profile with Google info if needed
-        await _client
-            .from('profiles')
-            .update({
-              'avatar_url': avatarUrl ?? existingProfile['avatar_url'],
-              'updated_at': now,
-            })
-            .eq('id', userId);
-      }
-    } catch (e) {
-      debugPrint('Error creating/updating profile from Google: $e');
-      // Don't throw - profile creation is not critical for sign-in
     }
   }
 
   Future<void> signOutGoogle() async {
-    try {
-      await _googleSignIn.signOut();
-    } catch (e) {
-      debugPrint('Error signing out from Google: $e');
+    if (!kIsWeb) {
+      try {
+        await _googleSignIn.signOut();
+      } catch (_) {}
     }
     await _client.auth.signOut();
   }
 
   // ===============================
-  // 🔹 PROFILE FUNCTIONS
+  // 👤 PROFILE FUNCTIONS
   // ===============================
 
   Future<Map<String, dynamic>?> getProfile() async {
@@ -176,13 +107,15 @@ class SupabaseService {
     await _client.from('profiles').update(updates).eq('id', user.id);
   }
 
+  // ===============================
+  // 🖼️ STORAGE FUNCTIONS
+  // ===============================
+
   Future<String> uploadImage(File file, String bucket, String fileName) async {
     final storage = _client.storage.from(bucket);
-
     try {
       await storage.remove([fileName]);
     } catch (_) {}
-
     await storage.upload(fileName, file);
     return storage.getPublicUrl(fileName);
   }
@@ -193,18 +126,16 @@ class SupabaseService {
     String fileName,
   ) async {
     final storage = _client.storage.from(bucket);
-
     try {
       await storage.remove([fileName]);
     } catch (_) {}
-
     final Uint8List uint8list = Uint8List.fromList(bytes);
     await storage.uploadBinary(fileName, uint8list);
     return storage.getPublicUrl(fileName);
   }
 
   // ===============================
-  // 🔹 AUTH FUNCTIONS
+  // 🔐 AUTH FUNCTIONS (EMAIL)
   // ===============================
 
   Future<AuthResponse> signUp(
@@ -212,28 +143,26 @@ class SupabaseService {
     String password,
     String username,
   ) async {
-    final response = await _client.auth.signUp(
+    return await _client.auth.signUp(
       email: email,
       password: password,
       data: {'username': username},
     );
-    return response;
   }
 
   Future<AuthResponse> signIn(String email, String password) async {
-    final response = await _client.auth.signInWithPassword(
+    return await _client.auth.signInWithPassword(
       email: email,
       password: password,
     );
-    return response;
   }
 
   Future<void> signOut() async {
-    await _client.auth.signOut();
+    await signOutGoogle();
   }
 
   // ===============================
-  // 🔹 TASK FUNCTIONS
+  // 📝 TASK FUNCTIONS
   // ===============================
 
   Future<List<Task>> getTasks() async {

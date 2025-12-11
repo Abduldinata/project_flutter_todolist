@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart'; // Untuk kIsWeb
 import 'package:get/get.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../../widgets/neumorphic_dialog.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/app_routes.dart';
@@ -9,7 +12,6 @@ import '../../utils/app_colors.dart';
 import '../../utils/neumorphic_decoration.dart';
 import '../../widgets/neumorphic_textfield.dart';
 import '../../widgets/neumorphic_button.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -19,40 +21,53 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  // Controllers
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _service = SupabaseService();
+
+  // Service & State Variables
+  late final SupabaseService _service;
+  late final StreamSubscription<AuthState> _authSubscription;
+
   bool _isLoading = false;
-  bool _showPassword = false;
   bool _isGoogleLoading = false;
+  bool _showPassword = false;
 
   @override
   void initState() {
     super.initState();
+    _service = SupabaseService();
 
-    // Listen for auth state changes (untuk web OAuth redirect)
-    Supabase.instance.client.auth.onAuthStateChange.listen((data) {
-      final session = data.session;
-      if (session != null && mounted) {
-        // User berhasil login via OAuth redirect
-        WidgetsBinding.instance.addPostFrameCallback((_) {
+    // 🟢 PERBAIKAN PENTING DI SINI (SOLUSI CRASH):
+    // Kita hanya mengandalkan listener untuk navigasi di WEB.
+    // Di Mobile, navigasi akan dihandle manual oleh tombol (await) agar
+    // bisa menampilkan Dialog Sukses terlebih dahulu tanpa tabrakan.
+    _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen((
+      data,
+    ) {
+      if (kIsWeb) {
+        final session = data.session;
+        if (session != null && mounted) {
+          // Cek agar tidak redirect berulang
           if (Get.currentRoute == AppRoutes.login) {
-            Get.offAllNamed(AppRoutes.inbox);
+            // Gunakan postFrameCallback agar aman saat rebuild
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              Get.offAllNamed(AppRoutes.inbox);
+            });
           }
-        });
+        }
       }
     });
   }
 
+  // --- LOGIC LOGIN EMAIL ---
   Future<void> _handleLogin() async {
-    // Validasi input
     if (_emailController.text.trim().isEmpty ||
         _passwordController.text.isEmpty) {
       _showError('Email dan password harus diisi');
       return;
     }
 
-    // Validasi format email
     if (!GetUtils.isEmail(_emailController.text.trim())) {
       _showError('Format email tidak valid');
       return;
@@ -67,18 +82,20 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (response.user != null) {
-        NeumorphicDialog.show(
-          title: 'Berhasil',
-          message: 'Login berhasil! Selamat datang ${response.user!.email}',
-          type: DialogType.success,
-        );
+        if (mounted) {
+          NeumorphicDialog.show(
+            title: 'Berhasil',
+            message: 'Login berhasil! Selamat datang.',
+            type: DialogType.success,
+          );
 
-        await Future.delayed(const Duration(milliseconds: 1500));
-        Get.offAllNamed(AppRoutes.inbox);
+          // Delay sedikit untuk UX, lalu navigasi manual (Mobile & Web non-redirect)
+          await Future.delayed(const Duration(milliseconds: 1500));
+          Get.offAllNamed(AppRoutes.inbox);
+        }
       }
     } catch (e) {
-      String errorMessage = _parseError(e.toString());
-      _showError(errorMessage);
+      _showError(_parseError(e.toString()));
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -86,108 +103,93 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  // --- LOGIC LOGIN GOOGLE ---
   Future<void> _handleGoogleSignIn() async {
     setState(() => _isGoogleLoading = true);
 
     try {
-      if (kIsWeb) {
-        // Untuk web, gunakan OAuth flow (akan redirect)
-        await _service.signInWithGoogle();
-        // OAuth flow akan redirect, jadi loading tetap aktif
-        // State change listener akan handle navigation setelah redirect
-      } else {
-        // Untuk mobile, gunakan Google Sign-In package
-        final response = await _service.signInWithGoogle();
+      // 1. Panggil Service
+      final response = await _service.signInWithGoogle();
 
-        if (response.user != null) {
+      // 2. Handle Hasil (KHUSUS MOBILE)
+      // Jika di Web, halaman biasanya sudah redirect/reload, jadi kode di bawah skip.
+      // Jika di Mobile, kita handle navigasi di sini (karena listener dimatikan untuk mobile).
+      if (!kIsWeb && response.user != null) {
+        if (mounted) {
           NeumorphicDialog.show(
             title: 'Berhasil',
             message: 'Login dengan Google berhasil!',
             type: DialogType.success,
           );
 
-          await Future.delayed(const Duration(milliseconds: 1500));
+          await Future.delayed(const Duration(milliseconds: 1000));
           Get.offAllNamed(AppRoutes.inbox);
         }
       }
     } catch (e) {
+      // Parse error agar user friendly
       String errorMessage = _parseGoogleError(e.toString());
-      _showError(errorMessage);
 
+      // Jangan tampilkan popup error jika user hanya membatalkan login (Back button)
+      if (!errorMessage.toLowerCase().contains('dibatalkan')) {
+        _showError(errorMessage);
+      } else {
+        debugPrint("User cancelled Google Sign In");
+      }
+    } finally {
       if (mounted) {
         setState(() => _isGoogleLoading = false);
       }
     }
   }
 
+  // --- ERROR PARSING ---
   String _parseError(String error) {
-    // Network errors
     if (error.contains('SocketException') ||
         error.contains('Failed host lookup') ||
         error.contains('Network is unreachable')) {
-      return '❌ Tidak ada koneksi internet\n\nPastikan:\n• WiFi atau data seluler aktif\n• Koneksi internet stabil\n• Tidak ada firewall yang memblokir';
+      return '❌ Tidak ada koneksi internet';
     }
-
-    // Timeout errors
-    if (error.contains('TimeoutException') || error.contains('timed out')) {
-      return '⏱️ Koneksi timeout\n\nKoneksi terlalu lambat atau server tidak merespons';
-    }
-
-    // Auth errors
     if (error.contains('Invalid login credentials') ||
         error.contains('Invalid email or password')) {
-      return '🔐 Email atau password salah\n\nPeriksa kembali email dan password Anda';
+      return '🔐 Email atau password salah';
     }
-
     if (error.contains('Email not confirmed')) {
-      return '📧 Email belum diverifikasi\n\nCek inbox email Anda dan klik link verifikasi';
+      return '📧 Email belum diverifikasi. Cek inbox Anda.';
     }
-
-    if (error.contains('User not found')) {
-      return '👤 Akun tidak ditemukan\n\nSilakan daftar terlebih dahulu';
-    }
-
-    // SSL/Certificate errors
-    if (error.contains('CERTIFICATE') || error.contains('SSL')) {
-      return '🔒 Error sertifikat SSL\n\nMungkin ada masalah dengan keamanan koneksi';
-    }
-
-    // Generic error
-    return '⚠️ Login gagal\n\n${error.length > 100 ? "${error.substring(0, 100)}..." : error}';
+    return '⚠️ Login gagal: ${error.length > 100 ? "${error.substring(0, 100)}..." : error}';
   }
 
   String _parseGoogleError(String error) {
     if (error.contains('sign in cancelled') || error.contains('canceled')) {
-      return 'Login dengan Google dibatalkan';
+      return 'Login dibatalkan';
     }
-
-    if (error.contains('popup_closed')) {
-      return 'Popup login Google ditutup sebelum selesai';
-    }
-
-    if (error.contains('redirect_uri_mismatch')) {
-      return '⚠️ Konfigurasi Google OAuth salah\n\nRedirect URI tidak sesuai. Hubungi developer.';
-    }
-
     if (error.contains('network error') || error.contains('SocketException')) {
-      return '❌ Tidak ada koneksi internet\n\nPastikan koneksi internet aktif untuk login dengan Google';
+      return '❌ Periksa koneksi internet Anda';
     }
-
-    if (error.contains('sign_in_failed') || error.contains('SIGN_IN_FAILED')) {
-      return '⚠️ Gagal login dengan Google\n\nPastikan:\n• Google Play Services terinstall (Android)\n• Akun Google tersedia di device';
+    if (error.contains('10') || error.contains('SIGN_IN_FAILED')) {
+      return '⚠️ Konfigurasi Error:\nPastikan SHA-1 Fingerprint sudah didaftarkan di Google Cloud Console untuk Android.';
     }
-
-    return '⚠️ Gagal login dengan Google\n\n$error';
+    return '⚠️ Gagal login Google: $error';
   }
 
   void _showError(String message) {
     NeumorphicDialog.show(
-      title: 'Error',
+      title: 'Info',
       message: message,
       type: DialogType.error,
     );
   }
 
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _authSubscription.cancel(); // Wajib cancel listener
+    super.dispose();
+  }
+
+  // --- UI BUILD ---
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -201,6 +203,7 @@ class _LoginScreenState extends State<LoginScreen> {
               color: Colors.black.withAlpha((0.25 * 255).round()),
             ),
           ),
+
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -208,7 +211,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Logo atau Icon
+                    // Logo
                     Container(
                       width: 100,
                       height: 100,
@@ -239,12 +242,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       controller: _passwordController,
                       hint: 'Password',
                       obscure: !_showPassword,
-                      textInputAction: TextInputAction
-                          .done, // Mengubah icon keyboard menjadi "Selesai" atau "Centang"
-                      onSubmitted: (_) {
-                        // Memanggil fungsi login ketika tombol enter ditekan
-                        _handleLogin();
-                      },
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => _handleLogin(),
                       suffix: IconButton(
                         onPressed: () =>
                             setState(() => _showPassword = !_showPassword),
@@ -258,7 +257,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 40),
 
-                    // Login Button
+                    // Login Button (Email)
                     _isLoading
                         ? Container(
                             padding: const EdgeInsets.all(14),
@@ -374,12 +373,5 @@ class _LoginScreenState extends State<LoginScreen> {
         ],
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
   }
 }

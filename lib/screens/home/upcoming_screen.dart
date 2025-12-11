@@ -7,7 +7,6 @@ import '../../widgets/bottom_nav.dart';
 import '../../widgets/task_tile.dart';
 import '../../services/task_service.dart';
 import '../add_task/add_task_popup.dart';
-import '../edit_task/edit_task_screen.dart';
 
 class UpcomingScreen extends StatefulWidget {
   const UpcomingScreen({super.key});
