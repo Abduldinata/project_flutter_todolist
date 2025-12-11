@@ -113,20 +113,36 @@ class _TodayScreenState extends State<TodayScreen> {
           padding: const EdgeInsets.all(20),
           child: Column(
             children: [
-              // HEADER
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text("Today", style: AppStyle.title),
-                  GestureDetector(
-                    onTap: () => Get.to(() => const CompletedScreen()),
-                    child: Text(
-                      "Completed >",
-                      style: AppStyle.normal.copyWith(color: AppColors.blue),
+            // HEADER - ganti bagian ini
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text("Today", style: AppStyle.title),
+                GestureDetector(
+                  onTap: () => Get.to(() => const CompletedScreen()),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.blue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.check_circle, size: 16, color: AppColors.blue),
+                        const SizedBox(width: 6),
+                        Text(
+                          "Completed",
+                          style: AppStyle.normal.copyWith(
+                            color: AppColors.blue,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
+            ),
               const SizedBox(height: 4),
               Align(
                 alignment: Alignment.centerLeft,
@@ -227,20 +243,14 @@ class _TodayScreenState extends State<TodayScreen> {
       itemBuilder: (_, index) {
         final task = tasks[index];
         
-      // Di _buildTaskList() - LINE YANG PERLU DIPERBAIKI:
-      return TaskTile(
-        task: task,
-        onToggleCompletion: (taskId, currentValue) => 
-            _toggleTaskCompletion(taskId, currentValue),
-        onDelete: (taskId, title) => _deleteTask(taskId, title),
-        // ❌ HAPUS INI jika ada:
-        // onTap: () {
-        //   Get.snackbar("Info", "Detail task: ${task['title']}");
-        // },
-        
-        // ✅ ATAU BIARKAN KOSONG (null):
-        onTap: null,
-      );
+        return TaskTile(
+          task: task,
+          onToggleCompletion: (taskId, currentValue) => 
+              _toggleTaskCompletion(taskId, currentValue),
+          onDelete: (taskId, title) => _deleteTask(taskId, title),
+          showDate: false, // ❌ TIDAK tampilkan tanggal di Today (redundan)
+          compactMode: false, // ✅ Tampilkan deskripsi normal
+        );
       },
     );
   }

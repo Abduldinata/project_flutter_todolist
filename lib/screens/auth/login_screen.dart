@@ -239,6 +239,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       controller: _passwordController,
                       hint: 'Password',
                       obscure: !_showPassword,
+                      textInputAction: TextInputAction
+                          .done, // Mengubah icon keyboard menjadi "Selesai" atau "Centang"
+                      onSubmitted: (_) {
+                        // Memanggil fungsi login ketika tombol enter ditekan
+                        _handleLogin();
+                      },
                       suffix: IconButton(
                         onPressed: () =>
                             setState(() => _showPassword = !_showPassword),
