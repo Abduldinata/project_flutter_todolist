@@ -123,7 +123,7 @@ class _TodayScreenState extends State<TodayScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: AppColors.blue.withOpacity(0.1),
+                      color: AppColors.blue.withAlpha((0.1 * 255).round()),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
