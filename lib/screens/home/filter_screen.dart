@@ -102,9 +102,16 @@ class _FilterScreenState extends State<FilterScreen> {
     try {
       await _taskService.updateCompleted(taskId, !currentValue);
       await loadFilteredTasks();
-    } catch (e) {
-      Get.snackbar("Error", "Gagal update: $e");
+    } catch (e, st) {
+      debugPrint("Error update task: $e\n$st");
+      Get.snackbar(
+        "Error",
+        "Terjadi kesalahan saat mengupdate task",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     }
+
   }
 
   Future<void> _deleteTask(String taskId, String title) async {
@@ -281,7 +288,7 @@ class _FilterScreenState extends State<FilterScreen> {
                                   value: filterByPriority,
                                   onChanged: (value) {
                                     setState(() => filterByPriority = value);
-                                    if (value) _applyFilters();
+                                    _applyFilters();
                                   },
                                   activeThumbColor: AppColors.blue,
                                 ),
@@ -320,7 +327,7 @@ class _FilterScreenState extends State<FilterScreen> {
                                   value: filterByStatus,
                                   onChanged: (value) {
                                     setState(() => filterByStatus = value);
-                                    if (value) _applyFilters();
+                                    _applyFilters();
                                   },
                                   activeThumbColor: AppColors.blue,
                                 ),
@@ -365,7 +372,7 @@ class _FilterScreenState extends State<FilterScreen> {
                                   value: filterByDate,
                                   onChanged: (value) {
                                     setState(() => filterByDate = value);
-                                    if (value) _applyFilters();
+                                    _applyFilters();
                                   },
                                   activeThumbColor: AppColors.blue,
                                 ),
