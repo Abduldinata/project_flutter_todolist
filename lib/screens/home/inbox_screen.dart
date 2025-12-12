@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../theme/colors.dart';
-import '../../utils/app_style.dart';
+import '../../theme/theme_tokens.dart';
 import '../../widgets/add_task_button.dart';
 import '../../widgets/bottom_nav.dart';
 import '../../widgets/task_tile.dart';
 import '../../services/task_service.dart';
 import '../search/search_popup.dart';
-import '../profile/profile_screen.dart';
+import 'profile_screen.dart';
 import '../add_task/add_task_popup.dart';
 
 class InboxScreen extends StatefulWidget {
@@ -84,13 +83,13 @@ class _InboxScreenState extends State<InboxScreen> {
     try {
       final taskDateStr = task['date']?.toString() ?? '';
       if (taskDateStr.isEmpty) return false;
-      
+
       final taskDate = DateTime.parse(taskDateStr.split('T')[0]);
       final now = DateTime.now();
-      
+
       return taskDate.year == now.year &&
-             taskDate.month == now.month &&
-             taskDate.day == now.day;
+          taskDate.month == now.month &&
+          taskDate.day == now.day;
     } catch (e) {
       return false;
     }
@@ -104,9 +103,12 @@ class _InboxScreenState extends State<InboxScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     // Filter tasks berdasarkan kategori
     final todayTasks = allTasks
-        .where((task) => _isTodayTask(task) && (task['is_done'] ?? false) == false)
+        .where(
+          (task) => _isTodayTask(task) && (task['is_done'] ?? false) == false,
+        )
         .toList();
 
     final historyTasks = allTasks
@@ -114,11 +116,13 @@ class _InboxScreenState extends State<InboxScreen> {
         .toList();
 
     final otherTasks = allTasks
-        .where((task) => !_isTodayTask(task) && (task['is_done'] ?? false) == false)
+        .where(
+          (task) => !_isTodayTask(task) && (task['is_done'] ?? false) == false,
+        )
         .toList();
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20),
@@ -201,8 +205,10 @@ class _InboxScreenState extends State<InboxScreen> {
                               task: task,
                               onToggleCompletion: _toggleTaskCompletion,
                               onDelete: _deleteTask,
-                              showDate: false,     // ❌ Tidak tampilkan tanggal (sudah jelas hari ini)
-                              compactMode: false,  // ✅ Tampilkan deskripsi normal
+                              showDate:
+                                  false, // ❌ Tidak tampilkan tanggal (sudah jelas hari ini)
+                              compactMode:
+                                  false, // ✅ Tampilkan deskripsi normal
                             ),
                           ),
                           const SizedBox(height: 24),
@@ -219,8 +225,8 @@ class _InboxScreenState extends State<InboxScreen> {
                               task: task,
                               onToggleCompletion: _toggleTaskCompletion,
                               onDelete: _deleteTask,
-                              showDate: true,      // ✅ Tampilkan tanggal selesai
-                              compactMode: true,   // ✅ Mode ringkas untuk history
+                              showDate: true, // ✅ Tampilkan tanggal selesai
+                              compactMode: true, // ✅ Mode ringkas untuk history
                             ),
                           ),
                           const SizedBox(height: 24),
@@ -234,8 +240,10 @@ class _InboxScreenState extends State<InboxScreen> {
                               task: task,
                               onToggleCompletion: _toggleTaskCompletion,
                               onDelete: _deleteTask,
-                              showDate: true,      // ✅ Tampilkan tanggal (penting untuk konteks)
-                              compactMode: false,  // ✅ Tampilkan deskripsi normal
+                              showDate:
+                                  true, // ✅ Tampilkan tanggal (penting untuk konteks)
+                              compactMode:
+                                  false, // ✅ Tampilkan deskripsi normal
                             ),
                           ),
                         ],

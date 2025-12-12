@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/task_model.dart';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 
 class SupabaseService {

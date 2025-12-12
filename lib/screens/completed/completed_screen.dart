@@ -1,8 +1,7 @@
 // screens/completed/completed_screen.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../theme/colors.dart';
-import '../../utils/app_style.dart';
+import '../../theme/theme_tokens.dart';
 import '../../widgets/task_tile.dart';
 import '../../services/task_service.dart';
 

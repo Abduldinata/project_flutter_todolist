@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../theme/colors.dart';
-import '../../utils/app_style.dart';
+import '../../theme/theme_tokens.dart';
 import '../../utils/neumorphic_decoration.dart';
 import '../../theme/theme_controller.dart';
 import '../../widgets/bottom_nav.dart';
@@ -203,15 +202,7 @@ class _FilterScreenState extends State<FilterScreen> {
                     ),
                 ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                "Filter tasks berdasarkan kriteria",
-                style: AppStyle.smallGray.copyWith(
-                  color: theme.colorScheme.onSurface.withAlpha(
-                    (0.7 * 255).round(),
-                  ),
-                ),
-              ),
+
               const SizedBox(height: 20),
 
               // Filter Options Card
@@ -292,12 +283,7 @@ class _FilterScreenState extends State<FilterScreen> {
                                     setState(() => filterByPriority = value);
                                     if (value) _applyFilters();
                                   },
-                                  activeThumbColor: Theme.of(
-                                    context,
-                                  ).colorScheme.primary,
-                                  activeTrackColor: Theme.of(
-                                    context,
-                                  ).colorScheme.primary.withValues(alpha: 0.4),
+                                  activeThumbColor: AppColors.blue,
                                 ),
                               ],
                             ),
@@ -324,7 +310,11 @@ class _FilterScreenState extends State<FilterScreen> {
                               children: [
                                 Text(
                                   "Filter by Status",
-                                  style: AppStyle.subtitle,
+                                  style: AppStyle.subtitle.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface, // ikut dark/light
+                                  ),
                                 ),
                                 Switch(
                                   value: filterByStatus,
@@ -365,7 +355,11 @@ class _FilterScreenState extends State<FilterScreen> {
                               children: [
                                 Text(
                                   "Filter by Date",
-                                  style: AppStyle.subtitle,
+                                  style: AppStyle.subtitle.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface, // ikut dark/light
+                                  ),
                                 ),
                                 Switch(
                                   value: filterByDate,
@@ -397,7 +391,14 @@ class _FilterScreenState extends State<FilterScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text("Results", style: AppStyle.subtitle),
+                                Text(
+                                  "Results",
+                                  style: AppStyle.subtitle.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface, // ikut dark/light
+                                  ),
+                                ),
                                 Text(
                                   "${filteredTasks.length} task${filteredTasks.length != 1 ? 's' : ''}",
                                   style: AppStyle.smallGray.copyWith(
@@ -473,19 +474,36 @@ class _FilterScreenState extends State<FilterScreen> {
 
   Widget _buildPriorityOptions() {
     final theme = Theme.of(context);
-    final List<Map<String, dynamic>> priorities = [
-      {'value': 'high', 'label': 'Tinggi', 'color': Colors.red},
-      {'value': 'medium', 'label': 'Sedang', 'color': Colors.orange},
-      {'value': 'low', 'label': 'Rendah', 'color': Colors.green},
+    final List<Map<String, String>> priorities = [
+      {'value': 'high', 'label': 'Tinggi'},
+      {'value': 'medium', 'label': 'Sedang'},
+      {'value': 'low', 'label': 'Rendah'},
     ];
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: priorities.map((priority) {
-        final isSelected = selectedPriority == priority['value'];
-        final Color color = priority['color'] as Color;
-        final String value = priority['value'] as String;
-        final String label = priority['label'] as String;
+        final String value = priority['value']!;
+        final String label = priority['label']!;
+        final bool isSelected = selectedPriority == value;
+
+        // Warna dark mode → abu-abu
+        final Color darkUnselected = const Color(0xFF2C2C2C); // abu-abu gelap
+        final Color darkSelected = const Color(
+          0xFF505050,
+        ); // abu-abu lebih terang
+
+        // Warna light mode → seperti biasa
+        final Color lightUnselected = Colors.white;
+        final Color lightSelected = const Color.fromARGB(255, 138, 138, 138);
+
+        final bool isDark = theme.brightness == Brightness.dark;
+
+        final Color bgColor = isDark
+            ? (isSelected ? darkSelected : darkUnselected)
+            : (isSelected ? lightSelected : lightUnselected);
+
+        final Color textColor = isDark ? Colors.white : Colors.black87;
 
         return GestureDetector(
           onTap: () {
@@ -494,18 +512,12 @@ class _FilterScreenState extends State<FilterScreen> {
           },
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: isSelected
-                ? Neu.pressed.copyWith(
-                    color: color.withAlpha((0.8 * 255).round()),
-                  )
-                : Neu.convex,
+            decoration: (isSelected ? Neu.pressed : Neu.convex).copyWith(
+              color: bgColor,
+            ),
             child: Text(
               label,
-              style: AppStyle.normal.copyWith(
-                color: isSelected
-                    ? theme.colorScheme.onPrimary
-                    : theme.colorScheme.onSurface,
-              ),
+              style: AppStyle.normal.copyWith(color: textColor),
             ),
           ),
         );

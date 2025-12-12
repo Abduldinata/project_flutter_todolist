@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/colors.dart';
+import '../theme/theme_tokens.dart';
 
 class AppTheme {
   static final light = ThemeData(
@@ -19,7 +19,7 @@ class AppTheme {
 
   static final dark = ThemeData(
     brightness: Brightness.dark,
-    primarySwatch: Colors.indigo,
+    primarySwatch: Colors.blue,
     scaffoldBackgroundColor: const Color(0xFF121212),
     appBarTheme: const AppBarTheme(
       backgroundColor: Color(0xFF1E1E1E),

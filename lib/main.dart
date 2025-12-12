@@ -4,7 +4,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'utils/constants.dart';
 import 'utils/app_routes.dart';
-import 'utils/app_theme.dart';
+import 'theme/app_theme.dart';
 import 'theme/theme_controller.dart';
 
 // screens

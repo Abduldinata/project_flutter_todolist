@@ -1,8 +1,7 @@
 // screens/task_detail/task_detail_screen.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../theme/colors.dart';
-import '../../utils/app_style.dart';
+import '../../theme/theme_tokens.dart';
 import '../../utils/neumorphic_decoration.dart';
 import '../../services/task_service.dart';
 import '../edit_task/edit_task_screen.dart';

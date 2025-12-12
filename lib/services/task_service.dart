@@ -108,19 +108,20 @@ Future updateTask({
 
   // task_service.dart
 Future<Map<String, dynamic>?> getTaskById(String taskId) async {
-  try {
-    final response = await client
-        .from('tasks')
-        .select()
-        .eq('id', taskId)
-        .maybeSingle();
-    
-    return response as Map<String, dynamic>?;
-  } catch (e) {
-    debugPrint("Error getting task by ID: $e");
-    return null;
+    try {
+      final response = await client
+          .from('tasks')
+          .select()
+          .eq('id', taskId)
+          .maybeSingle();
+
+      return response; // 👈 cast dihapus
+    } catch (e) {
+      debugPrint("Error getting task by ID: $e");
+      return null;
+    }
   }
-}
+
 
 // task_service.dart - Tambah fungsi getCompletedTasks
 
