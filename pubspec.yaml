@@ -30,6 +30,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  shared_preferences: ^2.2.3
   google_sign_in: ^6.2.1
   supabase_flutter: ^2.3.4
   get: ^4.6.6
