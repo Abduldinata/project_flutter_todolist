@@ -423,7 +423,9 @@ class _FilterScreenState extends State<FilterScreen> {
                                     Icon(
                                       Icons.filter_alt_outlined,
                                       size: 48,
-                                      color: Colors.grey[400],
+                                      color: theme.colorScheme.onSurface
+                                          .withValues(alpha: 0.5),
+
                                     ),
                                     const SizedBox(height: 12),
                                     const Text(
@@ -564,6 +566,12 @@ class _FilterScreenState extends State<FilterScreen> {
 
   Widget _buildDateFilters() {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final textColor = theme.colorScheme.onSurface; // aman untuk dark/light
+    final hintColor = theme.colorScheme.onSurface.withValues(alpha: 0.6);
+    final iconHintColor = theme.colorScheme.onSurface.withValues(alpha: 0.5);
+
     return Column(
       children: [
         // Start Date
@@ -574,7 +582,22 @@ class _FilterScreenState extends State<FilterScreen> {
               initialDate: selectedStartDate ?? DateTime.now(),
               firstDate: DateTime(2000),
               lastDate: DateTime(2100),
+              builder: (context, child) {
+                // biar dialog date picker juga enak di dark mode
+                return Theme(
+                  data: theme.copyWith(
+                    colorScheme: isDark
+                        ? theme.colorScheme.copyWith(
+                            surface: theme.colorScheme.surface,
+                            onSurface: Colors.white,
+                          )
+                        : theme.colorScheme,
+                  ),
+                  child: child!,
+                );
+              },
             );
+
             if (picked != null) {
               setState(() => selectedStartDate = picked);
               _applyFilters();
@@ -592,12 +615,14 @@ class _FilterScreenState extends State<FilterScreen> {
                   selectedStartDate == null
                       ? "Pilih Tanggal Awal"
                       : "Dari: ${_formatDate(selectedStartDate!)}",
-                  style: AppStyle.normal,
+                  style: AppStyle.normal.copyWith(
+                    color: selectedStartDate == null ? hintColor : textColor,
+                  ),
                 ),
                 Icon(
                   Icons.calendar_today_outlined,
                   color: selectedStartDate == null
-                      ? theme.disabledColor
+                      ? iconHintColor
                       : theme.colorScheme.onSurface,
                 ),
               ],
@@ -614,7 +639,21 @@ class _FilterScreenState extends State<FilterScreen> {
                   selectedEndDate ?? (selectedStartDate ?? DateTime.now()),
               firstDate: selectedStartDate ?? DateTime(2000),
               lastDate: DateTime(2100),
+              builder: (context, child) {
+                return Theme(
+                  data: theme.copyWith(
+                    colorScheme: isDark
+                        ? theme.colorScheme.copyWith(
+                            surface: theme.colorScheme.surface,
+                            onSurface: Colors.white,
+                          )
+                        : theme.colorScheme,
+                  ),
+                  child: child!,
+                );
+              },
             );
+
             if (picked != null) {
               setState(() => selectedEndDate = picked);
               _applyFilters();
@@ -631,12 +670,14 @@ class _FilterScreenState extends State<FilterScreen> {
                   selectedEndDate == null
                       ? "Pilih Tanggal Akhir (Opsional)"
                       : "Sampai: ${_formatDate(selectedEndDate!)}",
-                  style: AppStyle.normal,
+                  style: AppStyle.normal.copyWith(
+                    color: selectedEndDate == null ? hintColor : textColor,
+                  ),
                 ),
                 Icon(
                   Icons.calendar_today_outlined,
                   color: selectedEndDate == null
-                      ? theme.disabledColor
+                      ? iconHintColor
                       : theme.colorScheme.onSurface,
                 ),
               ],
@@ -646,6 +687,7 @@ class _FilterScreenState extends State<FilterScreen> {
       ],
     );
   }
+
 
   bool _hasActiveFilters() {
     return filterByPriority || filterByStatus || filterByDate;
