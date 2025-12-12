@@ -473,8 +473,9 @@ class _FilterScreenState extends State<FilterScreen> {
   }
 
   Widget _buildPriorityOptions() {
-    final theme = Theme.of(context);
-    final List<Map<String, String>> priorities = [
+    final scheme = Theme.of(context).colorScheme;
+
+    final priorities = [
       {'value': 'high', 'label': 'Tinggi'},
       {'value': 'medium', 'label': 'Sedang'},
       {'value': 'low', 'label': 'Rendah'},
@@ -482,28 +483,16 @@ class _FilterScreenState extends State<FilterScreen> {
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: priorities.map((priority) {
-        final String value = priority['value']!;
-        final String label = priority['label']!;
-        final bool isSelected = selectedPriority == value;
+      children: priorities.map((p) {
+        final value = p['value']!;
+        final label = p['label']!;
+        final isSelected = selectedPriority == value;
 
-        // Warna dark mode → abu-abu
-        final Color darkUnselected = const Color(0xFF2C2C2C); // abu-abu gelap
-        final Color darkSelected = const Color(
-          0xFF505050,
-        ); // abu-abu lebih terang
+        final bgColor = isSelected ? scheme.primary : scheme.surface;
 
-        // Warna light mode → seperti biasa
-        final Color lightUnselected = Colors.white;
-        final Color lightSelected = const Color.fromARGB(255, 138, 138, 138);
-
-        final bool isDark = theme.brightness == Brightness.dark;
-
-        final Color bgColor = isDark
-            ? (isSelected ? darkSelected : darkUnselected)
-            : (isSelected ? lightSelected : lightUnselected);
-
-        final Color textColor = isDark ? Colors.white : Colors.black87;
+        final textColor = isSelected
+            ? scheme.onPrimary
+            : scheme.onSurface.withAlpha((0.8 * 255).round());
 
         return GestureDetector(
           onTap: () {
@@ -517,7 +506,10 @@ class _FilterScreenState extends State<FilterScreen> {
             ),
             child: Text(
               label,
-              style: AppStyle.normal.copyWith(color: textColor),
+              style: AppStyle.normal.copyWith(
+                color: textColor,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
             ),
           ),
         );
@@ -526,8 +518,20 @@ class _FilterScreenState extends State<FilterScreen> {
   }
 
   Widget _buildStatusOption(String label, bool isCompleted) {
-    final theme = Theme.of(context);
+    final scheme = Theme.of(context).colorScheme;
     final isSelected = showCompleted == isCompleted;
+
+    // 🔥 Warna chip dipilih & tidak dipilih dari theme
+    final Color bgColor = isSelected
+        ? scheme
+              .primary // dipilih → biru/light theme atau biru/dark theme
+        : scheme.surface; // tidak dipilih → putih/light atau abu gelap/dark
+
+    final Color textColor = isSelected
+        ? scheme
+              .onPrimary // teks putih saat dipilih
+        : scheme.onSurface; // teks normal saat tidak dipilih
+
     return GestureDetector(
       onTap: () {
         setState(() => showCompleted = isCompleted);
@@ -535,25 +539,21 @@ class _FilterScreenState extends State<FilterScreen> {
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: isSelected
-            ? Neu.pressed.copyWith(
-                color: isCompleted
-                    ? Colors.green.withAlpha((0.8 * 255).round())
-                    : Colors.orange.withAlpha((0.8 * 255).round()),
-              )
-            : Neu.convex,
+        decoration: (isSelected ? Neu.pressed : Neu.convex).copyWith(
+          color: bgColor,
+        ),
         child: Text(
           label,
           style: AppStyle.normal.copyWith(
-            color: isSelected
-                ? theme.colorScheme.onPrimary
-                : theme.colorScheme.onSurface,
+            color: textColor,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
       ),
     );
   }
+
+
 
   Widget _buildDateFilters() {
     final theme = Theme.of(context);
