@@ -34,8 +34,8 @@ class MyApp extends StatelessWidget {
       () => GetMaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'To-Do List App',
-        theme: AppTheme.light,
-        darkTheme: AppTheme.dark,
+        theme: AppTheme.light(),
+        darkTheme: AppTheme.dark(),
         themeMode: themeController.isDarkMode.value
             ? ThemeMode.dark
             : ThemeMode.light,
