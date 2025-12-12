@@ -21,27 +21,18 @@ class BottomNav extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : AppColors.bg,
-        boxShadow: isDark
-            ? [
-                BoxShadow(
-                  color: Colors.black.withAlpha((0.3 * 255).round()),
-                  offset: const Offset(0, -2),
-                  blurRadius: 8,
-                ),
-              ]
-            : [
-                const BoxShadow(
-                  color: Colors.white,
-                  offset: Offset(-4, -4),
-                  blurRadius: 8,
-                ),
-                const BoxShadow(
-                  color: Color(0xFFBEBEBE),
-                  offset: Offset(6, 6),
-                  blurRadius: 12,
-                ),
-              ],
+        color: isDark ? Theme.of(context).colorScheme.surface : Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha((0.3 * 255).round()),
+            offset: const Offset(0, -2),
+            blurRadius: 8,
+          ),
+        ],
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,

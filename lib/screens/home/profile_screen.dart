@@ -119,22 +119,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _logout() async {
     await _supabaseService.signOut();
     Get.offAllNamed(AppRoutes.login);
-
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     if (_isLoading) {
-      return const Scaffold(
-        backgroundColor: AppColors.bg,
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        backgroundColor: isDark ? AppColors.darkBg : AppColors.bg,
+        body: Center(
+          child: CircularProgressIndicator(color: colorScheme.primary),
+        ),
       );
     }
 
     final p = _profile;
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: isDark ? AppColors.darkBg : AppColors.bg,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -146,21 +150,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   IconButton(
                     onPressed: () => Get.back(),
-                    icon: const Icon(Icons.arrow_back),
-                    color: AppColors.text,
+                    icon: Icon(Icons.arrow_back),
+                    color: isDark ? AppColors.darkText : AppColors.text,
                     tooltip: 'Kembali',
                   ),
                 ],
               ),
               const SizedBox(height: 4),
-              const Center(child: Text("Profile", style: AppStyle.title)),
+              Center(
+                child: Text(
+                  "Profile",
+                  style: AppStyle.title.copyWith(
+                    color: isDark ? AppColors.darkText : AppColors.text,
+                  ),
+                ),
+              ),
               const SizedBox(height: 30),
 
               // AVATAR
               GestureDetector(
                 onTap: _isEditing ? _uploadAvatar : null,
                 child: Container(
-                  decoration: Neu.convex,
+                  decoration: isDark ? NeuDark.convex : Neu.convex,
                   padding: const EdgeInsets.all(8),
                   child: CircleAvatar(
                     radius: 60,
@@ -169,10 +180,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             (p!.avatarUrl ?? '').isNotEmpty)
                         ? NetworkImage(p.avatarUrl!)
                         : null,
-                    backgroundColor: Colors.white,
+                    backgroundColor: isDark ? AppColors.darkCard : Colors.white,
                     child:
                         (p?.avatarUrl == null || (p!.avatarUrl ?? '').isEmpty)
-                        ? const Icon(Icons.person, size: 60, color: Colors.grey)
+                        ? Icon(
+                            Icons.person,
+                            size: 60,
+                            color: isDark
+                                ? AppColors.darkText.withAlpha(128)
+                                : Colors.grey,
+                          )
                         : null,
                   ),
                 ),
@@ -182,16 +199,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               // USERNAME (tampak besar saat tidak edit)
               if (!_isEditing)
-                Text(p?.username ?? "", style: AppStyle.subtitle),
+                Text(
+                  p?.username ?? "",
+                  style: AppStyle.subtitle.copyWith(
+                    color: isDark ? AppColors.darkText : AppColors.text,
+                  ),
+                ),
 
               const SizedBox(height: 22),
 
               // --- FORM TILES ---
-              _tile("Nama", _usernameController, editable: _isEditing),
+              _tile(
+                "Nama",
+                _usernameController,
+                editable: _isEditing,
+                isDark: isDark,
+                colorScheme: colorScheme,
+              ),
               const SizedBox(height: 16),
-              _tile("Bio", _bioController, editable: _isEditing, maxLines: 3),
+              _tile(
+                "Bio",
+                _bioController,
+                editable: _isEditing,
+                maxLines: 3,
+                isDark: isDark,
+                colorScheme: colorScheme,
+              ),
               const SizedBox(height: 16),
-              _tile("Hobi", _hobbyController, editable: _isEditing),
+              _tile(
+                "Hobi",
+                _hobbyController,
+                editable: _isEditing,
+                isDark: isDark,
+                colorScheme: colorScheme,
+              ),
               const SizedBox(height: 22),
 
               // --- BUTTONS ---
@@ -203,12 +244,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         onTap: _save,
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          decoration: Neu.convex,
+                          decoration: isDark ? NeuDark.convex : Neu.convex,
                           child: Text(
                             "Simpan",
                             textAlign: TextAlign.center,
                             style: AppStyle.normal.copyWith(
-                              color: AppColors.blue,
+                              color: colorScheme.primary,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
@@ -220,11 +262,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         onTap: () => setState(() => _isEditing = false),
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          decoration: Neu.convex,
-                          child: const Text(
+                          decoration: isDark ? NeuDark.convex : Neu.convex,
+                          child: Text(
                             "Batal",
                             textAlign: TextAlign.center,
-                            style: AppStyle.normal,
+                            style: AppStyle.normal.copyWith(
+                              color: isDark
+                                  ? AppColors.darkText
+                                  : AppColors.text,
+                            ),
                           ),
                         ),
                       ),
@@ -237,11 +283,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     width: double.infinity,
-                    decoration: Neu.convex,
+                    decoration: isDark ? NeuDark.convex : Neu.convex,
                     child: Text(
                       "Ubah Profil",
                       textAlign: TextAlign.center,
-                      style: AppStyle.normal.copyWith(color: AppColors.blue),
+                      style: AppStyle.normal.copyWith(
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),
@@ -251,11 +300,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     width: double.infinity,
-                    decoration: Neu.convex,
-                    child: const Text(
+                    decoration: isDark ? NeuDark.convex : Neu.convex,
+                    child: Text(
                       "Logout",
                       textAlign: TextAlign.center,
-                      style: AppStyle.normal,
+                      style: AppStyle.normal.copyWith(
+                        color: isDark ? AppColors.darkText : AppColors.text,
+                      ),
                     ),
                   ),
                 ),
@@ -272,26 +323,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
     TextEditingController controller, {
     bool editable = false,
     int maxLines = 1,
+    required bool isDark,
+    required ColorScheme colorScheme,
   }) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
-      decoration: Neu.concave,
+      decoration: isDark ? NeuDark.concave : Neu.concave,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: AppStyle.smallGray),
+          Text(
+            title,
+            style: AppStyle.smallGray.copyWith(
+              color: isDark
+                  ? AppColors.darkText.withAlpha(179)
+                  : AppColors.gray,
+            ),
+          ),
           const SizedBox(height: 6),
           editable
               ? TextField(
                   controller: controller,
                   maxLines: maxLines,
-                  decoration: const InputDecoration(border: InputBorder.none),
-                  style: AppStyle.normal,
+                  decoration: InputDecoration(
+                    border: InputBorder.none,
+                    hintStyle: TextStyle(
+                      color: isDark
+                          ? AppColors.darkText.withAlpha(128)
+                          : Colors.grey,
+                    ),
+                  ),
+                  style: AppStyle.normal.copyWith(
+                    color: isDark ? AppColors.darkText : AppColors.text,
+                  ),
                 )
               : Text(
                   controller.text.isEmpty ? "-" : controller.text,
-                  style: AppStyle.normal,
+                  style: AppStyle.normal.copyWith(
+                    color: isDark ? AppColors.darkText : AppColors.text,
+                  ),
                 ),
         ],
       ),

@@ -39,11 +39,14 @@ class TaskTile extends StatelessWidget {
           },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
+        // Ganti bagian yang menggunakan hardcoded colors:
         decoration: isDark
             ? BoxDecoration(
-                color: const Color(0xFF2C2C2C),
-                borderRadius: BorderRadius.circular(15),
-                border: Border.all(color: Colors.grey[800]!),
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outline,
+                ),
               )
             : Neu.concave,
         child: Padding(
