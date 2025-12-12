@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:to_do_list_project/models/profile_model.dart';
+import 'package:to_do_list_project/screens/edit_task/edit_task_screen.dart';
+import 'package:to_do_list_project/screens/settings/settings_screen.dart';
+import 'package:to_do_list_project/screens/task_detail/task_detail_screen.dart';
 
 import 'utils/constants.dart';
 import 'utils/app_routes.dart';
@@ -15,6 +19,9 @@ import 'screens/home/inbox_screen.dart';
 import 'screens/home/today_screen.dart';
 import 'screens/home/upcoming_screen.dart';
 import 'screens/home/filter_screen.dart';
+
+import 'screens/home/profile_screen.dart';
+import 'screens/edit_profile/edit_profile_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -61,6 +68,60 @@ class MyApp extends StatelessWidget {
           GetPage(name: AppRoutes.today, page: () => const TodayScreen()),
           GetPage(name: AppRoutes.upcoming, page: () => const UpcomingScreen()),
           GetPage(name: AppRoutes.filter, page: () => const FilterScreen()),
+          GetPage(name: AppRoutes.settings, page: () => const SettingsScreen()),
+
+          // Profile
+          GetPage(name: AppRoutes.profile, page: () => const ProfileScreen()),
+                    
+          // Di main.dart - getPages:
+          GetPage(
+            name: AppRoutes.editProfile, 
+            page: () {
+              final args = Get.arguments;
+              if (args != null && args is Map<String, dynamic>) {
+                // ✅ Cast arguments dengan benar
+                final profile = args['profile'] as Profile?;
+                final onProfileUpdated = args['onProfileUpdated'] as VoidCallback?;
+                
+                if (profile != null && onProfileUpdated != null) {
+                  return EditProfileScreen(
+                    profile: profile,
+                    onProfileUpdated: onProfileUpdated,
+                  );
+                }
+              }
+              // Fallback: redirect ke profile
+              return const ProfileScreen();
+            }
+          ),
+
+           // Task Detail & Edit dengan arguments
+          GetPage(
+            name: AppRoutes.taskDetail,
+            page: () {
+              final args = Get.arguments;
+              if (args != null && args is Map<String, dynamic> && args.containsKey('task')) {
+                return TaskDetailScreen(task: args['task']);
+              }
+              return const Scaffold(
+                body: Center(child: Text("Tidak dapat membuka detail task")),
+              );
+            },
+          ),
+          
+          GetPage(
+            name: AppRoutes.editTask,
+            page: () {
+              final args = Get.arguments;
+              if (args != null && args is Map<String, dynamic> && args.containsKey('task')) {
+                return EditTaskScreen(task: args['task']);
+              }
+              return const Scaffold(
+                body: Center(child: Text("Tidak dapat membuka edit task")),
+              );
+            },
+          ),
+
         ],
       ),
     );

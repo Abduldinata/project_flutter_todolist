@@ -177,7 +177,7 @@ class _FilterScreenState extends State<FilterScreen> {
           padding: const EdgeInsets.all(20),
           child: Column(
             children: [
-              // Header
+              // Header dengan tombol Settings
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -187,29 +187,53 @@ class _FilterScreenState extends State<FilterScreen> {
                       color: theme.colorScheme.onSurface,
                     ),
                   ),
-                  if (_hasActiveFilters())
-                    GestureDetector(
-                      onTap: _resetFilters,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
+                  Row(
+                    children: [
+                      // Tombol Reset All (hanya muncul jika ada filter aktif)
+                      if (_hasActiveFilters())
+                        GestureDetector(
+                          onTap: _resetFilters,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            margin: const EdgeInsets.only(right: 12),
+                            decoration: BoxDecoration(
+                              color: AppColors.blue.withAlpha((0.1 * 255).round()),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              "Reset All",
+                              style: AppStyle.smallGray.copyWith(
+                                color: AppColors.blue,
+                              ),
+                            ),
+                          ),
                         ),
-                        decoration: BoxDecoration(
-                          color: AppColors.blue.withAlpha((0.1 * 255).round()),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          "Reset All",
-                          style: AppStyle.smallGray.copyWith(
+                      
+                      // Tombol Settings
+                      GestureDetector(
+                        onTap: () {
+                          Get.toNamed('/settings');
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.blue.withAlpha((0.1 * 255).round()),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.settings,
                             color: AppColors.blue,
+                            size: 20,
                           ),
                         ),
                       ),
-                    ),
+                    ],
+                  ),
                 ],
               ),
-
               const SizedBox(height: 20),
 
               // Filter Options Card
@@ -218,58 +242,11 @@ class _FilterScreenState extends State<FilterScreen> {
                   physics: const BouncingScrollPhysics(),
                   child: Column(
                     children: [
-                      // Theme Toggle Card
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: Neu.concave.copyWith(
-                          color: theme.colorScheme.surface,
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Obx(
-                                  () => Icon(
-                                    _themeController.isDarkMode.value
-                                        ? Icons.dark_mode
-                                        : Icons.light_mode,
-                                    color: AppColors.blue,
-                                    size: 24,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Text(
-                                  "Dark Mode",
-                                  style: AppStyle.subtitle.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface, // mengikuti mode
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Obx(
-                              () => Switch(
-                                value: _themeController.isDarkMode.value,
-                                onChanged: (value) {
-                                  _themeController.toggleTheme();
-                                },
-                                activeThumbColor: AppColors.blue,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
                       // Priority Filter Card
                       Container(
                         padding: const EdgeInsets.all(16),
                         margin: const EdgeInsets.only(bottom: 16),
-                        decoration: Neu.concave.copyWith(
-                          color: theme.colorScheme.surface,
-                        ),
+                        decoration: Neu.concave(context), // PAKAI (context) bukan .concave
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -279,9 +256,7 @@ class _FilterScreenState extends State<FilterScreen> {
                                 Text(
                                   "Filter by Priority",
                                   style: AppStyle.subtitle.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface, // ikut dark/light
+                                    color: theme.colorScheme.onSurface,
                                   ),
                                 ),
                                 Switch(
@@ -306,9 +281,7 @@ class _FilterScreenState extends State<FilterScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         margin: const EdgeInsets.only(bottom: 16),
-                        decoration: Neu.concave.copyWith(
-                          color: theme.colorScheme.surface,
-                        ),
+                        decoration: Neu.concave(context), // PAKAI (context) bukan .concave
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -318,9 +291,7 @@ class _FilterScreenState extends State<FilterScreen> {
                                 Text(
                                   "Filter by Status",
                                   style: AppStyle.subtitle.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface, // ikut dark/light
+                                    color: theme.colorScheme.onSurface,
                                   ),
                                 ),
                                 Switch(
@@ -351,9 +322,7 @@ class _FilterScreenState extends State<FilterScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         margin: const EdgeInsets.only(bottom: 16),
-                        decoration: Neu.concave.copyWith(
-                          color: theme.colorScheme.surface,
-                        ),
+                        decoration: Neu.concave(context), // PAKAI (context) bukan .concave
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -363,9 +332,7 @@ class _FilterScreenState extends State<FilterScreen> {
                                 Text(
                                   "Filter by Date",
                                   style: AppStyle.subtitle.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface, // ikut dark/light
+                                    color: theme.colorScheme.onSurface,
                                   ),
                                 ),
                                 Switch(
@@ -389,9 +356,8 @@ class _FilterScreenState extends State<FilterScreen> {
                       // Results Section
                       Container(
                         padding: const EdgeInsets.all(16),
-                        decoration: Neu.concave.copyWith(
-                          color: theme.colorScheme.surface,
-                        ),
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: Neu.concave(context), // PAKAI (context) bukan .concave
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -401,9 +367,7 @@ class _FilterScreenState extends State<FilterScreen> {
                                 Text(
                                   "Results",
                                   style: AppStyle.subtitle.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface, // ikut dark/light
+                                    color: theme.colorScheme.onSurface,
                                   ),
                                 ),
                                 Text(
@@ -424,19 +388,23 @@ class _FilterScreenState extends State<FilterScreen> {
                                       Icons.filter_alt_outlined,
                                       size: 48,
                                       color: theme.colorScheme.onSurface
-                                          .withValues(alpha: 0.5),
-
+                                          .withOpacity(0.5),
                                     ),
                                     const SizedBox(height: 12),
-                                    const Text(
+                                    Text(
                                       "No tasks match your filters",
-                                      style: AppStyle.smallGray,
+                                      style: AppStyle.smallGray.copyWith(
+                                        color: theme.colorScheme.onSurface
+                                            .withOpacity(0.7),
+                                      ),
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
                                       "Try adjusting your filter criteria",
                                       style: AppStyle.smallGray.copyWith(
                                         fontSize: 12,
+                                        color: theme.colorScheme.onSurface
+                                            .withOpacity(0.5),
                                       ),
                                     ),
                                   ],
@@ -501,7 +469,7 @@ class _FilterScreenState extends State<FilterScreen> {
 
         final textColor = isSelected
             ? scheme.onPrimary
-            : scheme.onSurface.withAlpha((0.8 * 255).round());
+            : scheme.onSurface.withOpacity(0.8);
 
         return GestureDetector(
           onTap: () {
@@ -510,9 +478,7 @@ class _FilterScreenState extends State<FilterScreen> {
           },
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: (isSelected ? Neu.pressed : Neu.convex).copyWith(
-              color: bgColor,
-            ),
+            decoration: (isSelected ? Neu.pressed(context) : Neu.convex(context)),
             child: Text(
               label,
               style: AppStyle.normal.copyWith(
@@ -530,16 +496,13 @@ class _FilterScreenState extends State<FilterScreen> {
     final scheme = Theme.of(context).colorScheme;
     final isSelected = showCompleted == isCompleted;
 
-    // 🔥 Warna chip dipilih & tidak dipilih dari theme
     final Color bgColor = isSelected
-        ? scheme
-              .primary // dipilih → biru/light theme atau biru/dark theme
-        : scheme.surface; // tidak dipilih → putih/light atau abu gelap/dark
+        ? scheme.primary
+        : scheme.surface;
 
     final Color textColor = isSelected
-        ? scheme
-              .onPrimary // teks putih saat dipilih
-        : scheme.onSurface; // teks normal saat tidak dipilih
+        ? scheme.onPrimary
+        : scheme.onSurface;
 
     return GestureDetector(
       onTap: () {
@@ -548,9 +511,7 @@ class _FilterScreenState extends State<FilterScreen> {
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: (isSelected ? Neu.pressed : Neu.convex).copyWith(
-          color: bgColor,
-        ),
+        decoration: (isSelected ? Neu.pressed(context) : Neu.convex(context)),
         child: Text(
           label,
           style: AppStyle.normal.copyWith(
@@ -562,15 +523,13 @@ class _FilterScreenState extends State<FilterScreen> {
     );
   }
 
-
-
   Widget _buildDateFilters() {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final textColor = theme.colorScheme.onSurface; // aman untuk dark/light
-    final hintColor = theme.colorScheme.onSurface.withValues(alpha: 0.6);
-    final iconHintColor = theme.colorScheme.onSurface.withValues(alpha: 0.5);
+    final textColor = theme.colorScheme.onSurface;
+    final hintColor = theme.colorScheme.onSurface.withOpacity(0.6);
+    final iconHintColor = theme.colorScheme.onSurface.withOpacity(0.5);
 
     return Column(
       children: [
@@ -583,7 +542,6 @@ class _FilterScreenState extends State<FilterScreen> {
               firstDate: DateTime(2000),
               lastDate: DateTime(2100),
               builder: (context, child) {
-                // biar dialog date picker juga enak di dark mode
                 return Theme(
                   data: theme.copyWith(
                     colorScheme: isDark
@@ -607,7 +565,7 @@ class _FilterScreenState extends State<FilterScreen> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             margin: const EdgeInsets.only(bottom: 12),
-            decoration: Neu.convex.copyWith(color: theme.colorScheme.surface),
+            decoration: Neu.convex(context), // PAKAI (context),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -662,7 +620,7 @@ class _FilterScreenState extends State<FilterScreen> {
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-            decoration: Neu.convex.copyWith(color: theme.colorScheme.surface),
+            decoration: Neu.convex(context), // PAKAI (context),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -687,7 +645,6 @@ class _FilterScreenState extends State<FilterScreen> {
       ],
     );
   }
-
 
   bool _hasActiveFilters() {
     return filterByPriority || filterByStatus || filterByDate;

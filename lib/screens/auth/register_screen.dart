@@ -143,7 +143,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     Container(
                       width: 100,
                       height: 100,
-                      decoration: Neu.concave,
+                      decoration: Neu.concave(context), // PAKAI (context)
                       child: const Icon(
                         Icons.person_add_rounded,
                         size: 60,
@@ -192,7 +192,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     _isLoading
                         ? Container(
                             padding: const EdgeInsets.all(14),
-                            decoration: Neu.convex,
+                            decoration: Neu.concave(context), // PAKAI (context),
                             child: const CircularProgressIndicator(
                               color: AppColors.blue,
                             ),

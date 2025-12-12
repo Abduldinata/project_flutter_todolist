@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../theme/theme_tokens.dart';
+import '../../utils/neumorphic_decoration.dart'; // Tambahkan import ini
 import '../../widgets/task_tile.dart';
 import '../../services/task_service.dart';
 
@@ -17,29 +18,23 @@ class _CompletedScreenState extends State<CompletedScreen> {
   List<Map<String, dynamic>> tasks = [];
   bool loading = true;
 
-// completed_screen.dart - Update line 25
-Future<void> loadTasks() async {
-  setState(() => loading = true);
-  try {
-    // COBA DUA OPTION INI:
-    // Option 1: Jika fungsi namanya getCompletedTasks
-    // final fetchedTasks = await _taskService.getCompletedTasks();
-    
-    // Option 2: Jika fungsi namanya getCompleted (yang ada di kode sebelumnya)
-    final fetchedTasks = await _taskService.getCompleted();
-    
-    setState(() => tasks = fetchedTasks);
-  } catch (e) {
-    debugPrint("Error loading completed tasks: $e");
-    Get.snackbar(
-      "Error",
-      "Gagal memuat tasks: ${e.toString()}",
-      backgroundColor: Colors.red,
-      colorText: Colors.white,
-    );
+  Future<void> loadTasks() async {
+    setState(() => loading = true);
+    try {
+      // Coba kedua option
+      final fetchedTasks = await _taskService.getCompletedTasks();
+      setState(() => tasks = fetchedTasks);
+    } catch (e) {
+      debugPrint("Error loading completed tasks: $e");
+      Get.snackbar(
+        "Error",
+        "Gagal memuat tasks: ${e.toString()}",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
+    setState(() => loading = false);
   }
-  setState(() => loading = false);
-}
 
   Future<void> _toggleTaskCompletion(String taskId, bool currentValue) async {
     try {
@@ -123,21 +118,27 @@ Future<void> loadTasks() async {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: theme.scaffoldBackgroundColor, // Gunakan dari theme
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back, color: scheme.onSurface),
           onPressed: () => Get.back(),
         ),
-        title: const Text("Completed Tasks", style: AppStyle.title),
+        title: Text(
+          "Completed Tasks",
+          style: AppStyle.title.copyWith(color: scheme.onSurface),
+        ),
         actions: [
           if (tasks.isNotEmpty)
             IconButton(
               onPressed: _deleteAllCompleted,
-              icon: const Icon(Icons.delete_sweep),
+              icon: Icon(Icons.delete_sweep, color: scheme.onSurface),
               tooltip: "Hapus Semua",
             ),
         ],
@@ -146,36 +147,23 @@ Future<void> loadTasks() async {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            // Stats
+            // Stats - Ganti dengan Neu.concave
             Container(
               padding: const EdgeInsets.all(16),
               margin: const EdgeInsets.only(bottom: 20),
-              decoration: BoxDecoration(
-                color: AppColors.bg,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.white,
-                    offset: const Offset(-4, -4),
-                    blurRadius: 8,
-                  ),
-                  BoxShadow(
-                    color: const Color(0xFFBEBEBE),
-                    offset: const Offset(4, 4),
-                    blurRadius: 12,
-                  ),
-                ],
-              ),
+              decoration: Neu.concave(context), // PAKAI Neu.concave(context)
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _buildStatItem(
+                    context: context,
                     icon: Icons.check_circle,
                     value: tasks.length.toString(),
                     label: "Total Selesai",
                     color: Colors.green,
                   ),
                   _buildStatItem(
+                    context: context,
                     icon: Icons.timelapse,
                     value: _getOldestCompletedDate(),
                     label: "Terlama",
@@ -187,7 +175,7 @@ Future<void> loadTasks() async {
 
             // Task List
             Expanded(
-              child: _buildTaskList(),
+              child: _buildTaskList(context),
             ),
           ],
         ),
@@ -196,23 +184,36 @@ Future<void> loadTasks() async {
   }
 
   Widget _buildStatItem({
+    required BuildContext context,
     required IconData icon,
     required String value,
     required String label,
     required Color color,
   }) {
+    final theme = Theme.of(context);
+    
     return Column(
       children: [
         Icon(icon, size: 28, color: color),
         const SizedBox(height: 8),
-        Text(value, style: AppStyle.subtitle.copyWith(color: color)),
+        Text(
+          value,
+          style: AppStyle.subtitle.copyWith(color: color),
+        ),
         const SizedBox(height: 4),
-        Text(label, style: AppStyle.smallGray),
+        Text(
+          label,
+          style: AppStyle.smallGray.copyWith(
+            color: theme.colorScheme.onSurface.withOpacity(0.7),
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildTaskList() {
+  Widget _buildTaskList(BuildContext context) {
+    final theme = Theme.of(context);
+    
     if (loading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -225,17 +226,22 @@ Future<void> loadTasks() async {
             Icon(
               Icons.check_circle_outline,
               size: 64,
-              color: Colors.grey[400],
+              color: theme.colorScheme.onSurface.withOpacity(0.4),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               "Belum ada task yang selesai",
-              style: AppStyle.smallGray,
+              style: AppStyle.smallGray.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.7),
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               "Selesaikan task dari Today atau Upcoming",
-              style: AppStyle.smallGray.copyWith(fontSize: 12),
+              style: AppStyle.smallGray.copyWith(
+                fontSize: 12,
+                color: theme.colorScheme.onSurface.withOpacity(0.5),
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -254,7 +260,6 @@ Future<void> loadTasks() async {
           onToggleCompletion: (taskId, currentValue) => 
               _toggleTaskCompletion(taskId, currentValue),
           onDelete: (taskId, title) => _deleteTask(taskId, title),
-          // ✅ Biarkan null untuk default behavior
           onTap: null,
         );
       },

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../theme/theme_tokens.dart';
 import '../utils/neumorphic_decoration.dart';
 import 'neumorphic_button.dart';
 
@@ -10,6 +9,8 @@ class NeumorphicDialog extends StatelessWidget {
   final DialogType type;
   final VoidCallback? onConfirm;
   final String? confirmText;
+  final String? cancelText;
+  final bool showCancel;
 
   const NeumorphicDialog({
     super.key,
@@ -18,71 +19,72 @@ class NeumorphicDialog extends StatelessWidget {
     this.type = DialogType.info,
     this.onConfirm,
     this.confirmText,
+    this.cancelText,
+    this.showCancel = true,
   });
 
-  static void show({
+  static Future<bool?> show({
     required String title,
     required String message,
     DialogType type = DialogType.info,
     VoidCallback? onConfirm,
     String? confirmText,
+    String? cancelText,
+    bool showCancel = true,
+    bool barrierDismissible = false,
   }) {
-    Get.dialog(
+    return Get.dialog<bool>(
       NeumorphicDialog(
         title: title,
         message: message,
         type: type,
         onConfirm: onConfirm,
         confirmText: confirmText,
+        cancelText: cancelText,
+        showCancel: showCancel,
       ),
-      barrierDismissible: false,
+      barrierDismissible: barrierDismissible,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
 
     return Dialog(
       backgroundColor: Colors.transparent,
       elevation: 0,
+      insetPadding: const EdgeInsets.all(40),
       child: Container(
         padding: const EdgeInsets.all(24),
-        decoration: isDark
-            ? BoxDecoration(
-                color: const Color(0xFF2C2C2C),
-                borderRadius: BorderRadius.circular(25),
-                border: Border.all(color: Colors.grey[800]!),
-              )
-            : Neu.convex.copyWith(borderRadius: BorderRadius.circular(25)),
+        decoration: Neu.convex(context).copyWith(
+          borderRadius: BorderRadius.circular(25),
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             // Icon based on type
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E1E1E) : AppColors.bg,
+              decoration: Neu.pressed(context).copyWith(
                 shape: BoxShape.circle,
-                boxShadow: isDark
-                    ? [
-                        BoxShadow(
-                          color: Colors.black.withAlpha((0.5 * 255).round()),
-                          blurRadius: 8,
-                        ),
-                      ]
-                    : Neu.pressed.boxShadow,
               ),
-              child: Icon(type.icon, size: 32, color: type.color),
+              child: Icon(
+                type.icon,
+                size: 32,
+                color: type.color(context),
+              ),
             ),
             const SizedBox(height: 24),
 
             // Title
             Text(
               title,
-              style: AppStyle.title.copyWith(
-                fontSize: 20,
-                color: isDark ? Colors.white : AppColors.text,
+              style: textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
               ),
               textAlign: TextAlign.center,
             ),
@@ -91,8 +93,8 @@ class NeumorphicDialog extends StatelessWidget {
             // Message
             Text(
               message,
-              style: AppStyle.normal.copyWith(
-                color: isDark ? Colors.grey[300] : AppColors.text,
+              style: textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurface.withOpacity(0.8),
               ),
               textAlign: TextAlign.center,
             ),
@@ -101,22 +103,30 @@ class NeumorphicDialog extends StatelessWidget {
             // Buttons
             Row(
               children: [
-                if (onConfirm != null) ...[
+                // Cancel Button
+                if (onConfirm != null && showCancel) ...[
                   Expanded(
                     child: NeumorphicButton(
-                      label: 'Batal',
-                      onTap: () => Get.back(),
+                      label: cancelText ?? 'Batal',
+                      onTap: () => Get.back(result: false),
+                      textColor: colorScheme.onSurface.withOpacity(0.7),
                     ),
                   ),
                   const SizedBox(width: 16),
                 ],
+                
+                // Confirm/OK Button
                 Expanded(
                   child: NeumorphicButton(
                     label: confirmText ?? 'OK',
                     onTap: () {
-                      Get.back();
-                      if (onConfirm != null) onConfirm!();
+                      Get.back(result: true);
+                      if (onConfirm != null) {
+                        onConfirm!();
+                      }
                     },
+                    textColor: type.color(context),
+                    backgroundColor: type.color(context).withOpacity(0.1),
                   ),
                 ),
               ],
@@ -147,16 +157,18 @@ enum DialogType {
     }
   }
 
-  Color get color {
+  Color color(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     switch (this) {
       case DialogType.success:
-        return AppColors.success;
+        return Colors.green;
       case DialogType.error:
-        return AppColors.danger;
+        return colorScheme.error;
       case DialogType.warning:
         return Colors.orange;
       case DialogType.info:
-        return AppColors.blue;
+        return colorScheme.primary;
     }
   }
 }

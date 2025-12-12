@@ -7,7 +7,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../models/profile_model.dart';
 import '../../services/supabase_service.dart';
-import '../../theme/theme_tokens.dart';
 import '../../utils/neumorphic_decoration.dart';
 import '../../utils/app_routes.dart';
 
@@ -21,35 +20,28 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final SupabaseService _supabaseService = SupabaseService();
   Profile? _profile;
-
   bool _isLoading = true;
-  bool _isEditing = false;
-
-  final TextEditingController _usernameController = TextEditingController();
-  final TextEditingController _hobbyController = TextEditingController();
-  final TextEditingController _bioController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _loadProfile();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _loadProfile();
+    });
   }
 
   Future<void> _loadProfile() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
     try {
       final data = await _supabaseService.getProfile();
-      if (data != null) {
-        final p = Profile.fromJson(data);
-        setState(() {
-          _profile = p;
-          _usernameController.text = p.username;
-          _hobbyController.text = p.hobby ?? '';
-          _bioController.text = p.bio ?? '';
-        });
+      if (data != null && mounted) {
+        setState(() => _profile = Profile.fromJson(data));
       }
     } catch (e) {
-      Get.snackbar("Error", "$e");
+      if (mounted) {
+        Get.snackbar("Error", "$e");
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -92,31 +84,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<void> _save() async {
-    final username = _usernameController.text.trim();
-    if (username.isEmpty) {
-      Get.snackbar("Validasi", "Nama tidak boleh kosong");
-      return;
-    }
-
-    try {
-      await _supabaseService.updateProfile(
-        username: username,
-        bio: _bioController.text.trim().isEmpty
-            ? null
-            : _bioController.text.trim(),
-        hobby: _hobbyController.text.trim().isEmpty
-            ? null
-            : _hobbyController.text.trim(),
-      );
-      setState(() => _isEditing = false);
-      await _loadProfile();
-      Get.snackbar("Sukses", "Profil diperbarui");
-    } catch (e) {
-      Get.snackbar("Error", "$e");
-    }
-  }
-
   Future<void> _logout() async {
     await Supabase.instance.client.auth.signOut();
     Get.offAllNamed(AppRoutes.login);
@@ -124,142 +91,231 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     if (_isLoading) {
-      return const Scaffold(
-        backgroundColor: AppColors.bg,
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        body: Center(
+          child: CircularProgressIndicator(color: colorScheme.primary),
+        ),
       );
     }
 
     final p = _profile;
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           child: Column(
             children: [
-              const SizedBox(height: 6),
-              // Back button (icon only)
+              // Header
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  IconButton(
-                    onPressed: () => Get.back(),
-                    icon: const Icon(Icons.arrow_back),
-                    color: AppColors.text,
-                    tooltip: 'Kembali',
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      if (Navigator.canPop(context)) {
+                        Get.back();
+                      } else {
+                        Get.offAllNamed(AppRoutes.inbox);
+                      }
+                    },
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.all(8),
+                      decoration: Neu.convex(context),
+                      child: Icon(
+                        Icons.arrow_back,
+                        color: colorScheme.onSurface,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                  
+                  Text(
+                    "Profile",
+                    style: textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  
+                  // Edit Button - FIXED
+                  GestureDetector(
+                    onTap: p != null
+                        ? () {
+                            Get.toNamed(
+                              AppRoutes.editProfile,
+                              arguments: {
+                                'profile': p,
+                                'onProfileUpdated': _loadProfile,
+                              },
+                            );
+                          }
+                        : null,
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.all(8),
+                      decoration: Neu.convex(context),
+                      child: Icon(
+                        Icons.edit,
+                        color: p != null
+                            ? colorScheme.primary
+                            : colorScheme.onSurface.withOpacity(0.3),
+                        size: 20,
+                      ),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 4),
-              const Center(child: Text("Profile", style: AppStyle.title)),
               const SizedBox(height: 30),
 
-              // AVATAR
-              GestureDetector(
-                onTap: _isEditing ? _uploadAvatar : null,
-                child: Container(
-                  decoration: Neu.convex,
-                  padding: const EdgeInsets.all(8),
-                  child: CircleAvatar(
-                    radius: 60,
-                    backgroundImage:
-                        (p?.avatarUrl != null &&
-                            (p!.avatarUrl ?? '').isNotEmpty)
-                        ? NetworkImage(p.avatarUrl!)
-                        : null,
-                    backgroundColor: Colors.white,
-                    child:
-                        (p?.avatarUrl == null || (p!.avatarUrl ?? '').isEmpty)
-                        ? const Icon(Icons.person, size: 60, color: Colors.grey)
-                        : null,
+              // Avatar
+              Stack(
+                children: [
+                  GestureDetector(
+                    onTap: _uploadAvatar,
+                    child: Container(
+                      decoration: Neu.convex(context),
+                      padding: const EdgeInsets.all(8),
+                      child: CircleAvatar(
+                        radius: 60,
+                        backgroundImage: (p?.avatarUrl != null &&
+                                (p!.avatarUrl ?? '').isNotEmpty)
+                            ? NetworkImage(p.avatarUrl!)
+                            : null,
+                        backgroundColor: colorScheme.surface,
+                        child: (p?.avatarUrl == null ||
+                                (p!.avatarUrl ?? '').isEmpty)
+                            ? Icon(
+                                Icons.person,
+                                size: 60,
+                                color: colorScheme.onSurface.withOpacity(0.5),
+                              )
+                            : null,
+                      ),
+                    ),
                   ),
-                ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: GestureDetector(
+                      onTap: _uploadAvatar,
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: colorScheme.primary,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: colorScheme.primary.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          Icons.camera_alt,
+                          size: 20,
+                          color: colorScheme.onPrimary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
 
               const SizedBox(height: 20),
 
-              // USERNAME (tampak besar saat tidak edit)
-              if (!_isEditing)
-                Text(p?.username ?? "", style: AppStyle.subtitle),
-
-              const SizedBox(height: 22),
-
-              // --- FORM TILES ---
-              _tile("Nama", _usernameController, editable: _isEditing),
-              const SizedBox(height: 16),
-              _tile("Bio", _bioController, editable: _isEditing, maxLines: 3),
-              const SizedBox(height: 16),
-              _tile("Hobi", _hobbyController, editable: _isEditing),
-              const SizedBox(height: 22),
-
-              // --- BUTTONS ---
-              if (_isEditing)
-                Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: _save,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          decoration: Neu.convex,
-                          child: Text(
-                            "Simpan",
-                            textAlign: TextAlign.center,
-                            style: AppStyle.normal.copyWith(
-                              color: AppColors.blue,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => setState(() => _isEditing = false),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          decoration: Neu.convex,
-                          child: const Text(
-                            "Batal",
-                            textAlign: TextAlign.center,
-                            style: AppStyle.normal,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                )
-              else ...[
-                GestureDetector(
-                  onTap: () => setState(() => _isEditing = true),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    width: double.infinity,
-                    decoration: Neu.convex,
-                    child: Text(
-                      "Ubah Profil",
-                      textAlign: TextAlign.center,
-                      style: AppStyle.normal.copyWith(color: AppColors.blue),
+              Text(
+                p?.username ?? "User",
+                style: textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              if (p?.bio?.isNotEmpty == true)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 40),
+                  child: Text(
+                    p!.bio!,
+                    textAlign: TextAlign.center,
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurface.withOpacity(0.7),
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
-                GestureDetector(
-                  onTap: _logout,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    width: double.infinity,
-                    decoration: Neu.convex,
-                    child: const Text(
-                      "Logout",
-                      textAlign: TextAlign.center,
-                      style: AppStyle.normal,
-                    ),
+
+              const SizedBox(height: 30),
+
+              // Info Cards
+              _infoCard(
+                context,
+                icon: Icons.person_outline,
+                title: "Nama",
+                value: p?.username ?? "-",
+              ),
+              const SizedBox(height: 16),
+              _infoCard(
+                context,
+                icon: Icons.description_outlined,
+                title: "Bio",
+                value: p?.bio?.isNotEmpty == true ? p!.bio! : "-",
+              ),
+              const SizedBox(height: 16),
+              _infoCard(
+                context,
+                icon: Icons.sports_basketball_outlined,
+                title: "Hobi",
+                value: p?.hobby?.isNotEmpty == true ? p!.hobby! : "-",
+              ),
+              const SizedBox(height: 40), // ✅ Spacing tanpa info helper
+
+              // Logout Button saja
+              GestureDetector(
+                onTap: _logout,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  width: double.infinity,
+                  decoration: Neu.convex(context).copyWith(
+                    boxShadow: [
+                      ...Neu.convex(context).boxShadow!,
+                      BoxShadow(
+                        color: colorScheme.error.withOpacity(0.3),
+                        offset: const Offset(0, 4),
+                        blurRadius: 10,
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.logout,
+                        size: 20,
+                        color: colorScheme.error,
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        "Logout",
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.error,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ],
           ),
         ),
@@ -267,32 +323,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _tile(
-    String title,
-    TextEditingController controller, {
-    bool editable = false,
-    int maxLines = 1,
+  Widget _infoCard(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String value,
   }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
-      decoration: Neu.concave,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      decoration: Neu.concave(context),
+      child: Row(
         children: [
-          Text(title, style: AppStyle.smallGray),
-          const SizedBox(height: 6),
-          editable
-              ? TextField(
-                  controller: controller,
-                  maxLines: maxLines,
-                  decoration: const InputDecoration(border: InputBorder.none),
-                  style: AppStyle.normal,
-                )
-              : Text(
-                  controller.text.isEmpty ? "-" : controller.text,
-                  style: AppStyle.normal,
+          Icon(
+            icon,
+            color: colorScheme.onSurface.withOpacity(0.7),
+            size: 22,
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurface.withOpacity(0.6),
+                  ),
                 ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: value == "-"
+                        ? colorScheme.onSurface.withOpacity(0.5)
+                        : colorScheme.onSurface,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

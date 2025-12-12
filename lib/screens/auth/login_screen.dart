@@ -214,7 +214,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Container(
                       width: 100,
                       height: 100,
-                      decoration: Neu.concave,
+                      decoration: Neu.concave(context), // PAKAI (context),
                       child: const Icon(
                         Icons.checklist_rounded,
                         size: 60,
@@ -260,7 +260,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     _isLoading
                         ? Container(
                             padding: const EdgeInsets.all(14),
-                            decoration: Neu.convex,
+                            decoration: Neu.concave(context), // PAKAI (context)
                             child: const CircularProgressIndicator(
                               color: AppColors.blue,
                             ),
@@ -304,13 +304,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     _isGoogleLoading
                         ? Container(
                             padding: const EdgeInsets.all(14),
-                            decoration: Neu.convex,
+                            decoration: Neu.concave(context), // PAKAI (context)
                             child: const CircularProgressIndicator(
                               color: AppColors.blue,
                             ),
                           )
                         : Container(
-                            decoration: Neu.convex,
+                            decoration: Neu.concave(context), // PAKAI (context)
                             child: Material(
                               color: Colors.transparent,
                               child: InkWell(

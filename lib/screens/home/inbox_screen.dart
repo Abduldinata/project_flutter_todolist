@@ -94,13 +94,12 @@ class _InboxScreenState extends State<InboxScreen> {
     }
   }
 
-  // Helper untuk cek apakah task hari ini (lebih aman: parse YYYY-MM-DD saja)
   bool _isTodayTask(Map<String, dynamic> task) {
     try {
       final taskDateStr = task['date']?.toString() ?? '';
       if (taskDateStr.isEmpty) return false;
 
-      final key = taskDateStr.split('T').first; // YYYY-MM-DD
+      final key = taskDateStr.split('T').first;
       final parts = key.split('-');
       if (parts.length != 3) return false;
 
@@ -130,7 +129,6 @@ class _InboxScreenState extends State<InboxScreen> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
-    // Filter tasks berdasarkan kategori
     final todayTasks = allTasks
         .where(
           (task) => _isTodayTask(task) && (task['is_done'] ?? false) == false,
@@ -154,7 +152,7 @@ class _InboxScreenState extends State<InboxScreen> {
           padding: const EdgeInsets.all(20),
           child: Column(
             children: [
-              // Top bar: title + icon
+              // Top bar
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -184,7 +182,7 @@ class _InboxScreenState extends State<InboxScreen> {
                           backgroundColor: scheme.surface,
                           child: Icon(
                             Icons.person,
-                            color: scheme.onSurface.withValues(alpha: 0.6),
+                            color: scheme.onSurface.withOpacity(0.6),
                           ),
                         ),
                       ),
@@ -210,13 +208,13 @@ class _InboxScreenState extends State<InboxScreen> {
                         Icon(
                           Icons.inbox_outlined,
                           size: 64,
-                          color: scheme.onSurface.withValues(alpha: 0.35),
+                          color: scheme.onSurface.withOpacity(0.35),
                         ),
                         const SizedBox(height: 16),
                         Text(
                           "Inbox kosong",
                           style: AppStyle.smallGray.copyWith(
-                            color: scheme.onSurface.withValues(alpha: 0.7),
+                            color: scheme.onSurface.withOpacity(0.7),
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -224,7 +222,7 @@ class _InboxScreenState extends State<InboxScreen> {
                           "Tambahkan task pertama kamu",
                           style: AppStyle.smallGray.copyWith(
                             fontSize: 12,
-                            color: scheme.onSurface.withValues(alpha: 0.55),
+                            color: scheme.onSurface.withOpacity(0.55),
                           ),
                         ),
                       ],
@@ -251,7 +249,9 @@ class _InboxScreenState extends State<InboxScreen> {
                               task: task,
                               onToggleCompletion: _toggleTaskCompletion,
                               onDelete: _deleteTask,
-                              showDate: false,
+                              onTaskUpdated: loadTasks, // ✅ Tambahkan ini
+                              showDate: true, // ✅ TRUE untuk menampilkan tanggal
+                              showDelete: true,
                               compactMode: false,
                             ),
                           ),
@@ -270,7 +270,9 @@ class _InboxScreenState extends State<InboxScreen> {
                               task: task,
                               onToggleCompletion: _toggleTaskCompletion,
                               onDelete: _deleteTask,
-                              showDate: true,
+                              onTaskUpdated: loadTasks, // ✅ Tambahkan ini
+                              showDate: true, // ✅ TRUE untuk menampilkan tanggal
+                              showDelete: true,
                               compactMode: true,
                             ),
                           ),
@@ -289,7 +291,9 @@ class _InboxScreenState extends State<InboxScreen> {
                               task: task,
                               onToggleCompletion: _toggleTaskCompletion,
                               onDelete: _deleteTask,
-                              showDate: true,
+                              onTaskUpdated: loadTasks, // ✅ Tambahkan ini
+                              showDate: true, // ✅ TRUE untuk menampilkan tanggal
+                              showDelete: true,
                               compactMode: false,
                             ),
                           ),
@@ -368,7 +372,7 @@ class _InboxScreenState extends State<InboxScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
-              color: scheme.primary.withValues(alpha: 0.12),
+              color: scheme.primary.withOpacity(0.12),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(

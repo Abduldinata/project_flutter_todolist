@@ -1,10 +1,9 @@
 // screens/task_detail/task_detail_screen.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../theme/theme_tokens.dart';
 import '../../utils/neumorphic_decoration.dart';
 import '../../services/task_service.dart';
-import '../edit_task/edit_task_screen.dart';
+import '../../utils/app_routes.dart';
 
 class TaskDetailScreen extends StatefulWidget {
   final Map<String, dynamic> task;
@@ -29,7 +28,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     try {
       final taskId = _task['id']?.toString();
       if (taskId != null) {
-        // Fetch task terbaru dari database
         final response = await _taskService.getTaskById(taskId);
         if (response != null) {
           setState(() {
@@ -66,6 +64,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+    
     final title = _task['title']?.toString() ?? 'No Title';
     final description = _task['description']?.toString();
     final dateStr = _task['date']?.toString();
@@ -84,18 +86,18 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
-            // Header dengan back button dan actions
+            // Header
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppColors.bg,
+                color: theme.scaffoldBackgroundColor,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withAlpha((0.05 * 255).round()),
+                    color: colorScheme.onSurface.withAlpha((0.05 * 255).round()),
                     blurRadius: 10,
                     offset: const Offset(0, 2),
                   ),
@@ -103,32 +105,48 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               ),
               child: Row(
                 children: [
+                  // Back Button
                   GestureDetector(
-                    onTap: () => Get.back(),
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      if (Get.isSnackbarOpen) {
+                        Get.closeCurrentSnackbar();
+                      }
+                      Get.back();
+                    },
                     child: Container(
+                      width: 40,
+                      height: 40,
+                      alignment: Alignment.center,
                       padding: const EdgeInsets.all(8),
-                      decoration: Neu.convex,
-                      child: const Icon(Icons.arrow_back),
+                      decoration: Neu.convex(context),
+                      child: Icon(
+                        Icons.arrow_back,
+                        color: colorScheme.onSurface,
+                        size: 20,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Text(
                       "Detail Task",
-                      style: AppStyle.title.copyWith(fontSize: 20),
+                      style: textTheme.titleLarge?.copyWith(fontSize: 20),
                     ),
                   ),
+                  // Edit Button
                   IconButton(
                     onPressed: () {
-                      Get.to(() => EditTaskScreen(task: _task))?.then((
-                        updated,
-                      ) {
+                      Get.toNamed(
+                        AppRoutes.editTask,
+                        arguments: {'task': _task},
+                      )?.then((updated) {
                         if (updated == true) {
                           _refreshTask();
                         }
                       });
                     },
-                    icon: const Icon(Icons.edit),
+                    icon: Icon(Icons.edit, color: colorScheme.onSurface),
                   ),
                   const SizedBox(width: 8),
                 ],
@@ -146,7 +164,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(20),
                       margin: const EdgeInsets.only(bottom: 20),
-                      decoration: Neu.concave,
+                      decoration: Neu.concave(context),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -171,13 +189,13 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                                   ),
                                 ),
                               ),
-                              _buildPriorityBadge(priority),
+                              _buildPriorityBadge(context, priority),
                             ],
                           ),
                           const SizedBox(height: 16),
                           Text(
                             title,
-                            style: AppStyle.title.copyWith(fontSize: 22),
+                            style: textTheme.titleLarge?.copyWith(fontSize: 22),
                           ),
                         ],
                       ),
@@ -188,30 +206,29 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(20),
                       margin: const EdgeInsets.only(bottom: 20),
-                      decoration: Neu.concave,
+                      decoration: Neu.concave(context),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             "Deskripsi",
-                            style: AppStyle.subtitle.copyWith(
-                              color: AppColors.text.withAlpha(
-                                (0.8 * 255).round(),
-                              ),
+                            style: textTheme.titleMedium?.copyWith(
+                              color: colorScheme.onSurface.withOpacity(0.8),
                             ),
                           ),
                           const SizedBox(height: 12),
                           Container(
                             width: double.infinity,
                             padding: const EdgeInsets.all(16),
-                            decoration: Neu.convex,
+                            decoration: Neu.convex(context),
                             child: Text(
                               description?.isNotEmpty == true
                                   ? description!
                                   : "Tidak ada deskripsi",
                               style: description?.isNotEmpty == true
-                                  ? AppStyle.normal
-                                  : AppStyle.smallGray.copyWith(
+                                  ? textTheme.bodyMedium
+                                  : textTheme.bodySmall?.copyWith(
+                                      color: colorScheme.onSurface.withOpacity(0.6),
                                       fontStyle: FontStyle.italic,
                                     ),
                             ),
@@ -225,20 +242,19 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(20),
                       margin: const EdgeInsets.only(bottom: 20),
-                      decoration: Neu.concave,
+                      decoration: Neu.concave(context),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             "Informasi Task",
-                            style: AppStyle.subtitle.copyWith(
-                              color: AppColors.text.withAlpha(
-                                (0.8 * 255).round(),
-                              ),
+                            style: textTheme.titleMedium?.copyWith(
+                              color: colorScheme.onSurface.withOpacity(0.8),
                             ),
                           ),
                           const SizedBox(height: 16),
                           _buildInfoRow(
+                            context,
                             icon: Icons.calendar_today,
                             label: "Tanggal Jatuh Tempo:",
                             value: taskDate != null
@@ -247,6 +263,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                           ),
                           const SizedBox(height: 12),
                           _buildInfoRow(
+                            context,
                             icon: Icons.timelapse,
                             label: "Dibuat pada:",
                             value: createdAt != null
@@ -256,6 +273,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                           if (updatedAt != null) ...[
                             const SizedBox(height: 12),
                             _buildInfoRow(
+                              context,
                               icon: Icons.update,
                               label: "Terakhir diupdate:",
                               value: _formatDateTime(updatedAt),
@@ -263,10 +281,11 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                           ],
                           const SizedBox(height: 12),
                           _buildInfoRow(
+                            context,
                             icon: Icons.priority_high,
                             label: "Prioritas:",
                             value: _getPriorityLabel(priority),
-                            valueColor: _getPriorityColor(priority),
+                            valueColor: _getPriorityColor(context, priority),
                           ),
                         ],
                       ),
@@ -280,13 +299,12 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                             onTap: _toggleCompletion,
                             child: Container(
                               padding: const EdgeInsets.symmetric(vertical: 16),
-                              decoration: Neu.convex.copyWith(
+                              decoration: Neu.convex(context).copyWith(
                                 boxShadow: [
-                                  ...Neu.convex.boxShadow!,
+                                  ...Neu.convex(context).boxShadow!,
                                   BoxShadow(
-                                    color:
-                                        (isDone ? Colors.orange : Colors.green)
-                                            .withAlpha((0.3 * 255).round()),
+                                    color: (isDone ? Colors.orange : Colors.green)
+                                        .withAlpha((0.3 * 255).round()),
                                     offset: const Offset(0, 4),
                                     blurRadius: 10,
                                   ),
@@ -297,7 +315,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                                   isDone
                                       ? "Tandai Belum Selesai"
                                       : "Tandai Selesai",
-                                  style: AppStyle.normal.copyWith(
+                                  style: textTheme.bodyMedium?.copyWith(
                                     color: isDone
                                         ? Colors.orange
                                         : Colors.green,
@@ -323,11 +341,12 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                                   ElevatedButton(
                                     onPressed: () => Get.back(result: true),
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.red,
+                                      backgroundColor: colorScheme.error,
                                     ),
-                                    child: const Text(
+                                    child: Text(
                                       "Hapus",
-                                      style: TextStyle(color: Colors.white),
+                                      style: TextStyle(
+                                          color: colorScheme.onError),
                                     ),
                                   ),
                                 ],
@@ -339,11 +358,15 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                                 await _taskService.deleteTask(
                                   _task['id'].toString(),
                                 );
-                                Get.back(); // Kembali ke screen sebelumnya
+                                if (Get.isSnackbarOpen) {
+                                  Get.closeCurrentSnackbar();
+                                }
+                                Get.back();
                                 Get.snackbar(
                                   "Success",
                                   "Task berhasil dihapus",
                                   backgroundColor: Colors.green,
+                                  duration: const Duration(seconds: 2),
                                 );
                               } catch (e) {
                                 Get.snackbar("Error", "Gagal menghapus: $e");
@@ -355,11 +378,11 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                               vertical: 16,
                               horizontal: 20,
                             ),
-                            decoration: Neu.convex.copyWith(
+                            decoration: Neu.convex(context).copyWith(
                               boxShadow: [
-                                ...Neu.convex.boxShadow!,
+                                ...Neu.convex(context).boxShadow!,
                                 BoxShadow(
-                                  color: Colors.red.withAlpha(
+                                  color: colorScheme.error.withAlpha(
                                     (0.3 * 255).round(),
                                   ),
                                   offset: const Offset(0, 4),
@@ -367,7 +390,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                                 ),
                               ],
                             ),
-                            child: const Icon(Icons.delete, color: Colors.red),
+                            child: Icon(Icons.delete, color: colorScheme.error),
                           ),
                         ),
                       ],
@@ -382,8 +405,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     );
   }
 
-  Widget _buildPriorityBadge(String priority) {
-    final (color, label) = _getPriorityInfo(priority);
+  Widget _buildPriorityBadge(BuildContext context, String priority) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final (color, label) = _getPriorityInfo(context, priority);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -410,30 +435,41 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     );
   }
 
-  Widget _buildInfoRow({
+  Widget _buildInfoRow(
+    BuildContext context, {
     required IconData icon,
     required String label,
     required String value,
     Color? valueColor,
   }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Row(
       children: [
         Icon(
           icon,
           size: 18,
-          color: AppColors.text.withAlpha((0.6 * 255).round()),
+          color: colorScheme.onSurface.withOpacity(0.6),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: AppStyle.smallGray.copyWith(fontSize: 12)),
+              Text(
+                label,
+                style: textTheme.bodySmall?.copyWith(
+                  fontSize: 12,
+                  color: colorScheme.onSurface.withOpacity(0.7),
+                ),
+              ),
               const SizedBox(height: 4),
               Text(
                 value,
-                style: AppStyle.normal.copyWith(
-                  color: valueColor ?? AppColors.text,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: valueColor ?? colorScheme.onSurface,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -444,16 +480,18 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     );
   }
 
-  (Color, String) _getPriorityInfo(String priority) {
+  (Color, String) _getPriorityInfo(BuildContext context, String priority) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     switch (priority.toLowerCase()) {
       case 'high':
-        return (Colors.red, "TINGGI");
+        return (colorScheme.error, "TINGGI");
       case 'medium':
-        return (Colors.orange, "SEDANG");
+        return (colorScheme.tertiary, "SEDANG");
       case 'low':
-        return (Colors.green, "RENDAH");
+        return (colorScheme.secondary, "RENDAH");
       default:
-        return (Colors.grey, priority.toUpperCase());
+        return (colorScheme.onSurface.withOpacity(0.5), priority.toUpperCase());
     }
   }
 
@@ -483,16 +521,18 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     }
   }
 
-  Color _getPriorityColor(String priority) {
+  Color _getPriorityColor(BuildContext context, String priority) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     switch (priority.toLowerCase()) {
       case 'high':
-        return Colors.red;
+        return colorScheme.error;
       case 'medium':
-        return Colors.orange;
+        return colorScheme.tertiary;
       case 'low':
-        return Colors.green;
+        return colorScheme.secondary;
       default:
-        return AppColors.text;
+        return colorScheme.onSurface;
     }
   }
 
