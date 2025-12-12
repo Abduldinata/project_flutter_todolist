@@ -70,7 +70,7 @@ flutter:
   assets:
     - assets/images/bg.png
     - assets/images/icon_google.png
-    - lib/assets/icon.png
+    - assets/icon.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:
