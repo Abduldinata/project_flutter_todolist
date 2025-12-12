@@ -43,7 +43,6 @@ class AppColors {
   );
 }
 
-
 class AppTypography {
   // Style dasar
   static const title = TextStyle(
@@ -94,7 +93,7 @@ class AppTypography {
       bodyLarge: body.copyWith(color: baseColor),
       bodyMedium: body.copyWith(fontSize: 15, color: baseColor),
 
-      bodySmall: small.copyWith(color: scheme.onSurface.withValues(alpha: 0.7)),
+      bodySmall: small.copyWith(color: scheme.onSurface.withOpacity(0.7)),
 
       labelLarge: button.copyWith(color: scheme.onPrimary),
 
@@ -105,7 +104,6 @@ class AppTypography {
     );
   }
 }
-
 
 class AppStyle {
   static const title = TextStyle(
@@ -142,5 +140,65 @@ class AppStyle {
     fontSize: 15,
     decoration: TextDecoration.underline,
     color: AppColors.gray,
+  );
+}
+
+// Kelas untuk mendefinisikan dekorasi Neumorphism
+class Neu {
+  // Dekorasi Concave (cekung) - Digunakan untuk latar belakang dialog besar
+  static BoxDecoration get concave => BoxDecoration(
+    color: AppColors.bg,
+    borderRadius: BorderRadius.circular(25),
+    boxShadow: [
+      BoxShadow(
+        color: Colors.white, // Bayangan terang di atas/kiri
+        offset: const Offset(-6, -6),
+        blurRadius: 10,
+      ),
+      BoxShadow(
+        color: AppColors.text.withAlpha(128), // Bayangan gelap di bawah/kanan
+        offset: const Offset(6, 6),
+        blurRadius: 10,
+      ),
+    ],
+  );
+
+  // Dekorasi Convex (cembung) - Digunakan untuk input field dan tombol biasa
+  static BoxDecoration get convex => BoxDecoration(
+    color: AppColors.bg,
+    borderRadius: BorderRadius.circular(15),
+    boxShadow: [
+      BoxShadow(
+        color: AppColors.text.withAlpha(128), // Bayangan gelap di atas/kiri
+        offset: const Offset(-4, -4),
+        blurRadius: 8,
+      ),
+      BoxShadow(
+        color: Colors.white, // Bayangan terang di bawah/kanan
+        offset: const Offset(4, 4),
+        blurRadius: 8,
+      ),
+    ],
+  );
+
+  // Dekorasi Pressed (Tertekan) - Digunakan untuk tombol yang aktif atau dipilih (seperti Prioritas)
+  static BoxDecoration get pressed => BoxDecoration(
+    color: AppColors.bg,
+    borderRadius: BorderRadius.circular(15),
+    boxShadow: [
+      // Bayangan dimasukkan (inverse shadow)
+      BoxShadow(
+        color: AppColors.text.withAlpha(128),
+        offset: const Offset(4, 4),
+        blurRadius: 8,
+        spreadRadius: -1,
+      ),
+      BoxShadow(
+        color: Colors.white.withAlpha(128),
+        offset: const Offset(-4, -4),
+        blurRadius: 8,
+        spreadRadius: -1,
+      ),
+    ],
   );
 }

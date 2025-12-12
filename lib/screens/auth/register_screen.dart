@@ -4,7 +4,6 @@ import '../../widgets/neumorphic_dialog.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/app_routes.dart';
 import '../../theme/theme_tokens.dart';
-import '../../utils/neumorphic_decoration.dart';
 import '../../widgets/neumorphic_textfield.dart';
 import '../../widgets/neumorphic_button.dart';
 

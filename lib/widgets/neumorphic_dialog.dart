@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../theme/theme_tokens.dart';
-import '../utils/neumorphic_decoration.dart';
 import 'neumorphic_button.dart';
 
 class NeumorphicDialog extends StatelessWidget {
