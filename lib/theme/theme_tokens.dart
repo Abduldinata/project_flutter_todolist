@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// ===============================================================
-///  WARNA GLOBAL
-/// ===============================================================
 class AppColors {
   /// Warna utama (light)
   static const bg = Color(0xFFFFF9F1); // background neumorphism
@@ -46,9 +43,7 @@ class AppColors {
   );
 }
 
-/// ===============================================================
-///  TYPOGRAPHY
-/// ===============================================================
+
 class AppTypography {
   // Style dasar
   static const title = TextStyle(
@@ -111,11 +106,7 @@ class AppTypography {
   }
 }
 
-/// ===============================================================
-///  APP STYLE (nama sama, isi alias ke AppTypography)
-/// ===============================================================
-/// Supaya kode lama yang pakai `AppStyle.title` tetap jalan,
-/// kita bikin AppStyle sebagai alias dari AppTypography.
+
 class AppStyle {
   static const title = TextStyle(
     color: AppColors.text,
