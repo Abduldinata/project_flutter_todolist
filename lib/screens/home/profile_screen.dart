@@ -118,8 +118,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _logout() async {
-    await Supabase.instance.client.auth.signOut();
+    await _supabaseService.signOut();
     Get.offAllNamed(AppRoutes.login);
+
   }
 
   @override
