@@ -35,8 +35,9 @@ class _InboxScreenState extends State<InboxScreen> {
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
+    } finally {
+      setState(() => loading = false);
     }
-    setState(() => loading = false);
   }
 
   Future<void> _toggleTaskCompletion(String taskId, bool currentValue) async {
@@ -44,7 +45,12 @@ class _InboxScreenState extends State<InboxScreen> {
       await _taskService.updateCompleted(taskId, !currentValue);
       await loadTasks();
     } catch (e) {
-      Get.snackbar("Error", "Gagal update: $e");
+      Get.snackbar(
+        "Error",
+        "Gagal update: ${e.toString()}",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     }
   }
 
@@ -71,26 +77,44 @@ class _InboxScreenState extends State<InboxScreen> {
       try {
         await _taskService.deleteTask(taskId);
         await loadTasks();
-        Get.snackbar("Success", "Task berhasil dihapus");
+        Get.snackbar(
+          "Success",
+          "Task berhasil dihapus",
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
       } catch (e) {
-        Get.snackbar("Error", "Gagal menghapus: $e");
+        Get.snackbar(
+          "Error",
+          "Gagal menghapus: ${e.toString()}",
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
       }
     }
   }
 
-  // Helper untuk cek apakah task hari ini
+  // Helper untuk cek apakah task hari ini (lebih aman: parse YYYY-MM-DD saja)
   bool _isTodayTask(Map<String, dynamic> task) {
     try {
       final taskDateStr = task['date']?.toString() ?? '';
       if (taskDateStr.isEmpty) return false;
 
-      final taskDate = DateTime.parse(taskDateStr.split('T')[0]);
+      final key = taskDateStr.split('T').first; // YYYY-MM-DD
+      final parts = key.split('-');
+      if (parts.length != 3) return false;
+
+      final taskDate = DateTime(
+        int.parse(parts[0]),
+        int.parse(parts[1]),
+        int.parse(parts[2]),
+      );
       final now = DateTime.now();
 
       return taskDate.year == now.year &&
           taskDate.month == now.month &&
           taskDate.day == now.day;
-    } catch (e) {
+    } catch (_) {
       return false;
     }
   }
@@ -104,6 +128,8 @@ class _InboxScreenState extends State<InboxScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
     // Filter tasks berdasarkan kategori
     final todayTasks = allTasks
         .where(
@@ -132,7 +158,10 @@ class _InboxScreenState extends State<InboxScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text("Inbox", style: AppStyle.title),
+                  Text(
+                    "Inbox",
+                    style: AppStyle.title.copyWith(color: scheme.onSurface),
+                  ),
                   Row(
                     children: [
                       IconButton(
@@ -142,16 +171,21 @@ class _InboxScreenState extends State<InboxScreen> {
                             builder: (ctx) => const SearchPopup(),
                           );
                         },
-                        icon: const Icon(Icons.search, size: 26),
+                        icon: Icon(
+                          Icons.search,
+                          size: 26,
+                          color: scheme.onSurface,
+                        ),
                       ),
                       GestureDetector(
-                        onTap: () {
-                          Get.to(() => const ProfileScreen());
-                        },
-                        child: const CircleAvatar(
+                        onTap: () => Get.to(() => const ProfileScreen()),
+                        child: CircleAvatar(
                           radius: 18,
-                          backgroundColor: Colors.white,
-                          child: Icon(Icons.person, color: Colors.grey),
+                          backgroundColor: scheme.surface,
+                          child: Icon(
+                            Icons.person,
+                            color: scheme.onSurface.withValues(alpha: 0.6),
+                          ),
                         ),
                       ),
                     ],
@@ -176,14 +210,22 @@ class _InboxScreenState extends State<InboxScreen> {
                         Icon(
                           Icons.inbox_outlined,
                           size: 64,
-                          color: Colors.grey[400],
+                          color: scheme.onSurface.withValues(alpha: 0.35),
                         ),
                         const SizedBox(height: 16),
-                        const Text("Inbox kosong", style: AppStyle.smallGray),
+                        Text(
+                          "Inbox kosong",
+                          style: AppStyle.smallGray.copyWith(
+                            color: scheme.onSurface.withValues(alpha: 0.7),
+                          ),
+                        ),
                         const SizedBox(height: 8),
                         Text(
                           "Tambahkan task pertama kamu",
-                          style: AppStyle.smallGray.copyWith(fontSize: 12),
+                          style: AppStyle.smallGray.copyWith(
+                            fontSize: 12,
+                            color: scheme.onSurface.withValues(alpha: 0.55),
+                          ),
                         ),
                       ],
                     ),
@@ -199,16 +241,18 @@ class _InboxScreenState extends State<InboxScreen> {
                       children: [
                         // Today Section
                         if (todayTasks.isNotEmpty) ...[
-                          _buildSectionHeader("Hari Ini", todayTasks.length),
+                          _buildSectionHeader(
+                            context,
+                            "Hari Ini",
+                            todayTasks.length,
+                          ),
                           ...todayTasks.map(
                             (task) => TaskTile(
                               task: task,
                               onToggleCompletion: _toggleTaskCompletion,
                               onDelete: _deleteTask,
-                              showDate:
-                                  false, // ❌ Tidak tampilkan tanggal (sudah jelas hari ini)
-                              compactMode:
-                                  false, // ✅ Tampilkan deskripsi normal
+                              showDate: false,
+                              compactMode: false,
                             ),
                           ),
                           const SizedBox(height: 24),
@@ -217,6 +261,7 @@ class _InboxScreenState extends State<InboxScreen> {
                         // History/Completed Section
                         if (historyTasks.isNotEmpty) ...[
                           _buildSectionHeader(
+                            context,
                             "History (Selesai)",
                             historyTasks.length,
                           ),
@@ -225,8 +270,8 @@ class _InboxScreenState extends State<InboxScreen> {
                               task: task,
                               onToggleCompletion: _toggleTaskCompletion,
                               onDelete: _deleteTask,
-                              showDate: true, // ✅ Tampilkan tanggal selesai
-                              compactMode: true, // ✅ Mode ringkas untuk history
+                              showDate: true,
+                              compactMode: true,
                             ),
                           ),
                           const SizedBox(height: 24),
@@ -234,16 +279,18 @@ class _InboxScreenState extends State<InboxScreen> {
 
                         // Upcoming/Other Tasks
                         if (otherTasks.isNotEmpty) ...[
-                          _buildSectionHeader("Lainnya", otherTasks.length),
+                          _buildSectionHeader(
+                            context,
+                            "Lainnya",
+                            otherTasks.length,
+                          ),
                           ...otherTasks.map(
                             (task) => TaskTile(
                               task: task,
                               onToggleCompletion: _toggleTaskCompletion,
                               onDelete: _deleteTask,
-                              showDate:
-                                  true, // ✅ Tampilkan tanggal (penting untuk konteks)
-                              compactMode:
-                                  false, // ✅ Tampilkan deskripsi normal
+                              showDate: true,
+                              compactMode: false,
                             ),
                           ),
                         ],
@@ -285,6 +332,7 @@ class _InboxScreenState extends State<InboxScreen> {
                 "Error",
                 "Gagal menambahkan task: ${e.toString()}",
                 backgroundColor: Colors.red,
+                colorText: Colors.white,
               );
             }
           }
@@ -304,23 +352,29 @@ class _InboxScreenState extends State<InboxScreen> {
     );
   }
 
-  Widget _buildSectionHeader(String title, int count) {
+  Widget _buildSectionHeader(BuildContext context, String title, int count) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
-          Text(title, style: AppStyle.subtitle),
+          Text(
+            title,
+            style: AppStyle.subtitle.copyWith(color: scheme.onSurface),
+          ),
           const SizedBox(width: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
-              color: AppColors.blue.withAlpha((0.1 * 255).round()),
+              color: scheme.primary.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
               count.toString(),
               style: AppStyle.smallGray.copyWith(
-                color: AppColors.blue,
+                color: scheme.primary,
                 fontWeight: FontWeight.bold,
               ),
             ),

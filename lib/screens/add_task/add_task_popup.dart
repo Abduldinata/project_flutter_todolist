@@ -15,14 +15,13 @@ class AddTaskPopup extends StatefulWidget {
 class _AddTaskPopupState extends State<AddTaskPopup> {
   final TextEditingController taskCtrl = TextEditingController();
   final TextEditingController descCtrl = TextEditingController();
+
   DateTime? selectedDate;
   Priority selectedPriority = Priority.medium;
 
-  String _formatDate(DateTime date) {
-    return "${date.day}/${date.month}/${date.year}";
-  }
+  String _formatDate(DateTime date) => "${date.day}/${date.month}/${date.year}";
 
-  // Helper untuk convert Priority ke String
+  // Helper untuk convert Priority ke String (buat disimpan ke DB)
   String _priorityToString(Priority priority) {
     switch (priority) {
       case Priority.high:
@@ -34,41 +33,38 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
     }
   }
 
-  // Widget untuk tombol Prioritas dengan style Neumorphism
-  Widget _buildPriorityButton(Priority priority, String label) {
-    bool isSelected = selectedPriority == priority;
-
-    // Tentukan warna aksen berdasarkan prioritas
-    Color accentColor;
-    switch (priority) {
+  String _priorityLabel(Priority p) {
+    switch (p) {
       case Priority.high:
-        accentColor = Colors.red.shade600;
-        break;
+        return "Tinggi";
       case Priority.medium:
-        accentColor = Colors.orange.shade600;
-        break;
+        return "Sedang";
       case Priority.low:
-        accentColor = Colors.green.shade600;
-        break;
+        return "Rendah";
     }
+  }
+
+  // ✅ Prioritas mengikuti theme (seperti FilterScreen)
+  Widget _buildPriorityButton(BuildContext context, Priority priority) {
+    final scheme = Theme.of(context).colorScheme;
+    final isSelected = selectedPriority == priority;
+
+    final bgColor = isSelected ? scheme.primary : scheme.surface;
+    final textColor = isSelected
+        ? scheme.onPrimary
+        : scheme.onSurface.withValues(alpha: 0.8);
 
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          selectedPriority = priority;
-        });
-      },
+      onTap: () => setState(() => selectedPriority = priority),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: isSelected
-            ? Neu.pressed.copyWith(
-                color: accentColor.withAlpha((0.8 * 255).round()),
-              )
-            : Neu.convex,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: (isSelected ? Neu.pressed : Neu.convex).copyWith(
+          color: bgColor,
+        ),
         child: Text(
-          label,
+          _priorityLabel(priority),
           style: AppStyle.normal.copyWith(
-            color: isSelected ? Colors.white : AppColors.text,
+            color: textColor,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
@@ -83,95 +79,128 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
   }
 
   void _saveTask() {
-    // Validasi input
-    if (taskCtrl.text.isEmpty) {
+    if (taskCtrl.text.trim().isEmpty) {
       _showError("Nama tugas tidak boleh kosong");
       return;
     }
-
     if (selectedDate == null) {
       _showError("Pilih tanggal jatuh tempo");
       return;
     }
 
     Navigator.pop(context, {
-      "text": taskCtrl.text,
-      "description": descCtrl.text.isEmpty ? null : descCtrl.text,
+      "text": taskCtrl.text.trim(),
+      "description": descCtrl.text.trim().isEmpty ? null : descCtrl.text.trim(),
       "date": selectedDate!,
-      "priority": _priorityToString(selectedPriority), // ✅ Kirim priority
+      "priority": _priorityToString(selectedPriority),
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    final surface = scheme.surface;
+    final textColor = scheme.onSurface;
+    final hintColor = scheme.onSurface.withValues(alpha: 0.55);
+    final iconHintColor = scheme.onSurface.withValues(alpha: 0.5);
+
     return Scaffold(
-      backgroundColor: AppColors.bg.withAlpha((0.9 * 255).round()),
+      backgroundColor: theme.scaffoldBackgroundColor.withValues(alpha: 0.92),
       body: Center(
         child: Container(
           width: 330,
           padding: const EdgeInsets.all(22),
-          decoration: Neu.concave,
+          decoration: Neu.concave.copyWith(color: surface),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text("Add Task", style: AppStyle.title),
+              Text(
+                "Add Task",
+                style: AppStyle.title.copyWith(color: textColor),
+              ),
               const SizedBox(height: 20),
 
-              // 1. Nama Tugas (Task Title) - REQUIRED
+              // 1) Nama Tugas (REQUIRED)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: Neu.convex,
+                decoration: Neu.convex.copyWith(color: surface),
                 child: TextField(
                   controller: taskCtrl,
+                  style: AppStyle.normal.copyWith(color: textColor),
                   decoration: InputDecoration(
                     hintText: "Nama Tugas*",
                     border: InputBorder.none,
-                    errorText: taskCtrl.text.isEmpty ? null : null,
+                    hintStyle: AppStyle.smallGray.copyWith(color: hintColor),
                   ),
                 ),
               ),
               const SizedBox(height: 18),
 
-              // 2. Deskripsi Tugas (Task Description) - OPTIONAL
+              // 2) Deskripsi (OPTIONAL)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: Neu.convex,
+                decoration: Neu.convex.copyWith(color: surface),
                 child: TextField(
                   controller: descCtrl,
                   maxLines: 3,
-                  decoration: const InputDecoration(
+                  style: AppStyle.normal.copyWith(color: textColor),
+                  decoration: InputDecoration(
                     hintText: "Deskripsi/Catatan (Opsional)",
                     border: InputBorder.none,
+                    hintStyle: AppStyle.smallGray.copyWith(color: hintColor),
                   ),
                 ),
               ),
               const SizedBox(height: 18),
 
-              // 3. Pilihan Prioritas - FUTURE FEATURE
-              const Text("Prioritas:", style: AppStyle.subtitle),
+              // 3) Prioritas (Theme-based)
+              Text(
+                "Prioritas:",
+                style: AppStyle.subtitle.copyWith(color: textColor),
+              ),
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildPriorityButton(Priority.high, "Tinggi"),
-                  _buildPriorityButton(Priority.medium, "Sedang"),
-                  _buildPriorityButton(Priority.low, "Rendah"),
+                  _buildPriorityButton(context, Priority.high),
+                  _buildPriorityButton(context, Priority.medium),
+                  _buildPriorityButton(context, Priority.low),
                 ],
               ),
               const SizedBox(height: 18),
 
-              // 4. Date selector (Tanggal Jatuh Tempo) - REQUIRED
+              // 4) Date Selector (REQUIRED)
               GestureDetector(
                 onTap: () async {
-                  DateTime? picked = await showDatePicker(
+                  final picked = await showDatePicker(
                     context: context,
                     initialDate: selectedDate ?? DateTime.now(),
                     firstDate: DateTime.now().subtract(
                       const Duration(days: 365),
                     ),
                     lastDate: DateTime.now().add(const Duration(days: 365)),
+                    builder: (context, child) {
+                      return Theme(
+                        data: theme.copyWith(
+                          dialogTheme: DialogThemeData(
+                            backgroundColor: scheme.surface,
+                          ),
+                          colorScheme: isDark
+                              ? scheme.copyWith(
+                                  surface: scheme.surface,
+                                  onSurface: Colors.white,
+                                )
+                              : scheme,
+                        ),
+                        child: child!,
+                      );
+                    },
                   );
+
                   if (picked != null) {
                     setState(() => selectedDate = picked);
                   }
@@ -182,7 +211,7 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
                     vertical: 14,
                     horizontal: 16,
                   ),
-                  decoration: Neu.convex,
+                  decoration: Neu.convex.copyWith(color: surface),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -191,16 +220,12 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
                             ? "Pilih Tanggal Jatuh Tempo*"
                             : "Jatuh Tempo: ${_formatDate(selectedDate!)}",
                         style: AppStyle.normal.copyWith(
-                          color: selectedDate == null
-                              ? Colors.grey
-                              : AppColors.text,
+                          color: selectedDate == null ? hintColor : textColor,
                         ),
                       ),
                       Icon(
                         Icons.calendar_today_outlined,
-                        color: selectedDate == null
-                            ? Colors.grey
-                            : AppColors.text,
+                        color: selectedDate == null ? iconHintColor : textColor,
                       ),
                     ],
                   ),
@@ -208,11 +233,11 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
               ),
               const SizedBox(height: 26),
 
-              // Button row (Cancel and Save)
+              // Buttons
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Cancel Button
+                  // Cancel
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
                     child: Container(
@@ -220,12 +245,15 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
                         vertical: 14,
                         horizontal: 26,
                       ),
-                      decoration: Neu.convex,
-                      child: const Text("Batal", style: AppStyle.normal),
+                      decoration: Neu.convex.copyWith(color: surface),
+                      child: Text(
+                        "Batal",
+                        style: AppStyle.normal.copyWith(color: textColor),
+                      ),
                     ),
                   ),
 
-                  // Save Button
+                  // Save
                   GestureDetector(
                     onTap: _saveTask,
                     child: Container(
@@ -234,10 +262,11 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
                         horizontal: 26,
                       ),
                       decoration: Neu.convex.copyWith(
+                        color: surface,
                         boxShadow: [
-                          ...Neu.convex.boxShadow!,
+                          ...?Neu.convex.boxShadow,
                           BoxShadow(
-                            color: AppColors.blue.withAlpha(128),
+                            color: scheme.primary.withValues(alpha: 0.35),
                             offset: const Offset(0, 4),
                             blurRadius: 10,
                           ),
@@ -246,7 +275,7 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
                       child: Text(
                         "Simpan",
                         style: AppStyle.normal.copyWith(
-                          color: AppColors.blue,
+                          color: scheme.primary,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -259,5 +288,12 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    taskCtrl.dispose();
+    descCtrl.dispose();
+    super.dispose();
   }
 }

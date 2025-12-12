@@ -26,6 +26,8 @@ class _SearchPopupState extends State<SearchPopup> {
       setState(() {
         searchResults = [];
         hasSearched = true;
+        searching = false;
+        _searchQuery = null;
       });
       return;
     }
@@ -38,12 +40,10 @@ class _SearchPopupState extends State<SearchPopup> {
     try {
       final allTasks = await _taskService.getAllTasks();
 
-      // Case-insensitive search in title and description
+      final searchLower = query.toLowerCase();
       final results = allTasks.where((task) {
         final title = task['title']?.toString().toLowerCase() ?? '';
         final description = task['description']?.toString().toLowerCase() ?? '';
-        final searchLower = query.toLowerCase();
-
         return title.contains(searchLower) || description.contains(searchLower);
       }).toList();
 
@@ -67,12 +67,16 @@ class _SearchPopupState extends State<SearchPopup> {
   Future<void> _toggleTaskCompletion(String taskId, bool currentValue) async {
     try {
       await _taskService.updateCompleted(taskId, !currentValue);
-      // Refresh search results
       if (_searchQuery != null) {
         await _performSearch(_searchQuery!);
       }
     } catch (e) {
-      Get.snackbar("Error", "Gagal update: $e");
+      Get.snackbar(
+        "Error",
+        "Gagal update: ${e.toString()}",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     }
   }
 
@@ -98,13 +102,22 @@ class _SearchPopupState extends State<SearchPopup> {
     if (confirm == true) {
       try {
         await _taskService.deleteTask(taskId);
-        // Refresh search results
         if (_searchQuery != null) {
           await _performSearch(_searchQuery!);
         }
-        Get.snackbar("Success", "Task berhasil dihapus");
+        Get.snackbar(
+          "Success",
+          "Task berhasil dihapus",
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
       } catch (e) {
-        Get.snackbar("Error", "Gagal menghapus: $e");
+        Get.snackbar(
+          "Error",
+          "Gagal menghapus: ${e.toString()}",
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
       }
     }
   }
@@ -114,12 +127,16 @@ class _SearchPopupState extends State<SearchPopup> {
       _searchCtrl.clear();
       searchResults = [];
       hasSearched = false;
+      searching = false;
       _searchQuery = null;
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(20),
@@ -128,7 +145,7 @@ class _SearchPopupState extends State<SearchPopup> {
         constraints: BoxConstraints(
           maxHeight: MediaQuery.of(context).size.height * 0.8,
         ),
-        decoration: Neu.concave,
+        decoration: Neu.concave.copyWith(color: scheme.surface),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -136,7 +153,7 @@ class _SearchPopupState extends State<SearchPopup> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppColors.bg,
+                color: scheme.surface,
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),
@@ -147,10 +164,13 @@ class _SearchPopupState extends State<SearchPopup> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text("Search Tasks", style: AppStyle.title),
+                      Text(
+                        "Search Tasks",
+                        style: AppStyle.title.copyWith(color: scheme.onSurface),
+                      ),
                       IconButton(
                         onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.close),
+                        icon: Icon(Icons.close, color: scheme.onSurface),
                       ),
                     ],
                   ),
@@ -159,23 +179,32 @@ class _SearchPopupState extends State<SearchPopup> {
                   // Search Bar
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: Neu.convex,
+                    decoration: Neu.convex.copyWith(color: scheme.surface),
                     child: Row(
                       children: [
                         Expanded(
                           child: TextField(
                             controller: _searchCtrl,
                             autofocus: true,
-                            decoration: const InputDecoration(
+                            style: AppStyle.normal.copyWith(
+                              color: scheme.onSurface,
+                            ),
+                            decoration: InputDecoration(
                               hintText: "Cari task...",
                               border: InputBorder.none,
-                              hintStyle: AppStyle.smallGray,
+                              hintStyle: AppStyle.smallGray.copyWith(
+                                color: scheme.onSurface.withValues(alpha: 0.55),
+                              ),
                             ),
                             onChanged: (value) {
+                              // supaya tombol clear langsung update
+                              setState(() {});
+
                               // Debounce search
                               Future.delayed(
                                 const Duration(milliseconds: 300),
                                 () {
+                                  if (!mounted) return;
                                   if (_searchCtrl.text == value) {
                                     _performSearch(value);
                                   }
@@ -188,11 +217,19 @@ class _SearchPopupState extends State<SearchPopup> {
                         if (_searchCtrl.text.isNotEmpty)
                           IconButton(
                             onPressed: _clearSearch,
-                            icon: const Icon(Icons.clear, size: 20),
+                            icon: Icon(
+                              Icons.clear,
+                              size: 20,
+                              color: scheme.onSurface.withValues(alpha: 0.7),
+                            ),
                           ),
                         IconButton(
                           onPressed: () => _performSearch(_searchCtrl.text),
-                          icon: const Icon(Icons.search, size: 20),
+                          icon: Icon(
+                            Icons.search,
+                            size: 20,
+                            color: scheme.onSurface,
+                          ),
                         ),
                       ],
                     ),
@@ -205,13 +242,13 @@ class _SearchPopupState extends State<SearchPopup> {
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: AppColors.bg.withAlpha((0.9 * 255).round()),
+                  color: scheme.surface,
                   borderRadius: const BorderRadius.only(
                     bottomLeft: Radius.circular(16),
                     bottomRight: Radius.circular(16),
                   ),
                 ),
-                child: _buildSearchResults(),
+                child: _buildSearchResults(context),
               ),
             ),
           ],
@@ -220,7 +257,9 @@ class _SearchPopupState extends State<SearchPopup> {
     );
   }
 
-  Widget _buildSearchResults() {
+  Widget _buildSearchResults(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     if (searching) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -230,13 +269,25 @@ class _SearchPopupState extends State<SearchPopup> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.search_outlined, size: 64, color: Colors.grey[400]),
+            Icon(
+              Icons.search_outlined,
+              size: 64,
+              color: scheme.onSurface.withValues(alpha: 0.35),
+            ),
             const SizedBox(height: 16),
-            const Text("Cari task kamu", style: AppStyle.smallGray),
+            Text(
+              "Cari task kamu",
+              style: AppStyle.smallGray.copyWith(
+                color: scheme.onSurface.withValues(alpha: 0.7),
+              ),
+            ),
             const SizedBox(height: 8),
             Text(
               "Ketik di search bar untuk mencari task",
-              style: AppStyle.smallGray.copyWith(fontSize: 12),
+              style: AppStyle.smallGray.copyWith(
+                fontSize: 12,
+                color: scheme.onSurface.withValues(alpha: 0.55),
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -245,19 +296,32 @@ class _SearchPopupState extends State<SearchPopup> {
     }
 
     if (searchResults.isEmpty) {
+      final q = _searchCtrl.text;
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.search_off_outlined, size: 64, color: Colors.grey[400]),
+            Icon(
+              Icons.search_off_outlined,
+              size: 64,
+              color: scheme.onSurface.withValues(alpha: 0.35),
+            ),
             const SizedBox(height: 16),
-            Text("Tidak ditemukan", style: AppStyle.smallGray),
+            Text(
+              "Tidak ditemukan",
+              style: AppStyle.smallGray.copyWith(
+                color: scheme.onSurface.withValues(alpha: 0.7),
+              ),
+            ),
             const SizedBox(height: 8),
             Text(
-              _searchCtrl.text.isNotEmpty
-                  ? "Tidak ada task dengan kata kunci '${_searchCtrl.text}'"
+              q.isNotEmpty
+                  ? "Tidak ada task dengan kata kunci '$q'"
                   : "Masukkan kata kunci pencarian",
-              style: AppStyle.smallGray.copyWith(fontSize: 12),
+              style: AppStyle.smallGray.copyWith(
+                fontSize: 12,
+                color: scheme.onSurface.withValues(alpha: 0.55),
+              ),
               textAlign: TextAlign.center,
             ),
           ],

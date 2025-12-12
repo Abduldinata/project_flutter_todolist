@@ -16,8 +16,9 @@ class UpcomingScreen extends StatefulWidget {
 
 class _UpcomingScreenState extends State<UpcomingScreen> {
   final TaskService _taskService = TaskService();
+
   List<Map<String, dynamic>> tasks = [];
-  List<DateTime> upcomingDates = []; // ✅ Daftar tanggal unik dari tasks
+  List<DateTime> upcomingDates = []; // daftar tanggal unik dari tasks
   bool loading = true;
   int navIndex = 2;
 
@@ -25,10 +26,13 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
     setState(() => loading = true);
     try {
       final fetchedTasks = await _taskService.getUpcomingTasks();
+
+      // ekstrak tanggal unik (tanpa setState di dalam helper)
+      final dates = _extractUniqueDates(fetchedTasks);
+
       setState(() {
         tasks = fetchedTasks;
-        // ✅ Ekstrak tanggal unik dari tasks
-        _extractUniqueDates(fetchedTasks);
+        upcomingDates = dates;
       });
     } catch (e) {
       debugPrint("Error loading upcoming tasks: $e");
@@ -38,35 +42,42 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
+    } finally {
+      setState(() => loading = false);
     }
-    setState(() => loading = false);
   }
 
-  // ✅ Method untuk ekstrak tanggal unik dari tasks
-  void _extractUniqueDates(List<Map<String, dynamic>> taskList) {
-    final Set<String> dateStrings = {};
+  // Ekstrak tanggal unik dari tasks (lebih aman, tidak memanggil setState)
+  List<DateTime> _extractUniqueDates(List<Map<String, dynamic>> taskList) {
+    final Set<String> dateKeys = {};
     final List<DateTime> dates = [];
 
     for (final task in taskList) {
-      final dateStr = task['date']?.toString();
-      if (dateStr != null && dateStr.isNotEmpty) {
-        // Hanya tambah tanggal yang belum ada
-        if (!dateStrings.contains(dateStr)) {
-          dateStrings.add(dateStr);
-          try {
-            // Parse string ke DateTime
-            final date = DateTime.parse(dateStr.split('T')[0]);
-            dates.add(date);
-          } catch (e) {
-            debugPrint("Error parsing date: $dateStr");
+      final raw = task['date']?.toString();
+      if (raw == null || raw.isEmpty) continue;
+
+      // Kunci unik tanggal (ambil YYYY-MM-DD saja)
+      final key = raw.split('T').first;
+
+      if (!dateKeys.contains(key)) {
+        dateKeys.add(key);
+        try {
+          // Parse aman untuk "YYYY-MM-DD"
+          final parts = key.split('-');
+          if (parts.length == 3) {
+            final y = int.parse(parts[0]);
+            final m = int.parse(parts[1]);
+            final d = int.parse(parts[2]);
+            dates.add(DateTime(y, m, d));
           }
+        } catch (e) {
+          debugPrint("Error parsing date: $raw");
         }
       }
     }
 
-    // ✅ Urutkan dari tanggal terdekat ke terjauh
     dates.sort((a, b) => a.compareTo(b));
-    setState(() => upcomingDates = dates);
+    return dates;
   }
 
   Future<void> _toggleTaskCompletion(String taskId, bool currentValue) async {
@@ -78,6 +89,7 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
         "Error",
         "Gagal update: ${e.toString()}",
         backgroundColor: Colors.red,
+        colorText: Colors.white,
       );
     }
   }
@@ -116,6 +128,7 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
           "Error",
           "Gagal menghapus: ${e.toString()}",
           backgroundColor: Colors.red,
+          colorText: Colors.white,
         );
       }
     }
@@ -129,42 +142,61 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    final bg = theme.scaffoldBackgroundColor;
+
+    // Shadow neumorphic adaptif (dark/light)
+    final shadowLight = isDark
+        ? Colors.black.withValues(alpha: 0.35)
+        : Colors.white.withValues(alpha: 0.9);
+
+    final shadowDark = isDark
+        ? Colors.black.withValues(alpha: 0.80)
+        : const Color(0xFFBEBEBE).withValues(alpha: 0.9);
+
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: bg,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text("Upcoming", style: AppStyle.title),
+              Text(
+                "Upcoming",
+                style: AppStyle.title.copyWith(color: scheme.onSurface),
+              ),
               const SizedBox(height: 10),
 
-              // ✅ DYNAMIC DATES BAR - Hanya tampilkan jika ada upcomingDates
+              // Dynamic Dates Bar
               if (upcomingDates.isNotEmpty) ...[
                 SizedBox(
-                  height: 40,
+                  height: 44,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: upcomingDates.length,
                     separatorBuilder: (_, __) => const SizedBox(width: 10),
                     itemBuilder: (_, i) {
                       final d = upcomingDates[i];
+
                       return Container(
-                        width: 40,
+                        width: 44,
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: AppColors.bg,
+                          color: scheme.surface,
                           borderRadius: BorderRadius.circular(14),
-                          boxShadow: const [
+                          boxShadow: [
                             BoxShadow(
-                              color: Colors.white,
-                              offset: Offset(-3, -3),
+                              color: shadowLight,
+                              offset: const Offset(-3, -3),
                               blurRadius: 6,
                             ),
                             BoxShadow(
-                              color: Color(0xFFBEBEBE),
-                              offset: Offset(4, 4),
+                              color: shadowDark,
+                              offset: const Offset(4, 4),
                               blurRadius: 8,
                             ),
                           ],
@@ -174,13 +206,15 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
                           children: [
                             Text(
                               d.day.toString(),
-                              style: AppStyle.normal,
+                              style: AppStyle.normal.copyWith(
+                                color: scheme.onSurface,
+                              ),
                             ),
                             Text(
                               _monthShort(d.month),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 10,
-                                color: Colors.grey,
+                                color: scheme.onSurface.withValues(alpha: 0.6),
                               ),
                             ),
                           ],
@@ -192,13 +226,13 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
                 const SizedBox(height: 24),
               ],
 
-              Text("Tugas yang akan datang", style: AppStyle.subtitle),
+              Text(
+                "Tugas yang akan datang",
+                style: AppStyle.subtitle.copyWith(color: scheme.onSurface),
+              ),
               const SizedBox(height: 12),
 
-              // Task List
-              Expanded(
-                child: _buildTaskList(),
-              ),
+              Expanded(child: _buildTaskList()),
             ],
           ),
         ),
@@ -211,7 +245,9 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
             MaterialPageRoute(builder: (ctx) => const AddTaskPopup()),
           );
 
-          if (result != null && result['text'] != null && result['date'] != null) {
+          if (result != null &&
+              result['text'] != null &&
+              result['date'] != null) {
             try {
               await _taskService.insertTask(
                 title: result['text'].toString(),
@@ -231,6 +267,7 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
                 "Error",
                 "Gagal menambahkan task: ${e.toString()}",
                 backgroundColor: Colors.red,
+                colorText: Colors.white,
               );
             }
           }
@@ -251,6 +288,9 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
   }
 
   Widget _buildTaskList() {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
     if (loading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -263,17 +303,22 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
             Icon(
               Icons.calendar_today_outlined,
               size: 64,
-              color: Colors.grey[400],
+              color: scheme.onSurface.withValues(alpha: 0.35),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               "Belum ada tugas upcoming",
-              style: AppStyle.smallGray,
+              style: AppStyle.smallGray.copyWith(
+                color: scheme.onSurface.withValues(alpha: 0.7),
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               "Tambah task dengan tanggal besok atau seterusnya",
-              style: AppStyle.smallGray.copyWith(fontSize: 12),
+              style: AppStyle.smallGray.copyWith(
+                fontSize: 12,
+                color: scheme.onSurface.withValues(alpha: 0.55),
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -286,10 +331,10 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
       itemCount: tasks.length,
       itemBuilder: (_, index) {
         final task = tasks[index];
-        
+
         return TaskTile(
           task: task,
-          onToggleCompletion: (taskId, currentValue) => 
+          onToggleCompletion: (taskId, currentValue) =>
               _toggleTaskCompletion(taskId, currentValue),
           onDelete: (taskId, title) => _deleteTask(taskId, title),
           showDate: true,
@@ -299,11 +344,20 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
     );
   }
 
-  // Helper functions
   String _monthShort(int m) {
     const months = [
-      "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
-      "Jul", "Agu", "Sep", "Okt", "Nov", "Des"
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "Mei",
+      "Jun",
+      "Jul",
+      "Agu",
+      "Sep",
+      "Okt",
+      "Nov",
+      "Des",
     ];
     return months[m - 1];
   }
