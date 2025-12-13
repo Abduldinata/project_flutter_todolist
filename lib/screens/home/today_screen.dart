@@ -21,14 +21,25 @@ class _TodayScreenState extends State<TodayScreen> {
   bool loading = true;
   int navIndex = 1;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      loadTasks();
+    });
+  }
+
   Future<void> loadTasks() async {
+    if (!mounted) return;
+
     setState(() => loading = true);
     try {
       final fetchedTasks = await _taskService.getTasksByDate(DateTime.now());
-      debugPrint("DEBUG Tasks: ${fetchedTasks.length} items");
+      if (!mounted) return;
       setState(() => tasks = fetchedTasks);
     } catch (e) {
       debugPrint("Error loading tasks: $e");
+      if (!mounted) return;
       Get.snackbar(
         "Error",
         "Gagal memuat tasks: ${e.toString()}",
@@ -36,6 +47,7 @@ class _TodayScreenState extends State<TodayScreen> {
         colorText: Colors.white,
       );
     } finally {
+      if (!mounted) return;
       setState(() => loading = false);
     }
   }
@@ -55,7 +67,7 @@ class _TodayScreenState extends State<TodayScreen> {
   }
 
   Future<void> _deleteTask(String taskId, String title) async {
-    final confirm = await Get.dialog(
+    final confirm = await Get.dialog<bool>(
       AlertDialog(
         title: const Text("Hapus Task"),
         content: Text("Yakin hapus '$title'?"),
@@ -82,6 +94,7 @@ class _TodayScreenState extends State<TodayScreen> {
           "Task berhasil dihapus",
           backgroundColor: Colors.green,
           colorText: Colors.white,
+          duration: const Duration(seconds: 2),
         );
       } catch (e) {
         Get.snackbar(
@@ -95,19 +108,13 @@ class _TodayScreenState extends State<TodayScreen> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    loadTasks();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
     final DateTime now = DateTime.now();
     final String formatted =
-        "${now.day} ${_month(now.month)} · ${_weekday(now.weekday)}";
+        "${now.day} ${_month(now.month)} ${now.year} · ${_weekday(now.weekday)}";
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -120,19 +127,31 @@ class _TodayScreenState extends State<TodayScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    "Today",
-                    style: AppStyle.title.copyWith(color: scheme.onSurface),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Today",
+                        style: AppStyle.title.copyWith(color: scheme.onSurface),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        formatted,
+                        style: AppStyle.smallGray.copyWith(
+                          color: scheme.onSurface.withOpacity(0.6),
+                        ),
+                      ),
+                    ],
                   ),
                   GestureDetector(
                     onTap: () => Get.to(() => const CompletedScreen()),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
+                        horizontal: 16,
+                        vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: scheme.primary.withValues(alpha: 0.12),
+                        color: scheme.primary.withOpacity(0.12),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
@@ -148,6 +167,7 @@ class _TodayScreenState extends State<TodayScreen> {
                             style: AppStyle.normal.copyWith(
                               color: scheme.primary,
                               fontSize: 14,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
@@ -157,20 +177,21 @@ class _TodayScreenState extends State<TodayScreen> {
                 ],
               ),
 
-              const SizedBox(height: 4),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  formatted,
-                  style: AppStyle.smallGray.copyWith(
-                    color: scheme.onSurface.withValues(alpha: 0.6),
-                  ),
-                ),
-              ),
               const SizedBox(height: 20),
 
+              // Progress Indicator
+              if (tasks.isNotEmpty) ...[
+                _buildProgressIndicator(),
+                const SizedBox(height: 20),
+              ],
+
               // TASK LIST
-              Expanded(child: _buildTaskList()),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: loadTasks,
+                  child: _buildTaskList(),
+                ),
+              ),
             ],
           ),
         ),
@@ -179,9 +200,8 @@ class _TodayScreenState extends State<TodayScreen> {
       // ADD TASK BUTTON
       floatingActionButton: AddTaskButton(
         onTap: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (ctx) => const AddTaskPopup()),
+          final result = await Get.to<Map<String, dynamic>>(
+            () => const AddTaskPopup(),
           );
 
           if (result != null &&
@@ -200,6 +220,7 @@ class _TodayScreenState extends State<TodayScreen> {
                 "Task berhasil ditambahkan",
                 backgroundColor: Colors.green,
                 colorText: Colors.white,
+                duration: const Duration(seconds: 2),
               );
             } catch (e) {
               Get.snackbar(
@@ -219,17 +240,72 @@ class _TodayScreenState extends State<TodayScreen> {
         onTap: (i) {
           if (i == navIndex) return;
           setState(() => navIndex = i);
-          if (i == 0) Get.offAllNamed("/inbox");
-          if (i == 2) Get.offAllNamed("/upcoming");
-          if (i == 3) Get.offAllNamed("/filter");
+          switch (i) {
+            case 0:
+              Get.offAllNamed("/inbox");
+              break;
+            case 2:
+              Get.offAllNamed("/upcoming");
+              break;
+            case 3:
+              Get.offAllNamed("/filter");
+              break;
+            default:
+              Get.offAllNamed("/today");
+          }
         },
       ),
     );
   }
 
+  Widget _buildProgressIndicator() {
+    final completedCount = tasks
+        .where((task) => task['is_done'] == true)
+        .length;
+    final totalCount = tasks.length;
+    final percentage = totalCount > 0 ? (completedCount / totalCount) : 0.0;
+
+    final scheme = Theme.of(context).colorScheme;
+
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              "Progress Hari Ini",
+              style: AppStyle.subtitle.copyWith(color: scheme.onSurface),
+            ),
+            Text(
+              "${(percentage * 100).toInt()}%",
+              style: AppStyle.normal.copyWith(
+                color: scheme.primary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        LinearProgressIndicator(
+          value: percentage,
+          backgroundColor: scheme.surface,
+          color: scheme.primary,
+          borderRadius: BorderRadius.circular(10),
+          minHeight: 10,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          "$completedCount dari $totalCount task selesai",
+          style: AppStyle.smallGray.copyWith(
+            color: scheme.onSurface.withOpacity(0.6),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildTaskList() {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
+    final scheme = Theme.of(context).colorScheme;
 
     if (loading) {
       return const Center(child: CircularProgressIndicator());
@@ -243,23 +319,25 @@ class _TodayScreenState extends State<TodayScreen> {
             Icon(
               Icons.check_circle_outline,
               size: 64,
-              color: scheme.onSurface.withValues(alpha: 0.35),
+              color: scheme.onSurface.withOpacity(0.35),
             ),
             const SizedBox(height: 16),
             Text(
               "Belum ada tugas untuk hari ini",
-              style: AppStyle.smallGray.copyWith(
-                color: scheme.onSurface.withValues(alpha: 0.7),
+              style: AppStyle.subtitle.copyWith(
+                color: scheme.onSurface.withOpacity(0.7),
               ),
             ),
             const SizedBox(height: 8),
-            Text(
-              "Tambahkan tugas baru dengan tombol +",
-              style: AppStyle.smallGray.copyWith(
-                fontSize: 12,
-                color: scheme.onSurface.withValues(alpha: 0.55),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Text(
+                "Tambahkan tugas baru dengan tombol + di bawah",
+                style: AppStyle.smallGray.copyWith(
+                  color: scheme.onSurface.withOpacity(0.55),
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -267,16 +345,14 @@ class _TodayScreenState extends State<TodayScreen> {
     }
 
     return ListView.builder(
-      physics: const BouncingScrollPhysics(),
+      physics: const AlwaysScrollableScrollPhysics(),
       itemCount: tasks.length,
       itemBuilder: (_, index) {
         final task = tasks[index];
-
         return TaskTile(
           task: task,
-          onToggleCompletion: (taskId, currentValue) =>
-              _toggleTaskCompletion(taskId, currentValue),
-          onDelete: (taskId, title) => _deleteTask(taskId, title),
+          onToggleCompletion: _toggleTaskCompletion,
+          onDelete: _deleteTask,
           showDate: false,
           compactMode: false,
         );
