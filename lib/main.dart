@@ -11,6 +11,7 @@ import 'theme/theme_controller.dart';
 // screens
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
+import 'screens/auth/change_password_screen.dart';
 import 'screens/home/inbox_screen.dart';
 import 'screens/home/today_screen.dart';
 import 'screens/home/upcoming_screen.dart';
@@ -54,6 +55,7 @@ class MyApp extends StatelessWidget {
           // AUTH
           GetPage(name: AppRoutes.login, page: () => const LoginScreen()),
           GetPage(name: AppRoutes.register, page: () => const RegisterScreen()),
+          GetPage(name: AppRoutes.changePassword, page: () => const ChangePasswordScreen()),
 
           // HOME PAGES
           GetPage(name: AppRoutes.inbox, page: () => const InboxScreen()),

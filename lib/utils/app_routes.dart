@@ -8,4 +8,5 @@ class AppRoutes {
   static const upcoming = '/upcoming';
   static const filter = '/filter';
   static const settings = '/settings';
+  static const changePassword = '/change-password';
 }

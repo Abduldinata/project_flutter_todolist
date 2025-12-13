@@ -57,18 +57,32 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
     return GestureDetector(
       onTap: () => setState(() => selectedPriority = priority),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        clipBehavior: Clip.antiAlias,
         decoration:
             (isSelected
                     ? (isDark ? NeuDark.pressed : Neu.pressed)
                     : (isDark ? NeuDark.convex : Neu.convex))
-                .copyWith(color: bgColor),
+                .copyWith(
+          color: bgColor,
+          border: Border.all(
+            color: isSelected
+                ? (isDark
+                    ? scheme.primary.withValues(alpha: 0.5)
+                    : scheme.primary.withValues(alpha: 0.3))
+                : (isDark
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : Colors.grey.withValues(alpha: 0.2)),
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
         child: Text(
           _priorityLabel(priority),
           style: AppStyle.normal.copyWith(
             color: textColor,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
           ),
+          textAlign: TextAlign.center,
         ),
       ),
     );
@@ -114,9 +128,16 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
       body: Center(
         child: Container(
           width: 330,
-          padding: const EdgeInsets.all(22),
+          padding: const EdgeInsets.all(24),
+          clipBehavior: Clip.antiAlias,
           decoration: (isDark ? NeuDark.concave : Neu.concave).copyWith(
             color: surface,
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.15)
+                  : Colors.grey.withValues(alpha: 0.25),
+              width: 1.5,
+            ),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -130,9 +151,15 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
 
               // 1) Nama Tugas (REQUIRED)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                clipBehavior: Clip.antiAlias,
                 decoration: (isDark ? NeuDark.convex : Neu.convex).copyWith(
                   color: surface,
+                  border: Border.all(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : Colors.grey.withValues(alpha: 0.2),
+                    width: 1,
+                  ),
                 ),
                 child: TextField(
                   controller: taskCtrl,
@@ -140,6 +167,10 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
                   decoration: InputDecoration(
                     hintText: "Nama Tugas*",
                     border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 16,
+                    ),
                     hintStyle: AppStyle.smallGray.copyWith(color: hintColor),
                   ),
                 ),
@@ -148,9 +179,15 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
 
               // 2) Deskripsi (OPTIONAL)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                clipBehavior: Clip.antiAlias,
                 decoration: (isDark ? NeuDark.convex : Neu.convex).copyWith(
                   color: surface,
+                  border: Border.all(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : Colors.grey.withValues(alpha: 0.2),
+                    width: 1,
+                  ),
                 ),
                 child: TextField(
                   controller: descCtrl,
@@ -159,6 +196,10 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
                   decoration: InputDecoration(
                     hintText: "Deskripsi/Catatan (Opsional)",
                     border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 16,
+                    ),
                     hintStyle: AppStyle.smallGray.copyWith(color: hintColor),
                   ),
                 ),
@@ -216,11 +257,18 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(
-                    vertical: 14,
+                    vertical: 16,
                     horizontal: 16,
                   ),
+                  clipBehavior: Clip.antiAlias,
                   decoration: (isDark ? NeuDark.convex : Neu.convex).copyWith(
                     color: surface,
+                    border: Border.all(
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.1)
+                          : Colors.grey.withValues(alpha: 0.2),
+                      width: 1,
+                    ),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -236,6 +284,7 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
                       Icon(
                         Icons.calendar_today_outlined,
                         color: selectedDate == null ? iconHintColor : textColor,
+                        size: 20,
                       ),
                     ],
                   ),
@@ -253,13 +302,25 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                         vertical: 14,
-                        horizontal: 26,
+                        horizontal: 28,
                       ),
+                      clipBehavior: Clip.antiAlias,
                       decoration: (isDark ? NeuDark.convex : Neu.convex)
-                          .copyWith(color: surface),
+                          .copyWith(
+                        color: surface,
+                        border: Border.all(
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.1)
+                              : Colors.grey.withValues(alpha: 0.2),
+                          width: 1,
+                        ),
+                      ),
                       child: Text(
                         "Batal",
-                        style: AppStyle.normal.copyWith(color: textColor),
+                        style: AppStyle.normal.copyWith(
+                          color: textColor,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   ),
@@ -270,11 +331,16 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                         vertical: 14,
-                        horizontal: 26,
+                        horizontal: 28,
                       ),
+                      clipBehavior: Clip.antiAlias,
                       decoration: (isDark ? NeuDark.convex : Neu.convex)
                           .copyWith(
                             color: surface,
+                            border: Border.all(
+                              color: scheme.primary.withValues(alpha: 0.4),
+                              width: 1.5,
+                            ),
                             boxShadow: [
                               ...?(isDark ? NeuDark.convex : Neu.convex)
                                   .boxShadow,

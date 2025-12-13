@@ -196,6 +196,27 @@ class SupabaseService {
   }
 
   // ===============================
+  // 🔑 PASSWORD FUNCTIONS
+  // ===============================
+
+  /// Update password user yang sedang login
+  /// Membutuhkan password lama untuk verifikasi (opsional di Supabase)
+  Future<void> updatePassword(String newPassword) async {
+    final user = _client.auth.currentUser;
+    if (user == null) throw Exception('User belum login.');
+
+    // Validasi password baru
+    if (newPassword.length < 8) {
+      throw Exception('Password harus minimal 8 karakter');
+    }
+
+    // Update password melalui Supabase Auth
+    await _client.auth.updateUser(
+      UserAttributes(password: newPassword),
+    );
+  }
+
+  // ===============================
   // 📝 TASK FUNCTIONS
   // ===============================
 

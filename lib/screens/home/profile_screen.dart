@@ -8,6 +8,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/profile_model.dart';
 import '../../services/supabase_service.dart';
 import '../../theme/theme_tokens.dart';
+import '../../utils/app_routes.dart';
+import '../auth/change_password_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -545,7 +547,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
           "Change Password",
           icon: Icons.lock_outline,
           onTap: () {
-            Get.snackbar("Info", "Change Password feature coming soon");
+            debugPrint('Change Password tapped - navigating to ${AppRoutes.changePassword}');
+            try {
+              // Gunakan Navigator.push sebagai alternatif yang lebih reliable
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ChangePasswordScreen(),
+                ),
+              );
+            } catch (e) {
+              debugPrint('Error navigating to change password: $e');
+              Get.snackbar(
+                'Error',
+                'Gagal membuka halaman Change Password: $e',
+                backgroundColor: Colors.red,
+                colorText: Colors.white,
+              );
+            }
           },
           isDark: isDark,
           colorScheme: colorScheme,
@@ -613,37 +632,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required bool isDark,
     required ColorScheme colorScheme,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 18),
-        decoration: isDark ? NeuDark.concave : Neu.concave,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  icon,
-                  color: textColor ?? (isDark ? AppColors.darkText : AppColors.text),
-                  size: 20,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  title,
-                  style: AppStyle.normal.copyWith(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 18),
+          decoration: isDark ? NeuDark.concave : Neu.concave,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    icon,
                     color: textColor ?? (isDark ? AppColors.darkText : AppColors.text),
+                    size: 20,
                   ),
-                ),
-              ],
-            ),
-            trailing ??
-                Icon(
-                  Icons.chevron_right,
-                  color: isDark ? Colors.grey[400] : Colors.grey[600],
-                ),
-          ],
+                  const SizedBox(width: 12),
+                  Text(
+                    title,
+                    style: AppStyle.normal.copyWith(
+                      color: textColor ?? (isDark ? AppColors.darkText : AppColors.text),
+                    ),
+                  ),
+                ],
+              ),
+              trailing ??
+                  Icon(
+                    Icons.chevron_right,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
+            ],
+          ),
         ),
       ),
     );

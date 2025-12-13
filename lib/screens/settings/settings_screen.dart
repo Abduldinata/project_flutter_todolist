@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../../theme/theme_tokens.dart';
 import '../../theme/theme_controller.dart';
 import '../../widgets/bottom_nav.dart';
@@ -30,11 +31,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _startOfWeek = 'Monday';
   bool _soundEffectsEnabled = false;
 
+  // Package Info
+  String _version = '1.0.0';
+  String _buildNumber = '5';
+
   @override
   void initState() {
     super.initState();
     _loadProfile();
     _loadPreferences();
+    _loadPackageInfo();
+  }
+
+  Future<void> _loadPackageInfo() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      if (mounted) {
+        setState(() {
+          _version = packageInfo.version;
+          _buildNumber = packageInfo.buildNumber;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error loading package info: $e");
+    }
   }
 
   Future<void> _loadProfile() async {
@@ -213,7 +233,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       child: Column(
                         children: [
                           Text(
-                            'Version 2.4.0 (Build 1024)',
+                            'Version $_version (Build $_buildNumber)',
                             style: AppStyle.smallGray.copyWith(
                               color: isDark
                                   ? Colors.grey[500]
@@ -223,7 +243,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            '© 2023 TASKFLOW INC.',
+                            '© 2025 Project UAS\nSyachrul, Aziz, Ilyas',
+                            textAlign: TextAlign.center,
                             style: AppStyle.smallGray.copyWith(
                               color: isDark
                                   ? Colors.grey[600]
