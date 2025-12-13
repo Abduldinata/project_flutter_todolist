@@ -7,4 +7,5 @@ class AppRoutes {
   static const today = '/today';
   static const upcoming = '/upcoming';
   static const filter = '/filter';
+  static const settings = '/settings';
 }

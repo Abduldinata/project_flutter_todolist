@@ -135,6 +135,7 @@ class _SearchPopupState extends State<SearchPopup> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -144,7 +145,9 @@ class _SearchPopupState extends State<SearchPopup> {
         constraints: BoxConstraints(
           maxHeight: MediaQuery.of(context).size.height * 0.8,
         ),
-        decoration: Neu.concave.copyWith(color: scheme.surface),
+        decoration: (isDark ? NeuDark.concave : Neu.concave).copyWith(
+          color: scheme.surface,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -178,7 +181,9 @@ class _SearchPopupState extends State<SearchPopup> {
                   // Search Bar
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: Neu.convex.copyWith(color: scheme.surface),
+                    decoration: (isDark ? NeuDark.convex : Neu.convex).copyWith(
+                      color: scheme.surface,
+                    ),
                     child: Row(
                       children: [
                         Expanded(

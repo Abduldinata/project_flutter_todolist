@@ -15,6 +15,7 @@ import 'screens/home/inbox_screen.dart';
 import 'screens/home/today_screen.dart';
 import 'screens/home/upcoming_screen.dart';
 import 'screens/home/filter_screen.dart';
+import 'screens/settings/settings_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -61,6 +62,7 @@ class MyApp extends StatelessWidget {
           GetPage(name: AppRoutes.today, page: () => const TodayScreen()),
           GetPage(name: AppRoutes.upcoming, page: () => const UpcomingScreen()),
           GetPage(name: AppRoutes.filter, page: () => const FilterScreen()),
+          GetPage(name: AppRoutes.settings, page: () => const SettingsScreen()),
         ],
       ),
     );

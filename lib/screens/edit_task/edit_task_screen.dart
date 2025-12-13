@@ -108,6 +108,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
   }
 
   Widget _buildPriorityButton(Priority priority, String label) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     bool isSelected = _selectedPriority == priority;
     Color accentColor;
 
@@ -128,10 +129,10 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: isSelected
-            ? Neu.pressed.copyWith(
+            ? (isDark ? NeuDark.pressed : Neu.pressed).copyWith(
                 color: accentColor.withAlpha((0.8 * 255).round()),
               )
-            : Neu.convex,
+            : (isDark ? NeuDark.convex : Neu.convex),
         child: Text(
           label,
           style: AppStyle.normal.copyWith(
@@ -145,8 +146,9 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20),
@@ -159,7 +161,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                     onTap: () => Get.back(),
                     child: Container(
                       padding: const EdgeInsets.all(8),
-                      decoration: Neu.convex,
+                      decoration: isDark ? NeuDark.convex : Neu.convex,
                       child: const Icon(Icons.arrow_back),
                     ),
                   ),
@@ -175,14 +177,14 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                 child: SingleChildScrollView(
                   child: Container(
                     padding: const EdgeInsets.all(22),
-                    decoration: Neu.concave,
+                    decoration: isDark ? NeuDark.concave : Neu.concave,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Title
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          decoration: Neu.convex,
+                          decoration: isDark ? NeuDark.convex : Neu.convex,
                           child: TextField(
                             controller: _titleCtrl,
                             decoration: const InputDecoration(
@@ -196,7 +198,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                         // Description
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          decoration: Neu.convex,
+                          decoration: isDark ? NeuDark.convex : Neu.convex,
                           child: TextField(
                             controller: _descCtrl,
                             maxLines: 3,
@@ -240,7 +242,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                               vertical: 14,
                               horizontal: 16,
                             ),
-                            decoration: Neu.convex,
+                            decoration: isDark ? NeuDark.convex : Neu.convex,
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -270,7 +272,9 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                                   vertical: 14,
                                   horizontal: 26,
                                 ),
-                                decoration: Neu.convex,
+                                decoration: isDark
+                                    ? NeuDark.convex
+                                    : Neu.convex,
                                 child: const Text(
                                   "Batal",
                                   style: AppStyle.normal,
@@ -286,18 +290,23 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                                   vertical: 14,
                                   horizontal: 26,
                                 ),
-                                decoration: Neu.convex.copyWith(
-                                  boxShadow: [
-                                    ...Neu.convex.boxShadow!,
-                                    BoxShadow(
-                                      color: AppColors.blue.withAlpha(
-                                        (0.3 * 255).round(),
-                                      ),
-                                      offset: const Offset(0, 4),
-                                      blurRadius: 10,
-                                    ),
-                                  ],
-                                ),
+                                decoration:
+                                    (isDark ? NeuDark.convex : Neu.convex)
+                                        .copyWith(
+                                          boxShadow: [
+                                            ...?(isDark
+                                                    ? NeuDark.convex
+                                                    : Neu.convex)
+                                                .boxShadow,
+                                            BoxShadow(
+                                              color: AppColors.blue.withAlpha(
+                                                (0.3 * 255).round(),
+                                              ),
+                                              offset: const Offset(0, 4),
+                                              blurRadius: 10,
+                                            ),
+                                          ],
+                                        ),
                                 child: Text(
                                   "Simpan",
                                   style: AppStyle.normal.copyWith(

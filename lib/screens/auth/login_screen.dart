@@ -190,6 +190,7 @@ class _LoginScreenState extends State<LoginScreen> {
   // --- UI BUILD ---
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       body: Stack(
         children: [
@@ -213,7 +214,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Container(
                       width: 100,
                       height: 100,
-                      decoration: Neu.concave,
+                      decoration: isDark ? NeuDark.concave : Neu.concave,
                       child: const Icon(
                         Icons.checklist_rounded,
                         size: 60,
@@ -259,7 +260,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     _isLoading
                         ? Container(
                             padding: const EdgeInsets.all(14),
-                            decoration: Neu.convex,
+                            decoration: isDark ? NeuDark.convex : Neu.convex,
                             child: const CircularProgressIndicator(
                               color: AppColors.blue,
                             ),
@@ -303,13 +304,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     _isGoogleLoading
                         ? Container(
                             padding: const EdgeInsets.all(14),
-                            decoration: Neu.convex,
+                            decoration: isDark ? NeuDark.convex : Neu.convex,
                             child: const CircularProgressIndicator(
                               color: AppColors.blue,
                             ),
                           )
                         : Container(
-                            decoration: Neu.convex,
+                            decoration: isDark ? NeuDark.convex : Neu.convex,
                             child: Material(
                               color: Colors.transparent,
                               child: InkWell(

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../theme/theme_tokens.dart';
-import '../../theme/theme_controller.dart';
 import '../../widgets/bottom_nav.dart';
 import '../../widgets/task_tile.dart';
 import '../../services/task_service.dart';
+import '../../utils/app_routes.dart';
 
 class FilterScreen extends StatefulWidget {
   const FilterScreen({super.key});
@@ -15,7 +15,6 @@ class FilterScreen extends StatefulWidget {
 
 class _FilterScreenState extends State<FilterScreen> {
   final TaskService _taskService = TaskService();
-  final ThemeController _themeController = Get.find<ThemeController>();
 
   List<Map<String, dynamic>> filteredTasks = [];
   bool loading = true;
@@ -110,7 +109,6 @@ class _FilterScreenState extends State<FilterScreen> {
         colorText: Colors.white,
       );
     }
-
   }
 
   Future<void> _deleteTask(String taskId, String title) async {
@@ -169,6 +167,8 @@ class _FilterScreenState extends State<FilterScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final scheme = theme.colorScheme;
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
@@ -186,26 +186,59 @@ class _FilterScreenState extends State<FilterScreen> {
                       color: theme.colorScheme.onSurface,
                     ),
                   ),
-                  if (_hasActiveFilters())
-                    GestureDetector(
-                      onTap: _resetFilters,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
+                  Row(
+                    children: [
+                      if (_hasActiveFilters())
+                        GestureDetector(
+                          onTap: _resetFilters,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            margin: const EdgeInsets.only(right: 12),
+                            decoration: BoxDecoration(
+                              color: AppColors.blue.withAlpha(
+                                (0.1 * 255).round(),
+                              ),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              "Reset All",
+                              style: AppStyle.smallGray.copyWith(
+                                color: AppColors.blue,
+                              ),
+                            ),
+                          ),
                         ),
-                        decoration: BoxDecoration(
-                          color: AppColors.blue.withAlpha((0.1 * 255).round()),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          "Reset All",
-                          style: AppStyle.smallGray.copyWith(
-                            color: AppColors.blue,
+                      GestureDetector(
+                        onTap: () {
+                          debugPrint("Navigating to settings...");
+                          Get.toNamed(AppRoutes.settings)?.catchError((error) {
+                            debugPrint("Navigation error: $error");
+                            Get.snackbar(
+                              "Error",
+                              "Gagal membuka pengaturan",
+                              backgroundColor: Colors.red,
+                              colorText: Colors.white,
+                            );
+                          });
+                        },
+                        behavior: HitTestBehavior.opaque,
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          padding: const EdgeInsets.all(8),
+                          decoration: (isDark ? NeuDark.convex : Neu.convex),
+                          child: Icon(
+                            Icons.settings,
+                            color: theme.colorScheme.onSurface,
+                            size: 20,
                           ),
                         ),
                       ),
-                    ),
+                    ],
+                  ),
                 ],
               ),
 
@@ -217,58 +250,12 @@ class _FilterScreenState extends State<FilterScreen> {
                   physics: const BouncingScrollPhysics(),
                   child: Column(
                     children: [
-                      // Theme Toggle Card
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: Neu.concave.copyWith(
-                          color: theme.colorScheme.surface,
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Obx(
-                                  () => Icon(
-                                    _themeController.isDarkMode.value
-                                        ? Icons.dark_mode
-                                        : Icons.light_mode,
-                                    color: AppColors.blue,
-                                    size: 24,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Text(
-                                  "Dark Mode",
-                                  style: AppStyle.subtitle.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface, // mengikuti mode
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Obx(
-                              () => Switch(
-                                value: _themeController.isDarkMode.value,
-                                onChanged: (value) {
-                                  _themeController.toggleTheme();
-                                },
-                                activeThumbColor: AppColors.blue,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
                       // Priority Filter Card
                       Container(
                         padding: const EdgeInsets.all(16),
                         margin: const EdgeInsets.only(bottom: 16),
-                        decoration: Neu.concave.copyWith(
-                          color: theme.colorScheme.surface,
-                        ),
+                        decoration: (isDark ? NeuDark.concave : Neu.concave)
+                            .copyWith(color: theme.colorScheme.surface),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -290,6 +277,28 @@ class _FilterScreenState extends State<FilterScreen> {
                                     _applyFilters();
                                   },
                                   activeThumbColor: AppColors.blue,
+                                  activeTrackColor: AppColors.blue.withValues(
+                                    alpha: 0.3,
+                                  ),
+                                  inactiveThumbColor: isDark
+                                      ? Colors.grey[300]
+                                      : Colors.grey[400],
+                                  inactiveTrackColor: isDark
+                                      ? Colors.grey[800]!.withValues(alpha: 0.5)
+                                      : Colors.grey[300]!.withValues(
+                                          alpha: 0.5,
+                                        ),
+                                  trackOutlineColor:
+                                      WidgetStateProperty.resolveWith(
+                                        (states) =>
+                                            states.contains(
+                                              WidgetState.selected,
+                                            )
+                                            ? AppColors.blue
+                                            : (isDark
+                                                  ? Colors.grey[700]
+                                                  : Colors.grey[400]),
+                                      ),
                                 ),
                               ],
                             ),
@@ -305,9 +314,8 @@ class _FilterScreenState extends State<FilterScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         margin: const EdgeInsets.only(bottom: 16),
-                        decoration: Neu.concave.copyWith(
-                          color: theme.colorScheme.surface,
-                        ),
+                        decoration: (isDark ? NeuDark.concave : Neu.concave)
+                            .copyWith(color: theme.colorScheme.surface),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -329,6 +337,28 @@ class _FilterScreenState extends State<FilterScreen> {
                                     _applyFilters();
                                   },
                                   activeThumbColor: AppColors.blue,
+                                  activeTrackColor: AppColors.blue.withValues(
+                                    alpha: 0.3,
+                                  ),
+                                  inactiveThumbColor: isDark
+                                      ? Colors.grey[300]
+                                      : Colors.grey[400],
+                                  inactiveTrackColor: isDark
+                                      ? Colors.grey[800]!.withValues(alpha: 0.5)
+                                      : Colors.grey[300]!.withValues(
+                                          alpha: 0.5,
+                                        ),
+                                  trackOutlineColor:
+                                      WidgetStateProperty.resolveWith(
+                                        (states) =>
+                                            states.contains(
+                                              WidgetState.selected,
+                                            )
+                                            ? AppColors.blue
+                                            : (isDark
+                                                  ? Colors.grey[700]
+                                                  : Colors.grey[400]),
+                                      ),
                                 ),
                               ],
                             ),
@@ -350,9 +380,8 @@ class _FilterScreenState extends State<FilterScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         margin: const EdgeInsets.only(bottom: 16),
-                        decoration: Neu.concave.copyWith(
-                          color: theme.colorScheme.surface,
-                        ),
+                        decoration: (isDark ? NeuDark.concave : Neu.concave)
+                            .copyWith(color: theme.colorScheme.surface),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -374,6 +403,28 @@ class _FilterScreenState extends State<FilterScreen> {
                                     _applyFilters();
                                   },
                                   activeThumbColor: AppColors.blue,
+                                  activeTrackColor: AppColors.blue.withValues(
+                                    alpha: 0.3,
+                                  ),
+                                  inactiveThumbColor: isDark
+                                      ? Colors.grey[300]
+                                      : Colors.grey[400],
+                                  inactiveTrackColor: isDark
+                                      ? Colors.grey[800]!.withValues(alpha: 0.5)
+                                      : Colors.grey[300]!.withValues(
+                                          alpha: 0.5,
+                                        ),
+                                  trackOutlineColor:
+                                      WidgetStateProperty.resolveWith(
+                                        (states) =>
+                                            states.contains(
+                                              WidgetState.selected,
+                                            )
+                                            ? AppColors.blue
+                                            : (isDark
+                                                  ? Colors.grey[700]
+                                                  : Colors.grey[400]),
+                                      ),
                                 ),
                               ],
                             ),
@@ -388,9 +439,8 @@ class _FilterScreenState extends State<FilterScreen> {
                       // Results Section
                       Container(
                         padding: const EdgeInsets.all(16),
-                        decoration: Neu.concave.copyWith(
-                          color: theme.colorScheme.surface,
-                        ),
+                        decoration: (isDark ? NeuDark.concave : Neu.concave)
+                            .copyWith(color: theme.colorScheme.surface),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -424,7 +474,6 @@ class _FilterScreenState extends State<FilterScreen> {
                                       size: 48,
                                       color: theme.colorScheme.onSurface
                                           .withValues(alpha: 0.5),
-
                                     ),
                                     const SizedBox(height: 12),
                                     const Text(
@@ -482,6 +531,7 @@ class _FilterScreenState extends State<FilterScreen> {
 
   Widget _buildPriorityOptions() {
     final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final priorities = [
       {'value': 'high', 'label': 'Tinggi'},
@@ -509,9 +559,11 @@ class _FilterScreenState extends State<FilterScreen> {
           },
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: (isSelected ? Neu.pressed : Neu.convex).copyWith(
-              color: bgColor,
-            ),
+            decoration:
+                (isSelected
+                        ? (isDark ? NeuDark.pressed : Neu.pressed)
+                        : (isDark ? NeuDark.convex : Neu.convex))
+                    .copyWith(color: bgColor),
             child: Text(
               label,
               style: AppStyle.normal.copyWith(
@@ -527,6 +579,7 @@ class _FilterScreenState extends State<FilterScreen> {
 
   Widget _buildStatusOption(String label, bool isCompleted) {
     final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isSelected = showCompleted == isCompleted;
 
     // 🔥 Warna chip dipilih & tidak dipilih dari theme
@@ -547,9 +600,11 @@ class _FilterScreenState extends State<FilterScreen> {
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: (isSelected ? Neu.pressed : Neu.convex).copyWith(
-          color: bgColor,
-        ),
+        decoration:
+            (isSelected
+                    ? (isDark ? NeuDark.pressed : Neu.pressed)
+                    : (isDark ? NeuDark.convex : Neu.convex))
+                .copyWith(color: bgColor),
         child: Text(
           label,
           style: AppStyle.normal.copyWith(
@@ -560,8 +615,6 @@ class _FilterScreenState extends State<FilterScreen> {
       ),
     );
   }
-
-
 
   Widget _buildDateFilters() {
     final theme = Theme.of(context);
@@ -606,7 +659,9 @@ class _FilterScreenState extends State<FilterScreen> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             margin: const EdgeInsets.only(bottom: 12),
-            decoration: Neu.convex.copyWith(color: theme.colorScheme.surface),
+            decoration: (isDark ? NeuDark.convex : Neu.convex).copyWith(
+              color: theme.colorScheme.surface,
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -661,7 +716,9 @@ class _FilterScreenState extends State<FilterScreen> {
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-            decoration: Neu.convex.copyWith(color: theme.colorScheme.surface),
+            decoration: (isDark ? NeuDark.convex : Neu.convex).copyWith(
+              color: theme.colorScheme.surface,
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -686,7 +743,6 @@ class _FilterScreenState extends State<FilterScreen> {
       ],
     );
   }
-
 
   bool _hasActiveFilters() {
     return filterByPriority || filterByStatus || filterByDate;

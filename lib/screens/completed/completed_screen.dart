@@ -17,29 +17,29 @@ class _CompletedScreenState extends State<CompletedScreen> {
   List<Map<String, dynamic>> tasks = [];
   bool loading = true;
 
-// completed_screen.dart - Update line 25
-Future<void> loadTasks() async {
-  setState(() => loading = true);
-  try {
-    // COBA DUA OPTION INI:
-    // Option 1: Jika fungsi namanya getCompletedTasks
-    // final fetchedTasks = await _taskService.getCompletedTasks();
-    
-    // Option 2: Jika fungsi namanya getCompleted (yang ada di kode sebelumnya)
-    final fetchedTasks = await _taskService.getCompleted();
-    
-    setState(() => tasks = fetchedTasks);
-  } catch (e) {
-    debugPrint("Error loading completed tasks: $e");
-    Get.snackbar(
-      "Error",
-      "Gagal memuat tasks: ${e.toString()}",
-      backgroundColor: Colors.red,
-      colorText: Colors.white,
-    );
+  // completed_screen.dart - Update line 25
+  Future<void> loadTasks() async {
+    setState(() => loading = true);
+    try {
+      // COBA DUA OPTION INI:
+      // Option 1: Jika fungsi namanya getCompletedTasks
+      // final fetchedTasks = await _taskService.getCompletedTasks();
+
+      // Option 2: Jika fungsi namanya getCompleted (yang ada di kode sebelumnya)
+      final fetchedTasks = await _taskService.getCompleted();
+
+      setState(() => tasks = fetchedTasks);
+    } catch (e) {
+      debugPrint("Error loading completed tasks: $e");
+      Get.snackbar(
+        "Error",
+        "Gagal memuat tasks: ${e.toString()}",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
+    setState(() => loading = false);
   }
-  setState(() => loading = false);
-}
 
   Future<void> _toggleTaskCompletion(String taskId, bool currentValue) async {
     try {
@@ -93,7 +93,10 @@ Future<void> loadTasks() async {
           ElevatedButton(
             onPressed: () => Get.back(result: true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text("Hapus Semua", style: TextStyle(color: Colors.white)),
+            child: const Text(
+              "Hapus Semua",
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -123,8 +126,10 @@ Future<void> loadTasks() async {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -150,21 +155,8 @@ Future<void> loadTasks() async {
             Container(
               padding: const EdgeInsets.all(16),
               margin: const EdgeInsets.only(bottom: 20),
-              decoration: BoxDecoration(
-                color: AppColors.bg,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.white,
-                    offset: const Offset(-4, -4),
-                    blurRadius: 8,
-                  ),
-                  BoxShadow(
-                    color: const Color(0xFFBEBEBE),
-                    offset: const Offset(4, 4),
-                    blurRadius: 12,
-                  ),
-                ],
+              decoration: (isDark ? NeuDark.concave : Neu.concave).copyWith(
+                color: theme.colorScheme.surface,
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -186,9 +178,7 @@ Future<void> loadTasks() async {
             ),
 
             // Task List
-            Expanded(
-              child: _buildTaskList(),
-            ),
+            Expanded(child: _buildTaskList()),
           ],
         ),
       ),
@@ -222,11 +212,7 @@ Future<void> loadTasks() async {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.check_circle_outline,
-              size: 64,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.check_circle_outline, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
             const Text(
               "Belum ada task yang selesai",
@@ -248,10 +234,10 @@ Future<void> loadTasks() async {
       itemCount: tasks.length,
       itemBuilder: (_, index) {
         final task = tasks[index];
-        
+
         return TaskTile(
           task: task,
-          onToggleCompletion: (taskId, currentValue) => 
+          onToggleCompletion: (taskId, currentValue) =>
               _toggleTaskCompletion(taskId, currentValue),
           onDelete: (taskId, title) => _deleteTask(taskId, title),
           // ✅ Biarkan null untuk default behavior
@@ -263,7 +249,7 @@ Future<void> loadTasks() async {
 
   String _getOldestCompletedDate() {
     if (tasks.isEmpty) return "-";
-    
+
     DateTime? oldestDate;
     for (var task in tasks) {
       final dateStr = task['updated_at'] ?? task['created_at'];
@@ -278,9 +264,7 @@ Future<void> loadTasks() async {
         }
       }
     }
-    
-    return oldestDate != null 
-        ? "${oldestDate.day}/${oldestDate.month}"
-        : "-";
+
+    return oldestDate != null ? "${oldestDate.day}/${oldestDate.month}" : "-";
   }
 }

@@ -65,6 +65,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final title = _task['title']?.toString() ?? 'No Title';
     final description = _task['description']?.toString();
     final dateStr = _task['date']?.toString();
@@ -83,7 +84,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -91,7 +92,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppColors.bg,
+                color: Theme.of(context).scaffoldBackgroundColor,
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withAlpha((0.05 * 255).round()),
@@ -106,7 +107,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     onTap: () => Get.back(),
                     child: Container(
                       padding: const EdgeInsets.all(8),
-                      decoration: Neu.convex,
+                      decoration: isDark ? NeuDark.convex : Neu.convex,
                       child: const Icon(Icons.arrow_back),
                     ),
                   ),
@@ -145,7 +146,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(20),
                       margin: const EdgeInsets.only(bottom: 20),
-                      decoration: Neu.concave,
+                      decoration: isDark ? NeuDark.concave : Neu.concave,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -187,7 +188,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(20),
                       margin: const EdgeInsets.only(bottom: 20),
-                      decoration: Neu.concave,
+                      decoration: isDark ? NeuDark.concave : Neu.concave,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -203,7 +204,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                           Container(
                             width: double.infinity,
                             padding: const EdgeInsets.all(16),
-                            decoration: Neu.convex,
+                            decoration: isDark ? NeuDark.convex : Neu.convex,
                             child: Text(
                               description?.isNotEmpty == true
                                   ? description!
@@ -224,7 +225,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(20),
                       margin: const EdgeInsets.only(bottom: 20),
-                      decoration: Neu.concave,
+                      decoration: isDark ? NeuDark.concave : Neu.concave,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -279,18 +280,22 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                             onTap: _toggleCompletion,
                             child: Container(
                               padding: const EdgeInsets.symmetric(vertical: 16),
-                              decoration: Neu.convex.copyWith(
-                                boxShadow: [
-                                  ...Neu.convex.boxShadow!,
-                                  BoxShadow(
-                                    color:
-                                        (isDone ? Colors.orange : Colors.green)
-                                            .withAlpha((0.3 * 255).round()),
-                                    offset: const Offset(0, 4),
-                                    blurRadius: 10,
+                              decoration: (isDark ? NeuDark.convex : Neu.convex)
+                                  .copyWith(
+                                    boxShadow: [
+                                      ...?(isDark ? NeuDark.convex : Neu.convex)
+                                          .boxShadow,
+                                      BoxShadow(
+                                        color:
+                                            (isDone
+                                                    ? Colors.orange
+                                                    : Colors.green)
+                                                .withAlpha((0.3 * 255).round()),
+                                        offset: const Offset(0, 4),
+                                        blurRadius: 10,
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
                               child: Center(
                                 child: Text(
                                   isDone
@@ -354,18 +359,20 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                               vertical: 16,
                               horizontal: 20,
                             ),
-                            decoration: Neu.convex.copyWith(
-                              boxShadow: [
-                                ...Neu.convex.boxShadow!,
-                                BoxShadow(
-                                  color: Colors.red.withAlpha(
-                                    (0.3 * 255).round(),
-                                  ),
-                                  offset: const Offset(0, 4),
-                                  blurRadius: 10,
+                            decoration: (isDark ? NeuDark.convex : Neu.convex)
+                                .copyWith(
+                                  boxShadow: [
+                                    ...?(isDark ? NeuDark.convex : Neu.convex)
+                                        .boxShadow,
+                                    BoxShadow(
+                                      color: Colors.red.withAlpha(
+                                        (0.3 * 255).round(),
+                                      ),
+                                      offset: const Offset(0, 4),
+                                      blurRadius: 10,
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
                             child: const Icon(Icons.delete, color: Colors.red),
                           ),
                         ),

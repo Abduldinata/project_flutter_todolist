@@ -119,6 +119,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       body: Stack(
         children: [
@@ -142,7 +143,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     Container(
                       width: 100,
                       height: 100,
-                      decoration: Neu.concave,
+                      decoration: isDark ? NeuDark.concave : Neu.concave,
                       child: const Icon(
                         Icons.person_add_rounded,
                         size: 60,
@@ -191,7 +192,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     _isLoading
                         ? Container(
                             padding: const EdgeInsets.all(14),
-                            decoration: Neu.convex,
+                            decoration: isDark ? NeuDark.convex : Neu.convex,
                             child: const CircularProgressIndicator(
                               color: AppColors.blue,
                             ),
@@ -206,7 +207,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text('Already have an account? ', style: AppStyle.smallGray),
+                        Text(
+                          'Already have an account? ',
+                          style: AppStyle.smallGray,
+                        ),
                         GestureDetector(
                           onTap: () => Get.back(),
                           child: Text(

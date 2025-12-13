@@ -46,6 +46,7 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
   // ✅ Prioritas mengikuti theme (seperti FilterScreen)
   Widget _buildPriorityButton(BuildContext context, Priority priority) {
     final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isSelected = selectedPriority == priority;
 
     final bgColor = isSelected ? scheme.primary : scheme.surface;
@@ -57,9 +58,11 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
       onTap: () => setState(() => selectedPriority = priority),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: (isSelected ? Neu.pressed : Neu.convex).copyWith(
-          color: bgColor,
-        ),
+        decoration:
+            (isSelected
+                    ? (isDark ? NeuDark.pressed : Neu.pressed)
+                    : (isDark ? NeuDark.convex : Neu.convex))
+                .copyWith(color: bgColor),
         child: Text(
           _priorityLabel(priority),
           style: AppStyle.normal.copyWith(
@@ -112,7 +115,9 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
         child: Container(
           width: 330,
           padding: const EdgeInsets.all(22),
-          decoration: Neu.concave.copyWith(color: surface),
+          decoration: (isDark ? NeuDark.concave : Neu.concave).copyWith(
+            color: surface,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,7 +131,9 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
               // 1) Nama Tugas (REQUIRED)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: Neu.convex.copyWith(color: surface),
+                decoration: (isDark ? NeuDark.convex : Neu.convex).copyWith(
+                  color: surface,
+                ),
                 child: TextField(
                   controller: taskCtrl,
                   style: AppStyle.normal.copyWith(color: textColor),
@@ -142,7 +149,9 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
               // 2) Deskripsi (OPTIONAL)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: Neu.convex.copyWith(color: surface),
+                decoration: (isDark ? NeuDark.convex : Neu.convex).copyWith(
+                  color: surface,
+                ),
                 child: TextField(
                   controller: descCtrl,
                   maxLines: 3,
@@ -210,7 +219,9 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
                     vertical: 14,
                     horizontal: 16,
                   ),
-                  decoration: Neu.convex.copyWith(color: surface),
+                  decoration: (isDark ? NeuDark.convex : Neu.convex).copyWith(
+                    color: surface,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -244,7 +255,8 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
                         vertical: 14,
                         horizontal: 26,
                       ),
-                      decoration: Neu.convex.copyWith(color: surface),
+                      decoration: (isDark ? NeuDark.convex : Neu.convex)
+                          .copyWith(color: surface),
                       child: Text(
                         "Batal",
                         style: AppStyle.normal.copyWith(color: textColor),
@@ -260,17 +272,19 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
                         vertical: 14,
                         horizontal: 26,
                       ),
-                      decoration: Neu.convex.copyWith(
-                        color: surface,
-                        boxShadow: [
-                          ...?Neu.convex.boxShadow,
-                          BoxShadow(
-                            color: scheme.primary.withValues(alpha: 0.35),
-                            offset: const Offset(0, 4),
-                            blurRadius: 10,
+                      decoration: (isDark ? NeuDark.convex : Neu.convex)
+                          .copyWith(
+                            color: surface,
+                            boxShadow: [
+                              ...?(isDark ? NeuDark.convex : Neu.convex)
+                                  .boxShadow,
+                              BoxShadow(
+                                color: scheme.primary.withValues(alpha: 0.35),
+                                offset: const Offset(0, 4),
+                                blurRadius: 10,
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
                       child: Text(
                         "Simpan",
                         style: AppStyle.normal.copyWith(

@@ -24,7 +24,9 @@ class TaskTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final scheme = theme.colorScheme;
     final taskId = task['id']?.toString() ?? '';
     final title = task['title']?.toString() ?? 'No Title';
     final isDone = task['is_done'] ?? false;
@@ -60,31 +62,61 @@ class TaskTile extends StatelessWidget {
                     onToggleCompletion(taskId, isDone);
                   }
                 },
+                behavior: HitTestBehavior.opaque,
                 child: Container(
                   width: 28,
                   height: 28,
                   decoration: isDone
                       ? BoxDecoration(
-                          color: AppColors.blue.withAlpha((0.8 * 255).round()),
+                          color: AppColors.blue,
                           borderRadius: BorderRadius.circular(8),
                           boxShadow: isDark
                               ? [
                                   BoxShadow(
-                                    color: Colors.black.withAlpha(
-                                      (0.5 * 255).round(),
+                                    color: AppColors.blue.withValues(
+                                      alpha: 0.3,
                                     ),
-                                    blurRadius: 4,
+                                    blurRadius: 8,
+                                    spreadRadius: 0,
                                   ),
                                 ]
-                              : Neu.pressed.boxShadow,
+                              : [
+                                  BoxShadow(
+                                    color: AppColors.blue.withValues(
+                                      alpha: 0.2,
+                                    ),
+                                    blurRadius: 8,
+                                    spreadRadius: 0,
+                                  ),
+                                ],
                         )
-                      : (isDark
-                            ? BoxDecoration(
-                                color: const Color(0xFF1E1E1E),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.grey[700]!),
-                              )
-                            : Neu.convex),
+                      : BoxDecoration(
+                          color: isDark
+                              ? scheme.surfaceContainerHighest
+                              : scheme.surface,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: isDark
+                                ? scheme.outline.withValues(alpha: 0.5)
+                                : scheme.outline,
+                            width: 2,
+                          ),
+                          boxShadow: isDark
+                              ? [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.2),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ]
+                              : [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.05),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                        ),
                   child: Center(
                     child: isDone
                         ? const Icon(Icons.check, size: 18, color: Colors.white)
