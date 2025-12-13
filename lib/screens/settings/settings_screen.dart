@@ -401,15 +401,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 Obx(() {
                   final currentMode = _themeController.themeMode.value;
-                  IconData themeIcon;
+                  IconData iconData;
                   if (currentMode == ThemeMode.light) {
-                    themeIcon = Icons.light_mode;
+                    iconData = Icons.light_mode;
                   } else if (currentMode == ThemeMode.dark) {
-                    themeIcon = Icons.dark_mode;
+                    iconData = Icons.dark_mode;
                   } else {
-                    themeIcon = Icons.brightness_6;
+                    iconData = Icons.brightness_auto;
                   }
-                  return Icon(themeIcon, color: AppColors.blue, size: 24);
+                  return Icon(iconData, color: AppColors.blue, size: 24);
                 }),
                 const SizedBox(width: 12),
                 Expanded(
