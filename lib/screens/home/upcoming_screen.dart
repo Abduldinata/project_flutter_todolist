@@ -286,7 +286,7 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
                               boxShadow: isSelected
                                   ? [
                                       BoxShadow(
-                                        color: AppColors.blue.withOpacity(0.3),
+                                        color: AppColors.blue.withValues(alpha: 0.3),
                                         blurRadius: 8,
                                         spreadRadius: 2,
                                       ),
@@ -467,7 +467,7 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: AppColors.blue.withOpacity(0.1),
+                        color: AppColors.blue.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(

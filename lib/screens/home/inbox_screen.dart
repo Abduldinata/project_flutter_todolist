@@ -492,7 +492,7 @@ class _InboxScreenState extends State<InboxScreen> {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: categoryColor.withOpacity(0.2),
+                          color: categoryColor.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(

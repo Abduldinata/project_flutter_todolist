@@ -157,7 +157,7 @@ class _TodayScreenState extends State<TodayScreen> {
                       // Avatar
                       CircleAvatar(
                         radius: 24,
-                        backgroundColor: AppColors.blue.withOpacity(0.1),
+                        backgroundColor: AppColors.blue.withValues(alpha: 0.1),
                         backgroundImage: _profile?.avatarUrl != null && 
                             _profile!.avatarUrl!.isNotEmpty
                             ? NetworkImage(_profile!.avatarUrl!)

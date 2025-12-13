@@ -20,7 +20,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   
   bool _isLoading = false;
   bool _isGoogleLoading = false;
-  bool _isAppleLoading = false;
+  final bool _isAppleLoading = false;
   bool _showPassword = false;
   bool _showConfirmPassword = false;
   bool _agreeToTerms = false;

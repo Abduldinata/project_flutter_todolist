@@ -27,7 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _isLoading = false;
   bool _isGoogleLoading = false;
-  bool _isAppleLoading = false;
+  final bool _isAppleLoading = false;
   bool _showPassword = false;
 
   @override
@@ -199,7 +199,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -212,7 +212,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       width: 50,
                       height: 50,
                       decoration: BoxDecoration(
-                        color: AppColors.blue.withOpacity(0.1),
+                        color: AppColors.blue.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                     ),

@@ -291,7 +291,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 CircleAvatar(
                   radius: 32,
-                  backgroundColor: AppColors.blue.withOpacity(0.1),
+                  backgroundColor: AppColors.blue.withValues(alpha: 0.1),
                   backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
                       ? NetworkImage(avatarUrl)
                       : null,
@@ -511,7 +511,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 setState(() => _notificationsEnabled = value);
                 _savePreference('notifications_enabled', value);
               },
-              activeColor: AppColors.blue,
+              activeThumbColor: AppColors.blue,
             ),
           ),
           const Divider(height: 1),
@@ -551,7 +551,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 setState(() => _soundEffectsEnabled = value);
                 _savePreference('sound_effects_enabled', value);
               },
-              activeColor: AppColors.blue,
+              activeThumbColor: AppColors.blue,
             ),
           ),
         ],
