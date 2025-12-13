@@ -33,6 +33,7 @@ class _TodayScreenState extends State<TodayScreen> {
     if (!mounted) return;
 
     setState(() => loading = true);
+
     try {
       final fetchedTasks = await _taskService.getTasksByDate(DateTime.now());
       if (!mounted) return;
@@ -47,10 +48,13 @@ class _TodayScreenState extends State<TodayScreen> {
         colorText: Colors.white,
       );
     } finally {
-      if (!mounted) return;
-      setState(() => loading = false);
+      // ✅ jangan return di finally
+      if (mounted) {
+        setState(() => loading = false);
+      }
     }
   }
+
 
   Future<void> _toggleTaskCompletion(String taskId, bool currentValue) async {
     try {
@@ -138,7 +142,7 @@ class _TodayScreenState extends State<TodayScreen> {
                       Text(
                         formatted,
                         style: AppStyle.smallGray.copyWith(
-                          color: scheme.onSurface.withOpacity(0.6),
+                          color: scheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                     ],
@@ -151,7 +155,7 @@ class _TodayScreenState extends State<TodayScreen> {
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: scheme.primary.withOpacity(0.12),
+                        color: scheme.primary.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
@@ -297,7 +301,7 @@ class _TodayScreenState extends State<TodayScreen> {
         Text(
           "$completedCount dari $totalCount task selesai",
           style: AppStyle.smallGray.copyWith(
-            color: scheme.onSurface.withOpacity(0.6),
+            color: scheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
       ],
@@ -319,13 +323,13 @@ class _TodayScreenState extends State<TodayScreen> {
             Icon(
               Icons.check_circle_outline,
               size: 64,
-              color: scheme.onSurface.withOpacity(0.35),
+              color: scheme.onSurface.withValues(alpha: 0.35),
             ),
             const SizedBox(height: 16),
             Text(
               "Belum ada tugas untuk hari ini",
               style: AppStyle.subtitle.copyWith(
-                color: scheme.onSurface.withOpacity(0.7),
+                color: scheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(height: 8),
@@ -334,7 +338,7 @@ class _TodayScreenState extends State<TodayScreen> {
               child: Text(
                 "Tambahkan tugas baru dengan tombol + di bawah",
                 style: AppStyle.smallGray.copyWith(
-                  color: scheme.onSurface.withOpacity(0.55),
+                  color: scheme.onSurface.withValues(alpha: 0.55),
                 ),
                 textAlign: TextAlign.center,
               ),
