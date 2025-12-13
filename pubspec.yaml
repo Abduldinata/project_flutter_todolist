@@ -1,5 +1,5 @@
 name: to_do_list_project
-description: "A new Flutter project."
+description: "DoList - Modern task management app to organize your daily tasks with a clean UI and smooth experience."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -70,6 +70,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/icon_google.png
+    - assets/images/icon_apple.png
     - assets/icon.png
 
   # To add assets to your application, add an assets section, like this:

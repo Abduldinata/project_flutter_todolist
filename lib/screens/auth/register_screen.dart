@@ -138,6 +138,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return '⏱️ Connection timeout';
     }
 
+    // Database errors (trigger/profile creation)
+    if (error.contains('Database error') ||
+        error.contains('unexpected_failure') ||
+        error.contains('saving new')) {
+      return '⚠️ Database error\n\nPlease try again or contact support if the problem persists.';
+    }
+
     // Auth errors
     if (error.contains('User already registered') ||
         error.contains('already been registered')) {

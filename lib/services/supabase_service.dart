@@ -146,11 +146,42 @@ class SupabaseService {
     String password,
     String username,
   ) async {
-    return await _client.auth.signUp(
+    final response = await _client.auth.signUp(
       email: email,
       password: password,
       data: {'username': username},
     );
+
+    // Fallback: Jika trigger gagal, buat profile secara manual
+    if (response.user != null) {
+      try {
+        // Tunggu sebentar untuk trigger selesai
+        await Future.delayed(const Duration(milliseconds: 500));
+        
+        // Cek apakah profile sudah dibuat oleh trigger
+        final profile = await getProfile();
+        if (profile == null) {
+          // Jika profile belum ada, buat secara manual
+          await _client.from('profiles').insert({
+            'id': response.user!.id,
+            'username': username,
+            'email': email,
+            'hobby': null,
+            'bio': null,
+            'avatar_url': null,
+            'date_of_birth': null,
+            'phone': null,
+            'updated_at': DateTime.now().toIso8601String(),
+          });
+        }
+      } catch (e) {
+        // Jika gagal membuat profile, log error tapi tidak throw
+        // User sudah terdaftar, profile bisa dibuat nanti
+        debugPrint('Warning: Failed to create profile: $e');
+      }
+    }
+
+    return response;
   }
 
   Future<AuthResponse> signIn(String email, String password) async {

@@ -42,8 +42,19 @@ app.*.map.json
 # Android Studio will place build artifacts here
 /android/app/debug
 /android/app/profile
-/android/app/release\android\key.properties
+/android/app/release
+/android/key.properties
+/android/app/upload-key.jks
+**/key.properties
+**/*.jks
+**/*.keystore
 # Ignore Flutter auto-generated plugin files
 **/GeneratedPluginRegistrant.*
 **/generated_plugin_registrant.cc
 **/generated_plugins.cmake
+
+# Credentials & Secrets
+**/client_secret*.json
+**/*credentials*.json
+*.jks
+*.keystore
