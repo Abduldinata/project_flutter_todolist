@@ -399,7 +399,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                Icon(Icons.dark_mode, color: AppColors.blue, size: 24),
+                Obx(() {
+                  final currentMode = _themeController.themeMode.value;
+                  IconData themeIcon;
+                  if (currentMode == ThemeMode.light) {
+                    themeIcon = Icons.light_mode;
+                  } else if (currentMode == ThemeMode.dark) {
+                    themeIcon = Icons.dark_mode;
+                  } else {
+                    themeIcon = Icons.brightness_6;
+                  }
+                  return Icon(themeIcon, color: AppColors.blue, size: 24);
+                }),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
