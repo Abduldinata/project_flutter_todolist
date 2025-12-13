@@ -91,6 +91,8 @@ class SupabaseService {
     String? hobby,
     String? bio,
     String? avatarUrl,
+    DateTime? dateOfBirth,
+    String? phone,
   }) async {
     final user = _client.auth.currentUser;
     if (user == null) throw Exception('User belum login.');
@@ -100,6 +102,8 @@ class SupabaseService {
       if (hobby != null) 'hobby': hobby,
       if (bio != null) 'bio': bio,
       if (avatarUrl != null) 'avatar_url': avatarUrl,
+      if (dateOfBirth != null) 'date_of_birth': dateOfBirth.toIso8601String().split('T')[0], // Format: YYYY-MM-DD
+      if (phone != null) 'phone': phone,
       'updated_at': DateTime.now().toIso8601String(),
     };
 
