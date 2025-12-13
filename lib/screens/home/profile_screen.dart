@@ -8,7 +8,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/profile_model.dart';
 import '../../services/supabase_service.dart';
 import '../../theme/theme_tokens.dart';
-import '../../utils/app_routes.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -114,11 +113,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       Get.snackbar("Error", "$e");
     }
-  }
-
-  Future<void> _logout() async {
-    await _supabaseService.signOut();
-    Get.offAllNamed(AppRoutes.login);
   }
 
   @override
@@ -290,22 +284,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       style: AppStyle.normal.copyWith(
                         color: colorScheme.primary,
                         fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                GestureDetector(
-                  onTap: _logout,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    width: double.infinity,
-                    decoration: isDark ? NeuDark.convex : Neu.convex,
-                    child: Text(
-                      "Logout",
-                      textAlign: TextAlign.center,
-                      style: AppStyle.normal.copyWith(
-                        color: isDark ? AppColors.darkText : AppColors.text,
                       ),
                     ),
                   ),

@@ -481,10 +481,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       onTap: _isAppleLoading ? null : _handleAppleSignIn,
                       isDark: isDark,
                       isLoading: _isAppleLoading,
-                      icon: Icon(
-                        Icons.apple,
-                        size: 20,
-                        color: isDark ? Colors.white : Colors.black,
+                      icon: Image.asset(
+                        'assets/images/icon_apple.png',
+                        width: 20,
+                        height: 20,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Icon(
+                            Icons.apple,
+                            size: 20,
+                            color: isDark ? Colors.white : Colors.black,
+                          );
+                        },
                       ),
                       label: 'Apple',
                     ),

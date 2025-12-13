@@ -224,12 +224,26 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 40),
 
               // Welcome Text
-              Text(
-                'Welcome Back',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : AppColors.text,
+              RichText(
+                textAlign: TextAlign.center,
+                text: TextSpan(
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : AppColors.text,
+                  ),
+                  children: [
+                    const TextSpan(text: 'Welcome To '),
+                    TextSpan(
+                      text: 'DoList',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.blue,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 8),
@@ -407,10 +421,17 @@ class _LoginScreenState extends State<LoginScreen> {
                       onTap: _isAppleLoading ? null : _handleAppleSignIn,
                       isDark: isDark,
                       isLoading: _isAppleLoading,
-                      icon: Icon(
-                        Icons.apple,
-                        size: 20,
-                        color: isDark ? Colors.white : Colors.black,
+                      icon: Image.asset(
+                        'assets/images/icon_apple.png',
+                        width: 20,
+                        height: 20,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Icon(
+                            Icons.apple,
+                            size: 20,
+                            color: isDark ? Colors.white : Colors.black,
+                          );
+                        },
                       ),
                       label: 'Apple',
                     ),

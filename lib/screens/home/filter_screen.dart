@@ -56,26 +56,48 @@ class _FilterScreenState extends State<FilterScreen> {
                       color: theme.colorScheme.onSurface,
                     ),
                   ),
-                  if (_hasActiveFilters())
-                    GestureDetector(
-                      onTap: _resetFilters,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
+                  Row(
+                    children: [
+                      if (_hasActiveFilters())
+                        GestureDetector(
+                          onTap: _resetFilters,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            margin: const EdgeInsets.only(right: 12),
+                            decoration: BoxDecoration(
+                              color: AppColors.blue.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              "Reset All",
+                              style: AppStyle.smallGray.copyWith(
+                                color: AppColors.blue,
+                              ),
+                            ),
+                          ),
                         ),
-                        decoration: BoxDecoration(
-                          color: AppColors.blue.withAlpha((0.1 * 255).round()),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          "Reset All",
-                          style: AppStyle.smallGray.copyWith(
-                            color: AppColors.blue,
+                      GestureDetector(
+                        onTap: () => Get.back(),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? Colors.grey[800]!.withValues(alpha: 0.5)
+                                : Colors.grey[200]!.withValues(alpha: 0.5),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.close,
+                            size: 20,
+                            color: theme.colorScheme.onSurface,
                           ),
                         ),
                       ),
-                    ),
+                    ],
+                  ),
                 ],
               ),
 
