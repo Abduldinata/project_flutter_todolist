@@ -9,4 +9,5 @@ class AppRoutes {
   static const filter = '/filter';
   static const settings = '/settings';
   static const changePassword = '/change-password';
+  static const resetPassword = '/reset-password';
 }

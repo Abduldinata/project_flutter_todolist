@@ -216,6 +216,44 @@ class SupabaseService {
     );
   }
 
+  /// Reset password dengan token dari email link
+  /// Digunakan setelah user klik link reset password dari email
+  Future<void> resetPasswordWithToken(String newPassword) async {
+    // Validasi password baru
+    if (newPassword.length < 8) {
+      throw Exception('Password harus minimal 8 karakter');
+    }
+
+    // Update password - Supabase akan otomatis memverifikasi token dari session
+    // Token sudah diverifikasi saat deep link dibuka
+    await _client.auth.updateUser(
+      UserAttributes(password: newPassword),
+    );
+  }
+
+  /// Reset password dengan mengirim email reset link
+  /// User akan menerima email dengan link untuk reset password
+  Future<void> resetPassword(String email) async {
+    if (email.trim().isEmpty) {
+      throw Exception('Email harus diisi');
+    }
+
+    // Validasi format email
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(email.trim())) {
+      throw Exception('Format email tidak valid');
+    }
+
+    // Kirim email reset password dengan redirect URL untuk mobile app
+    // Format: scheme://host
+    const redirectUrl = 'todolist://reset-password';
+    
+    await _client.auth.resetPasswordForEmail(
+      email.trim(),
+      redirectTo: redirectUrl,
+    );
+  }
+
   // ===============================
   // 📝 TASK FUNCTIONS
   // ===============================

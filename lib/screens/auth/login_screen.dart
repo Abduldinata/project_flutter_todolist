@@ -8,6 +8,7 @@ import '../../widgets/neumorphic_dialog.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/app_routes.dart';
 import '../../theme/theme_tokens.dart';
+import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -316,8 +317,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: () {
-                    // Forgot password functionality
-                    _showError('Forgot password feature coming soon');
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ForgotPasswordScreen(),
+                      ),
+                    );
                   },
                   child: Text(
                     'Forgot Password?',

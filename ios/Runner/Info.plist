@@ -10,6 +10,7 @@
     <key>CFBundleURLSchemes</key>
     <array>
       <string>io.supabase.flutter</string>
+      <string>todolist</string>
     </array>
   </dict>
 </array>
