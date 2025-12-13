@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../theme/theme_tokens.dart';
 import '../../theme/theme_controller.dart';
 import '../../widgets/bottom_nav.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/app_routes.dart';
+import '../../models/profile_model.dart';
+import '../home/profile_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -16,22 +20,60 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final ThemeController _themeController = Get.find<ThemeController>();
   final SupabaseService _supabaseService = SupabaseService();
+  final _box = GetStorage();
+  
   int navIndex = 3;
+  Profile? _profile;
+  
+  // Preferences
+  bool _notificationsEnabled = true;
+  String _startOfWeek = 'Monday';
+  bool _soundEffectsEnabled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+    _loadPreferences();
+  }
+
+  Future<void> _loadProfile() async {
+    try {
+      final data = await _supabaseService.getProfile();
+      if (data != null && mounted) {
+        setState(() {
+          _profile = Profile.fromJson(data);
+        });
+      }
+    } catch (e) {
+      debugPrint("Error loading profile: $e");
+    }
+  }
+
+  void _loadPreferences() {
+    _notificationsEnabled = _box.read('notifications_enabled') ?? true;
+    _startOfWeek = _box.read('start_of_week') ?? 'Monday';
+    _soundEffectsEnabled = _box.read('sound_effects_enabled') ?? false;
+  }
+
+  void _savePreference(String key, dynamic value) {
+    _box.write(key, value);
+  }
 
   Future<void> _handleLogout() async {
-    final confirm = await Get.dialog(
+    final confirm = await Get.dialog<bool>(
       AlertDialog(
-        title: const Text("Logout"),
-        content: const Text("Yakin ingin logout?"),
+        title: const Text("Log Out"),
+        content: const Text("Are you sure you want to log out?"),
         actions: [
           TextButton(
             onPressed: () => Get.back(result: false),
-            child: const Text("Batal"),
+            child: const Text("Cancel"),
           ),
           ElevatedButton(
             onPressed: () => Get.back(result: true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text("Logout", style: TextStyle(color: Colors.white)),
+            child: const Text("Log Out", style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -41,16 +83,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       try {
         await _supabaseService.signOut();
         Get.offAllNamed(AppRoutes.login);
-        Get.snackbar(
-          "Success",
-          "Berhasil logout",
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-        );
       } catch (e) {
         Get.snackbar(
           "Error",
-          "Gagal logout: ${e.toString()}",
+          "Failed to log out: ${e.toString()}",
           backgroundColor: Colors.red,
           colorText: Colors.white,
         );
@@ -58,423 +94,146 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  void _showStartOfWeekPicker() {
+    final days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkCard : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: days.map((day) {
+            return ListTile(
+              title: Text(day),
+              onTap: () {
+                setState(() => _startOfWeek = day);
+                _savePreference('start_of_week', day);
+                Get.back();
+              },
+              trailing: _startOfWeek == day
+                  ? Icon(Icons.check, color: AppColors.blue)
+                  : null,
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  bool get isDark {
+    final theme = Theme.of(context);
+    return theme.brightness == Brightness.dark;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final scheme = theme.colorScheme;
+    final user = Supabase.instance.client.auth.currentUser;
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: isDark ? AppColors.darkBg : AppColors.bg,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              // Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Column(
+          children: [
+            // Header
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
                 children: [
-                  Text(
-                    "Pengaturan",
-                    style: AppStyle.title.copyWith(
-                      color: scheme.onSurface,
+                  IconButton(
+                    onPressed: () => Get.back(),
+                    icon: Icon(
+                      Icons.arrow_back,
+                      color: isDark ? Colors.white : AppColors.text,
                     ),
                   ),
-                  GestureDetector(
-                    onTap: () => Get.back(),
-                    behavior: HitTestBehavior.opaque,
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      padding: const EdgeInsets.all(8),
-                      decoration: (isDark ? NeuDark.convex : Neu.convex),
-                      child: Icon(
-                        Icons.arrow_back,
-                        color: scheme.onSurface,
+                  Expanded(
+                    child: Center(
+                      child: Text(
+                        'Settings',
+                        style: AppStyle.title.copyWith(
+                          color: isDark ? Colors.white : AppColors.text,
+                        ),
                       ),
                     ),
                   ),
+                  const SizedBox(width: 48), // Balance for back button
                 ],
               ),
+            ),
 
-              const SizedBox(height: 20),
+            // Content
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // User Profile Section
+                    _buildProfileCard(user, scheme),
+                    const SizedBox(height: 32),
 
-              // Settings List
-              Expanded(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: Column(
-                    children: [
-                      // Dark Mode Toggle Card
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: (isDark ? NeuDark.concave : Neu.concave)
-                            .copyWith(color: scheme.surface),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Obx(
-                                  () => Icon(
-                                    _themeController.isDarkMode.value
-                                        ? Icons.dark_mode
-                                        : Icons.light_mode,
-                                    color: AppColors.blue,
-                                    size: 24,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Text(
-                                  "Dark Mode",
-                                  style: AppStyle.subtitle.copyWith(
-                                    color: Theme.of(context).colorScheme.onSurface,
-                                  ),
-                                ),
-                              ],
+                    // Personalization Section
+                    _buildSectionTitle('PERSONALIZATION'),
+                    const SizedBox(height: 12),
+                    _buildPersonalizationCard(scheme),
+                    const SizedBox(height: 32),
+
+                    // Preferences Section
+                    _buildSectionTitle('PREFERENCES'),
+                    const SizedBox(height: 12),
+                    _buildPreferencesCard(scheme),
+                    const SizedBox(height: 32),
+
+                    // Support & About Section
+                    _buildSectionTitle('SUPPORT & ABOUT'),
+                    const SizedBox(height: 12),
+                    _buildSupportCard(scheme),
+                    const SizedBox(height: 32),
+
+                    // Log Out Button
+                    _buildLogOutButton(),
+                    const SizedBox(height: 20),
+
+                    // Version & Copyright
+                    Center(
+                      child: Column(
+                        children: [
+                          Text(
+                            'Version 2.4.0 (Build 1024)',
+                            style: AppStyle.smallGray.copyWith(
+                              color: isDark 
+                                  ? Colors.grey[500] 
+                                  : Colors.grey[600],
+                              fontSize: 12,
                             ),
-                            Obx(
-                              () => Switch(
-                                value: _themeController.isDarkMode.value,
-                                onChanged: (value) {
-                                  _themeController.toggleTheme();
-                                },
-                                activeThumbColor: AppColors.blue,
-                                activeTrackColor: AppColors.blue.withValues(alpha: 0.3),
-                                inactiveThumbColor: isDark
-                                    ? Colors.grey[300]
-                                    : Colors.grey[400],
-                                inactiveTrackColor: isDark
-                                    ? Colors.grey[800]!.withValues(alpha: 0.5)
-                                    : Colors.grey[300]!.withValues(alpha: 0.5),
-                                trackOutlineColor: WidgetStateProperty.resolveWith(
-                                  (states) => states.contains(WidgetState.selected)
-                                      ? AppColors.blue
-                                      : (isDark ? Colors.grey[700] : Colors.grey[400]),
-                                ),
-                              ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '© 2023 TASKFLOW INC.',
+                            style: AppStyle.smallGray.copyWith(
+                              color: isDark 
+                                  ? Colors.grey[600] 
+                                  : Colors.grey[500],
+                              fontSize: 11,
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-
-                      // Tentang Aplikasi Card
-                      GestureDetector(
-                        onTap: () {
-                          Get.dialog(
-                            AlertDialog(
-                              title: const Text("Tentang Aplikasi"),
-                              content: const Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text("To-Do List App"),
-                                  SizedBox(height: 8),
-                                  Text("Versi: 1.0.0"),
-                                  SizedBox(height: 8),
-                                  Text(
-                                    "Aplikasi manajemen tugas yang membantu Anda mengorganisir aktivitas sehari-hari.",
-                                  ),
-                                ],
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Get.back(),
-                                  child: const Text("Tutup"),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          margin: const EdgeInsets.only(bottom: 16),
-                          decoration: (isDark ? NeuDark.concave : Neu.concave)
-                              .copyWith(color: scheme.surface),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.info_outline,
-                                    color: AppColors.blue,
-                                    size: 24,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    "Tentang Aplikasi",
-                                    style: AppStyle.subtitle.copyWith(
-                                      color: Theme.of(context).colorScheme.onSurface,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Icon(
-                                Icons.chevron_right,
-                                color: scheme.onSurface.withValues(alpha: 0.5),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // Bantuan & Dukungan Card
-                      GestureDetector(
-                        onTap: () {
-                          Get.snackbar(
-                            "Info",
-                            "Fitur bantuan akan segera hadir",
-                            backgroundColor: Colors.blue,
-                            colorText: Colors.white,
-                          );
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          margin: const EdgeInsets.only(bottom: 16),
-                          decoration: (isDark ? NeuDark.concave : Neu.concave)
-                              .copyWith(color: scheme.surface),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.help_outline,
-                                    color: AppColors.blue,
-                                    size: 24,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    "Bantuan & Dukungan",
-                                    style: AppStyle.subtitle.copyWith(
-                                      color: Theme.of(context).colorScheme.onSurface,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Icon(
-                                Icons.chevron_right,
-                                color: scheme.onSurface.withValues(alpha: 0.5),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // Profil Card
-                      GestureDetector(
-                        onTap: () {
-                          Get.snackbar(
-                            "Info",
-                            "Fitur profil akan segera hadir",
-                            backgroundColor: Colors.blue,
-                            colorText: Colors.white,
-                          );
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          margin: const EdgeInsets.only(bottom: 16),
-                          decoration: (isDark ? NeuDark.concave : Neu.concave)
-                              .copyWith(color: scheme.surface),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.person_outline,
-                                    color: AppColors.blue,
-                                    size: 24,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    "Profil",
-                                    style: AppStyle.subtitle.copyWith(
-                                      color: Theme.of(context).colorScheme.onSurface,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Icon(
-                                Icons.chevron_right,
-                                color: scheme.onSurface.withValues(alpha: 0.5),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // Export Data Card
-                      GestureDetector(
-                        onTap: () {
-                          Get.snackbar(
-                            "Info",
-                            "Fitur export data akan segera hadir",
-                            backgroundColor: Colors.blue,
-                            colorText: Colors.white,
-                          );
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          margin: const EdgeInsets.only(bottom: 16),
-                          decoration: (isDark ? NeuDark.concave : Neu.concave)
-                              .copyWith(color: scheme.surface),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.download_outlined,
-                                    color: AppColors.blue,
-                                    size: 24,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    "Export Data",
-                                    style: AppStyle.subtitle.copyWith(
-                                      color: Theme.of(context).colorScheme.onSurface,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Icon(
-                                Icons.chevron_right,
-                                color: scheme.onSurface.withValues(alpha: 0.5),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // Hapus Semua Data Card
-                      GestureDetector(
-                        onTap: () async {
-                          final confirm = await Get.dialog(
-                            AlertDialog(
-                              title: const Text("Hapus Semua Data"),
-                              content: const Text(
-                                "Yakin ingin menghapus semua data? Tindakan ini tidak dapat dibatalkan.",
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Get.back(result: false),
-                                  child: const Text("Batal"),
-                                ),
-                                ElevatedButton(
-                                  onPressed: () => Get.back(result: true),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.red,
-                                  ),
-                                  child: const Text(
-                                    "Hapus",
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-
-                          if (confirm == true) {
-                            Get.snackbar(
-                              "Info",
-                              "Fitur hapus data akan segera hadir",
-                              backgroundColor: Colors.blue,
-                              colorText: Colors.white,
-                            );
-                          }
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          margin: const EdgeInsets.only(bottom: 16),
-                          decoration: (isDark ? NeuDark.concave : Neu.concave)
-                              .copyWith(color: scheme.surface),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.delete_outline,
-                                    color: Colors.red,
-                                    size: 24,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    "Hapus Semua Data",
-                                    style: AppStyle.subtitle.copyWith(
-                                      color: Colors.red,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Icon(
-                                Icons.chevron_right,
-                                color: scheme.onSurface.withValues(alpha: 0.5),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      // Logout Button
-                      GestureDetector(
-                        onTap: _handleLogout,
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 16,
-                            horizontal: 20,
-                          ),
-                          decoration: (isDark ? NeuDark.convex : Neu.convex)
-                              .copyWith(
-                            color: Colors.red.withValues(alpha: 0.1),
-                            boxShadow: [
-                              ...?(isDark ? NeuDark.convex : Neu.convex)
-                                  .boxShadow,
-                              BoxShadow(
-                                color: Colors.red.withValues(alpha: 0.2),
-                                offset: const Offset(0, 4),
-                                blurRadius: 10,
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.logout,
-                                color: Colors.red,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                "Logout",
-                                style: AppStyle.normal.copyWith(
-                                  color: Colors.red,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
-
       bottomNavigationBar: BottomNav(
         index: navIndex,
         onTap: (i) {
@@ -483,8 +242,457 @@ class _SettingsScreenState extends State<SettingsScreen> {
           if (i == 0) Get.offAllNamed("/inbox");
           if (i == 1) Get.offAllNamed("/today");
           if (i == 2) Get.offAllNamed("/upcoming");
-          if (i == 3) Get.offAllNamed("/filter");
+          if (i == 3) Get.offAllNamed("/settings");
         },
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 1.2,
+        color: isDark ? Colors.grey[400] : Colors.grey[600],
+      ),
+    );
+  }
+
+  Widget _buildProfileCard(User? user, ColorScheme scheme) {
+    final email = user?.email ?? _profile?.email ?? 'user@example.com';
+    final username = _profile?.username ?? 
+        user?.userMetadata?['username']?.toString() ?? 
+        'User';
+    final avatarUrl = _profile?.avatarUrl;
+
+    return GestureDetector(
+      onTap: () {
+        // Navigate to profile screen
+        Get.to(() => const ProfileScreen());
+      },
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: isDark ? NeuDark.concave : Neu.concave,
+        child: Row(
+          children: [
+            // Avatar
+            Stack(
+              children: [
+                CircleAvatar(
+                  radius: 32,
+                  backgroundColor: AppColors.blue.withOpacity(0.1),
+                  backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
+                      ? NetworkImage(avatarUrl)
+                      : null,
+                  child: avatarUrl == null || avatarUrl.isEmpty
+                      ? Text(
+                          username.isNotEmpty ? username[0].toUpperCase() : 'U',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.blue,
+                          ),
+                        )
+                      : null,
+                ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: AppColors.blue,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isDark ? AppColors.darkCard : Colors.white,
+                        width: 2,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.edit,
+                      size: 12,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(width: 16),
+            // Name & Email
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          username,
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : AppColors.text,
+                          ),
+                        ),
+                      ),
+                      // PRO Badge (optional - bisa diaktifkan jika ada premium)
+                      // Container(
+                      //   padding: const EdgeInsets.symmetric(
+                      //     horizontal: 8,
+                      //     vertical: 4,
+                      //   ),
+                      //   decoration: BoxDecoration(
+                      //     color: AppColors.blue,
+                      //     borderRadius: BorderRadius.circular(12),
+                      //   ),
+                      //   child: const Text(
+                      //     'PRO',
+                      //     style: TextStyle(
+                      //       color: Colors.white,
+                      //       fontSize: 10,
+                      //       fontWeight: FontWeight.bold,
+                      //     ),
+                      //   ),
+                      // ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    email,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPersonalizationCard(ColorScheme scheme) {
+    return Container(
+      decoration: isDark ? NeuDark.concave : Neu.concave,
+      child: Column(
+        children: [
+          // App Theme
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.dark_mode,
+                  color: AppColors.blue,
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'App Theme',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: isDark ? Colors.white : AppColors.text,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Obx(() {
+              final currentMode = _themeController.themeMode.value;
+              return SegmentedButton<ThemeMode>(
+                segments: const [
+                  ButtonSegment<ThemeMode>(
+                    value: ThemeMode.light,
+                    label: Text('Light'),
+                  ),
+                  ButtonSegment<ThemeMode>(
+                    value: ThemeMode.dark,
+                    label: Text('Dark'),
+                  ),
+                  ButtonSegment<ThemeMode>(
+                    value: ThemeMode.system,
+                    label: Text('System'),
+                  ),
+                ],
+                selected: {currentMode},
+                onSelectionChanged: (Set<ThemeMode> newSelection) {
+                  _themeController.setThemeMode(newSelection.first);
+                },
+                style: SegmentedButton.styleFrom(
+                  selectedBackgroundColor: AppColors.blue,
+                  selectedForegroundColor: Colors.white,
+                  backgroundColor: isDark 
+                      ? AppColors.darkSurface 
+                      : Colors.grey[200],
+                  foregroundColor: isDark 
+                      ? Colors.grey[300] 
+                      : Colors.grey[700],
+                ),
+              );
+            }),
+          ),
+          const Divider(height: 1),
+          // Accent Color
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.palette,
+                  color: Colors.purple[400],
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Accent Color',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: isDark ? Colors.white : AppColors.text,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: AppColors.blue,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
+                      width: 2,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.chevron_right,
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPreferencesCard(ColorScheme scheme) {
+    return Container(
+      decoration: isDark ? NeuDark.concave : Neu.concave,
+      child: Column(
+        children: [
+          // Notifications
+          _buildPreferenceItem(
+            icon: Icons.notifications,
+            iconColor: Colors.red,
+            title: 'Notifications',
+            trailing: Switch(
+              value: _notificationsEnabled,
+              onChanged: (value) {
+                setState(() => _notificationsEnabled = value);
+                _savePreference('notifications_enabled', value);
+              },
+              activeColor: AppColors.blue,
+            ),
+          ),
+          const Divider(height: 1),
+          // Start of Week
+          _buildPreferenceItem(
+            icon: Icons.calendar_today,
+            iconColor: Colors.green,
+            title: 'Start of Week',
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _startOfWeek,
+                  style: TextStyle(
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.chevron_right,
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                ),
+              ],
+            ),
+            onTap: _showStartOfWeekPicker,
+          ),
+          const Divider(height: 1),
+          // Sound Effects
+          _buildPreferenceItem(
+            icon: Icons.volume_up,
+            iconColor: Colors.orange,
+            title: 'Sound Effects',
+            trailing: Switch(
+              value: _soundEffectsEnabled,
+              onChanged: (value) {
+                setState(() => _soundEffectsEnabled = value);
+                _savePreference('sound_effects_enabled', value);
+              },
+              activeColor: AppColors.blue,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPreferenceItem({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required Widget trailing,
+    VoidCallback? onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(icon, color: iconColor, size: 24),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: isDark ? Colors.white : AppColors.text,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            trailing,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSupportCard(ColorScheme scheme) {
+    return Container(
+      decoration: isDark ? NeuDark.concave : Neu.concave,
+      child: Column(
+        children: [
+          _buildSupportItem(
+            icon: Icons.help_outline,
+            iconColor: AppColors.blue,
+            title: 'Help Center',
+            onTap: () {
+              Get.snackbar(
+                'Info',
+                'Help Center coming soon',
+                backgroundColor: AppColors.blue,
+                colorText: Colors.white,
+              );
+            },
+          ),
+          const Divider(height: 1),
+          _buildSupportItem(
+            icon: Icons.lock_outline,
+            iconColor: Colors.teal,
+            title: 'Privacy Policy',
+            onTap: () {
+              Get.snackbar(
+                'Info',
+                'Privacy Policy coming soon',
+                backgroundColor: AppColors.blue,
+                colorText: Colors.white,
+              );
+            },
+          ),
+          const Divider(height: 1),
+          _buildSupportItem(
+            icon: Icons.description_outlined,
+            iconColor: Colors.grey,
+            title: 'Terms of Service',
+            onTap: () {
+              Get.snackbar(
+                'Info',
+                'Terms of Service coming soon',
+                backgroundColor: AppColors.blue,
+                colorText: Colors.white,
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSupportItem({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(icon, color: iconColor, size: 24),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: isDark ? Colors.white : AppColors.text,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogOutButton() {
+    return GestureDetector(
+      onTap: _handleLogout,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkSurface : Colors.grey[200],
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Center(
+          child: Text(
+            'Log Out',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.red,
+            ),
+          ),
+        ),
       ),
     );
   }

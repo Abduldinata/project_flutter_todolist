@@ -3,10 +3,12 @@ import 'package:get/get.dart';
 import '../../theme/theme_tokens.dart';
 import '../../widgets/add_task_button.dart';
 import '../../widgets/bottom_nav.dart';
-import '../../widgets/task_tile.dart';
 import '../../services/task_service.dart';
-import '../completed/completed_screen.dart';
+import '../../services/supabase_service.dart';
+import '../../models/profile_model.dart';
 import '../add_task/add_task_popup.dart';
+import '../task_detail/task_detail_screen.dart';
+import '../../utils/app_routes.dart';
 
 class TodayScreen extends StatefulWidget {
   const TodayScreen({super.key});
@@ -17,16 +19,19 @@ class TodayScreen extends StatefulWidget {
 
 class _TodayScreenState extends State<TodayScreen> {
   final TaskService _taskService = TaskService();
+  final SupabaseService _supabaseService = SupabaseService();
+  
   List<Map<String, dynamic>> tasks = [];
+  Profile? _profile;
   bool loading = true;
+  bool loadingProfile = true;
   int navIndex = 1;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      loadTasks();
-    });
+    loadTasks();
+    loadProfile();
   }
 
   Future<void> loadTasks() async {
@@ -43,18 +48,35 @@ class _TodayScreenState extends State<TodayScreen> {
       if (!mounted) return;
       Get.snackbar(
         "Error",
-        "Gagal memuat tasks: ${e.toString()}",
+        "Failed to load tasks: ${e.toString()}",
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
     } finally {
-      // ✅ jangan return di finally
       if (mounted) {
         setState(() => loading = false);
       }
     }
   }
 
+  Future<void> loadProfile() async {
+    try {
+      final data = await _supabaseService.getProfile();
+      if (mounted && data != null) {
+        setState(() {
+          _profile = Profile.fromJson(data);
+          loadingProfile = false;
+        });
+      } else if (mounted) {
+        setState(() => loadingProfile = false);
+      }
+    } catch (e) {
+      debugPrint("Error loading profile: $e");
+      if (mounted) {
+        setState(() => loadingProfile = false);
+      }
+    }
+  }
 
   Future<void> _toggleTaskCompletion(String taskId, bool currentValue) async {
     try {
@@ -63,149 +85,323 @@ class _TodayScreenState extends State<TodayScreen> {
     } catch (e) {
       Get.snackbar(
         "Error",
-        "Gagal update: ${e.toString()}",
+        "Failed to update: ${e.toString()}",
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
     }
   }
 
-  Future<void> _deleteTask(String taskId, String title) async {
-    final confirm = await Get.dialog<bool>(
-      AlertDialog(
-        title: const Text("Hapus Task"),
-        content: Text("Yakin hapus '$title'?"),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(result: false),
-            child: const Text("Batal"),
-          ),
-          ElevatedButton(
-            onPressed: () => Get.back(result: true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text("Hapus", style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'GOOD MORNING';
+    if (hour < 17) return 'GOOD AFTERNOON';
+    return 'GOOD EVENING';
+  }
 
-    if (confirm == true) {
-      try {
-        await _taskService.deleteTask(taskId);
-        await loadTasks();
-        Get.snackbar(
-          "Success",
-          "Task berhasil dihapus",
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-          duration: const Duration(seconds: 2),
-        );
-      } catch (e) {
-        Get.snackbar(
-          "Error",
-          "Gagal menghapus: ${e.toString()}",
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
-      }
-    }
+  String _getFormattedDate() {
+    final now = DateTime.now();
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    return '${days[now.weekday - 1]}, ${months[now.month - 1]} ${now.day}';
+  }
+
+  List<Map<String, dynamic>> _getHighPriorityTasks() {
+    return tasks.where((task) {
+      if ((task['is_done'] ?? false) == true) return false;
+      final priority = task['priority']?.toString() ?? 'medium';
+      return priority.toLowerCase() == 'high' || priority.toLowerCase() == 'urgent';
+    }).toList();
+  }
+
+  List<Map<String, dynamic>> _getUpcomingTasks() {
+    return tasks.where((task) {
+      if ((task['is_done'] ?? false) == true) return false;
+      final priority = task['priority']?.toString() ?? 'medium';
+      return priority.toLowerCase() != 'high' && priority.toLowerCase() != 'urgent';
+    }).toList();
+  }
+
+  double _getProgressPercentage() {
+    if (tasks.isEmpty) return 0.0;
+    final completed = tasks.where((task) => (task['is_done'] ?? false) == true).length;
+    return completed / tasks.length;
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
-    final DateTime now = DateTime.now();
-    final String formatted =
-        "${now.day} ${_month(now.month)} ${now.year} · ${_weekday(now.weekday)}";
+    final highPriorityTasks = _getHighPriorityTasks();
+    final upcomingTasks = _getUpcomingTasks();
+    final progress = _getProgressPercentage();
+    final completedCount = tasks.where((task) => (task['is_done'] ?? false) == true).length;
+    final remainingCount = tasks.length - completedCount;
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: isDark ? AppColors.darkBg : AppColors.bg,
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // HEADER
+              // Header with Avatar and Greeting
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  Row(
                     children: [
-                      Text(
-                        "Today",
-                        style: AppStyle.title.copyWith(color: scheme.onSurface),
+                      // Avatar
+                      CircleAvatar(
+                        radius: 24,
+                        backgroundColor: AppColors.blue.withOpacity(0.1),
+                        backgroundImage: _profile?.avatarUrl != null && 
+                            _profile!.avatarUrl!.isNotEmpty
+                            ? NetworkImage(_profile!.avatarUrl!)
+                            : null,
+                        child: _profile?.avatarUrl == null || 
+                            _profile!.avatarUrl!.isEmpty
+                            ? Text(
+                                _profile?.username.isNotEmpty == true
+                                    ? _profile!.username[0].toUpperCase()
+                                    : 'U',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.blue,
+                                ),
+                              )
+                            : null,
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        formatted,
-                        style: AppStyle.smallGray.copyWith(
-                          color: scheme.onSurface.withValues(alpha: 0.6),
-                        ),
-                      ),
-                    ],
-                  ),
-                  GestureDetector(
-                    onTap: () => Get.to(() => const CompletedScreen()),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: scheme.primary.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            Icons.check_circle,
-                            size: 16,
-                            color: scheme.primary,
-                          ),
-                          const SizedBox(width: 6),
                           Text(
-                            "Completed",
-                            style: AppStyle.normal.copyWith(
-                              color: scheme.primary,
-                              fontSize: 14,
+                            _getGreeting(),
+                            style: TextStyle(
+                              fontSize: 12,
                               fontWeight: FontWeight.w500,
+                              color: isDark ? Colors.grey[400] : Colors.grey[600],
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _profile?.username ?? 'User',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white : AppColors.text,
                             ),
                           ),
                         ],
                       ),
+                    ],
+                  ),
+                  IconButton(
+                    onPressed: () => Get.toNamed(AppRoutes.settings),
+                    icon: Icon(
+                      Icons.settings,
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      size: 24,
                     ),
                   ),
                 ],
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
 
-              // Progress Indicator
-              if (tasks.isNotEmpty) ...[
-                _buildProgressIndicator(),
-                const SizedBox(height: 20),
-              ],
-
-              // TASK LIST
-              Expanded(
-                child: RefreshIndicator(
-                  onRefresh: loadTasks,
-                  child: _buildTaskList(),
+              // Title
+              Text(
+                'Today',
+                style: AppStyle.title.copyWith(
+                  color: isDark ? Colors.white : AppColors.text,
                 ),
               ),
+              const SizedBox(height: 4),
+              Text(
+                _getFormattedDate(),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Daily Progress Card
+              if (tasks.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: isDark ? NeuDark.concave : Neu.concave,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'DAILY PROGRESS',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "Keep it up, you're doing great!",
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? Colors.grey[300] : Colors.grey[700],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: LinearProgressIndicator(
+                                value: progress,
+                                backgroundColor: isDark
+                                    ? Colors.grey[800]
+                                    : Colors.grey[200],
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  AppColors.blue,
+                                ),
+                                minHeight: 8,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Text(
+                            '${(progress * 100).toInt()}%',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.blue,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '$completedCount of ${tasks.length} completed',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? Colors.grey[400] : Colors.grey[600],
+                            ),
+                          ),
+                          Text(
+                            '$remainingCount remaining',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? Colors.grey[400] : Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+              if (tasks.isNotEmpty) const SizedBox(height: 24),
+
+              // High Priority Section
+              if (highPriorityTasks.isNotEmpty) ...[
+                Row(
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'HIGH PRIORITY',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ...highPriorityTasks.map((task) => _buildTaskCard(task, isDark, isHighPriority: true)),
+                const SizedBox(height: 24),
+              ],
+
+              // Upcoming Section
+              if (upcomingTasks.isNotEmpty) ...[
+                Row(
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: AppColors.blue,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'UPCOMING',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ...upcomingTasks.map((task) => _buildTaskCard(task, isDark, isHighPriority: false)),
+              ],
+
+              // Empty State
+              if (tasks.isEmpty && !loading) ...[
+                const SizedBox(height: 40),
+                Center(
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.check_circle_outline,
+                        size: 64,
+                        color: isDark ? Colors.grey[600] : Colors.grey[400],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No tasks for today',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
         ),
       ),
-
-      // ADD TASK BUTTON
       floatingActionButton: AddTaskButton(
         onTap: () async {
-          final result = await Get.to<Map<String, dynamic>>(
-            () => const AddTaskPopup(),
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (ctx) => const AddTaskPopup()),
           );
 
           if (result != null &&
@@ -221,15 +417,14 @@ class _TodayScreenState extends State<TodayScreen> {
               await loadTasks();
               Get.snackbar(
                 "Success",
-                "Task berhasil ditambahkan",
+                "Task added successfully",
                 backgroundColor: Colors.green,
                 colorText: Colors.white,
-                duration: const Duration(seconds: 2),
               );
             } catch (e) {
               Get.snackbar(
                 "Error",
-                "Gagal menambahkan task: ${e.toString()}",
+                "Failed to add task: ${e.toString()}",
                 backgroundColor: Colors.red,
                 colorText: Colors.white,
               );
@@ -237,8 +432,6 @@ class _TodayScreenState extends State<TodayScreen> {
           }
         },
       ),
-
-      // BOTTOM NAV
       bottomNavigationBar: BottomNav(
         index: navIndex,
         onTap: (i) {
@@ -252,7 +445,7 @@ class _TodayScreenState extends State<TodayScreen> {
               Get.offAllNamed("/upcoming");
               break;
             case 3:
-              Get.offAllNamed("/filter");
+              Get.offAllNamed("/settings");
               break;
             default:
               Get.offAllNamed("/today");
@@ -262,137 +455,123 @@ class _TodayScreenState extends State<TodayScreen> {
     );
   }
 
-  Widget _buildProgressIndicator() {
-    final completedCount = tasks
-        .where((task) => task['is_done'] == true)
-        .length;
-    final totalCount = tasks.length;
-    final percentage = totalCount > 0 ? (completedCount / totalCount) : 0.0;
+  Widget _buildTaskCard(Map<String, dynamic> task, bool isDark, {required bool isHighPriority}) {
+    final taskId = task['id']?.toString() ?? '';
+    final title = task['title']?.toString() ?? 'No Title';
+    final isDone = task['is_done'] ?? false;
+    final priority = task['priority']?.toString() ?? 'medium';
+    
+    // Mock time and category (can be extended later)
+    final time = isHighPriority ? '10:00 AM' : '5:30 PM';
+    final category = _getCategoryFromPriority(priority);
+    final showAnytime = category == 'Habit';
 
-    final scheme = Theme.of(context).colorScheme;
-
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              "Progress Hari Ini",
-              style: AppStyle.subtitle.copyWith(color: scheme.onSurface),
-            ),
-            Text(
-              "${(percentage * 100).toInt()}%",
-              style: AppStyle.normal.copyWith(
-                color: scheme.primary,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        LinearProgressIndicator(
-          value: percentage,
-          backgroundColor: scheme.surface,
-          color: scheme.primary,
-          borderRadius: BorderRadius.circular(10),
-          minHeight: 10,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          "$completedCount dari $totalCount task selesai",
-          style: AppStyle.smallGray.copyWith(
-            color: scheme.onSurface.withValues(alpha: 0.6),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTaskList() {
-    final scheme = Theme.of(context).colorScheme;
-
-    if (loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (tasks.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.check_circle_outline,
-              size: 64,
-              color: scheme.onSurface.withValues(alpha: 0.35),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              "Belum ada tugas untuk hari ini",
-              style: AppStyle.subtitle.copyWith(
-                color: scheme.onSurface.withValues(alpha: 0.7),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Text(
-                "Tambahkan tugas baru dengan tombol + di bawah",
-                style: AppStyle.smallGray.copyWith(
-                  color: scheme.onSurface.withValues(alpha: 0.55),
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      physics: const AlwaysScrollableScrollPhysics(),
-      itemCount: tasks.length,
-      itemBuilder: (_, index) {
-        final task = tasks[index];
-        return TaskTile(
-          task: task,
-          onToggleCompletion: _toggleTaskCompletion,
-          onDelete: _deleteTask,
-          showDate: false,
-          compactMode: false,
-        );
+    return GestureDetector(
+      onTap: () {
+        Get.to(() => TaskDetailScreen(task: task));
       },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: isDark ? NeuDark.concave : Neu.concave,
+        child: Row(
+          children: [
+            // Checkbox
+            GestureDetector(
+              onTap: () {
+                if (taskId.isNotEmpty) {
+                  _toggleTaskCompletion(taskId, isDone);
+                }
+              },
+              child: Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: isDone ? AppColors.blue : Colors.transparent,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isDone
+                        ? AppColors.blue
+                        : (isDark ? Colors.grey[600]! : Colors.grey[400]!),
+                    width: 2,
+                  ),
+                ),
+                child: isDone
+                    ? const Icon(Icons.check, size: 16, color: Colors.white)
+                    : null,
+              ),
+            ),
+            const SizedBox(width: 16),
+            // Task Content
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: isDone
+                          ? (isDark ? Colors.grey[600] : Colors.grey[400])
+                          : (isDark ? Colors.white : AppColors.text),
+                      decoration: isDone ? TextDecoration.lineThrough : null,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Icon(
+                        showAnytime ? Icons.all_inclusive : Icons.access_time,
+                        size: 14,
+                        color: isHighPriority
+                            ? Colors.red
+                            : (isDark ? Colors.grey[500] : Colors.grey[600]),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        showAnytime ? 'Anytime' : time,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isHighPriority
+                              ? Colors.red
+                              : (isDark ? Colors.grey[500] : Colors.grey[600]),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        width: 4,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.grey[500] : Colors.grey[600],
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '#$category',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  // FORMAT NAMA HARI & BULAN
-  String _weekday(int d) {
-    const days = [
-      "Senin",
-      "Selasa",
-      "Rabu",
-      "Kamis",
-      "Jumat",
-      "Sabtu",
-      "Minggu",
-    ];
-    return days[d - 1];
-  }
-
-  String _month(int m) {
-    const months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "Mei",
-      "Jun",
-      "Jul",
-      "Agu",
-      "Sep",
-      "Okt",
-      "Nov",
-      "Des",
-    ];
-    return months[m - 1];
+  String _getCategoryFromPriority(String? priority) {
+    if (priority == null) return 'Work';
+    if (priority.toLowerCase() == 'high' || priority.toLowerCase() == 'urgent') {
+      return 'Work';
+    }
+    // Default categories based on task title or other logic
+    return 'Personal'; // Can be extended to detect from title or other fields
   }
 }

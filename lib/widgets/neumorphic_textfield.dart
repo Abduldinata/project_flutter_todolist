@@ -22,12 +22,14 @@ class NeumorphicTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderRadius = BorderRadius.circular(15);
 
     return Container(
+      clipBehavior: Clip.antiAlias,
       decoration: isDark
           ? BoxDecoration(
               color: const Color(0xFF2C2C2C),
-              borderRadius: BorderRadius.circular(15),
+              borderRadius: borderRadius,
               border: Border.all(color: Colors.grey[800]!),
             )
           : Neu.convex,
@@ -44,6 +46,13 @@ class NeumorphicTextField extends StatelessWidget {
             color: isDark ? Colors.grey[500] : Colors.grey,
           ),
           border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          errorBorder: InputBorder.none,
+          focusedErrorBorder: InputBorder.none,
+          disabledBorder: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(vertical: 16),
+          isDense: true,
           suffixIcon: suffix,
         ),
       ),

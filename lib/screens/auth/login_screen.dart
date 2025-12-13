@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart'; // Untuk kIsWeb
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -8,8 +8,6 @@ import '../../widgets/neumorphic_dialog.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/app_routes.dart';
 import '../../theme/theme_tokens.dart';
-import '../../widgets/neumorphic_textfield.dart';
-import '../../widgets/neumorphic_button.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -29,6 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _isLoading = false;
   bool _isGoogleLoading = false;
+  bool _isAppleLoading = false;
   bool _showPassword = false;
 
   @override
@@ -36,19 +35,13 @@ class _LoginScreenState extends State<LoginScreen> {
     super.initState();
     _service = SupabaseService();
 
-    // 🟢 PERBAIKAN PENTING DI SINI (SOLUSI CRASH):
-    // Kita hanya mengandalkan listener untuk navigasi di WEB.
-    // Di Mobile, navigasi akan dihandle manual oleh tombol (await) agar
-    // bisa menampilkan Dialog Sukses terlebih dahulu tanpa tabrakan.
     _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen((
       data,
     ) {
       if (kIsWeb) {
         final session = data.session;
         if (session != null && mounted) {
-          // Cek agar tidak redirect berulang
           if (Get.currentRoute == AppRoutes.login) {
-            // Gunakan postFrameCallback agar aman saat rebuild
             WidgetsBinding.instance.addPostFrameCallback((_) {
               Get.offAllNamed(AppRoutes.inbox);
             });
@@ -58,16 +51,15 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
-  // --- LOGIC LOGIN EMAIL ---
   Future<void> _handleLogin() async {
     if (_emailController.text.trim().isEmpty ||
         _passwordController.text.isEmpty) {
-      _showError('Email dan password harus diisi');
+      _showError('Email and password are required');
       return;
     }
 
     if (!GetUtils.isEmail(_emailController.text.trim())) {
-      _showError('Format email tidak valid');
+      _showError('Invalid email format');
       return;
     }
 
@@ -82,12 +74,11 @@ class _LoginScreenState extends State<LoginScreen> {
       if (response.user != null) {
         if (mounted) {
           NeumorphicDialog.show(
-            title: 'Berhasil',
-            message: 'Login berhasil! Selamat datang.',
+            title: 'Success',
+            message: 'Login successful! Welcome back.',
             type: DialogType.success,
           );
 
-          // Delay sedikit untuk UX, lalu navigasi manual (Mobile & Web non-redirect)
           await Future.delayed(const Duration(milliseconds: 1500));
           Get.offAllNamed(AppRoutes.inbox);
         }
@@ -101,22 +92,17 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // --- LOGIC LOGIN GOOGLE ---
   Future<void> _handleGoogleSignIn() async {
     setState(() => _isGoogleLoading = true);
 
     try {
-      // 1. Panggil Service
       final response = await _service.signInWithGoogle();
 
-      // 2. Handle Hasil (KHUSUS MOBILE)
-      // Jika di Web, halaman biasanya sudah redirect/reload, jadi kode di bawah skip.
-      // Jika di Mobile, kita handle navigasi di sini (karena listener dimatikan untuk mobile).
       if (!kIsWeb && response.user != null) {
         if (mounted) {
           NeumorphicDialog.show(
-            title: 'Berhasil',
-            message: 'Login dengan Google berhasil!',
+            title: 'Success',
+            message: 'Google sign in successful!',
             type: DialogType.success,
           );
 
@@ -125,11 +111,10 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       }
     } catch (e) {
-      // Parse error agar user friendly
       String errorMessage = _parseGoogleError(e.toString());
 
-      // Jangan tampilkan popup error jika user hanya membatalkan login (Back button)
-      if (!errorMessage.toLowerCase().contains('dibatalkan')) {
+      if (!errorMessage.toLowerCase().contains('cancelled') &&
+          !errorMessage.toLowerCase().contains('dibatalkan')) {
         _showError(errorMessage);
       } else {
         debugPrint("User cancelled Google Sign In");
@@ -141,39 +126,43 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // --- ERROR PARSING ---
+  Future<void> _handleAppleSignIn() async {
+    // Apple Sign In - can be implemented later
+    _showError('Apple Sign In coming soon');
+  }
+
   String _parseError(String error) {
     if (error.contains('SocketException') ||
         error.contains('Failed host lookup') ||
         error.contains('Network is unreachable')) {
-      return '❌ Tidak ada koneksi internet';
+      return '❌ No internet connection';
     }
     if (error.contains('Invalid login credentials') ||
         error.contains('Invalid email or password')) {
-      return '🔐 Email atau password salah';
+      return '🔐 Invalid email or password';
     }
     if (error.contains('Email not confirmed')) {
-      return '📧 Email belum diverifikasi. Cek inbox Anda.';
+      return '📧 Email not verified. Please check your inbox.';
     }
-    return '⚠️ Login gagal: ${error.length > 100 ? "${error.substring(0, 100)}..." : error}';
+    return '⚠️ Login failed: ${error.length > 100 ? "${error.substring(0, 100)}..." : error}';
   }
 
   String _parseGoogleError(String error) {
     if (error.contains('sign in cancelled') || error.contains('canceled')) {
-      return 'Login dibatalkan';
+      return 'Sign in cancelled';
     }
     if (error.contains('network error') || error.contains('SocketException')) {
-      return '❌ Periksa koneksi internet Anda';
+      return '❌ Please check your internet connection';
     }
     if (error.contains('10') || error.contains('SIGN_IN_FAILED')) {
-      return '⚠️ Konfigurasi Error:\nPastikan SHA-1 Fingerprint sudah didaftarkan di Google Cloud Console untuk Android.';
+      return '⚠️ Configuration Error:\nPlease ensure SHA-1 Fingerprint is registered in Google Cloud Console for Android.';
     }
-    return '⚠️ Gagal login Google: $error';
+    return '⚠️ Google sign in failed: $error';
   }
 
   void _showError(String message) {
     NeumorphicDialog.show(
-      title: 'Info',
+      title: 'Error',
       message: message,
       type: DialogType.error,
     );
@@ -183,193 +172,391 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _authSubscription.cancel(); // Wajib cancel listener
+    _authSubscription.cancel();
     super.dispose();
   }
 
-  // --- UI BUILD ---
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: Image.asset('assets/images/bg.png', fit: BoxFit.cover),
-          ),
-          Positioned.fill(
-            child: Container(
-              color: Colors.black.withAlpha((0.25 * 255).round()),
-            ),
-          ),
+      backgroundColor: isDark ? AppColors.darkBg : AppColors.bg,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(height: 40),
 
-          SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Logo
-                    Container(
-                      width: 100,
-                      height: 100,
-                      decoration: isDark ? NeuDark.concave : Neu.concave,
-                      child: const Icon(
-                        Icons.checklist_rounded,
-                        size: 60,
-                        color: AppColors.blue,
-                      ),
-                    ),
-                    const SizedBox(height: 30),
-
-                    // Title
-                    Text('Login', style: AppStyle.title),
-                    const SizedBox(height: 10),
-                    Text('Masuk ke akun Anda', style: AppStyle.smallGray),
-                    const SizedBox(height: 40),
-
-                    // Email Field
-                    NeumorphicTextField(
-                      controller: _emailController,
-                      hint: 'Email',
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Password Field
-                    NeumorphicTextField(
-                      controller: _passwordController,
-                      hint: 'Password',
-                      obscure: !_showPassword,
-                      textInputAction: TextInputAction.done,
-                      onSubmitted: (_) => _handleLogin(),
-                      suffix: IconButton(
-                        onPressed: () =>
-                            setState(() => _showPassword = !_showPassword),
-                        icon: Icon(
-                          _showPassword
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                          color: AppColors.text.withAlpha((0.6 * 255).round()),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 40),
-
-                    // Login Button (Email)
-                    _isLoading
-                        ? Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: isDark ? NeuDark.convex : Neu.convex,
-                            child: const CircularProgressIndicator(
-                              color: AppColors.blue,
-                            ),
-                          )
-                        : NeumorphicButton(
-                            label: 'Login dengan Email',
-                            onTap: _handleLogin,
-                          ),
-
-                    const SizedBox(height: 20),
-
-                    // OR Divider
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Divider(
-                            color: AppColors.text.withAlpha(
-                              (0.3 * 255).round(),
-                            ),
-                            thickness: 1,
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Text('atau', style: AppStyle.smallGray),
-                        ),
-                        Expanded(
-                          child: Divider(
-                            color: AppColors.text.withAlpha(
-                              (0.3 * 255).round(),
-                            ),
-                            thickness: 1,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Google Sign In Button
-                    _isGoogleLoading
-                        ? Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: isDark ? NeuDark.convex : Neu.convex,
-                            child: const CircularProgressIndicator(
-                              color: AppColors.blue,
-                            ),
-                          )
-                        : Container(
-                            decoration: isDark ? NeuDark.convex : Neu.convex,
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(15),
-                                onTap: _handleGoogleSignIn,
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 16,
-                                    horizontal: 24,
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Image.asset(
-                                        'assets/images/icon_google.png',
-                                        width: 24,
-                                        height: 24,
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Text(
-                                        'Login dengan Google',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          color: AppColors.text,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-
-                    const SizedBox(height: 30),
-
-                    // Register Link
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text('Belum punya akun? ', style: AppStyle.smallGray),
-                        GestureDetector(
-                          onTap: () => Get.toNamed(AppRoutes.register),
-                          child: Text(
-                            'Daftar',
-                            style: AppStyle.link.copyWith(
-                              color: AppColors.blue,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
+              // Logo
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.darkCard : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: AppColors.blue.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    Icon(Icons.check_circle, size: 40, color: AppColors.blue),
+                  ],
+                ),
               ),
+
+              const SizedBox(height: 40),
+
+              // Welcome Text
+              Text(
+                'Welcome Back',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : AppColors.text,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Please sign in to access your workspace',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                ),
+              ),
+
+              const SizedBox(height: 40),
+
+              // Email Field
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Email',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: isDark ? Colors.white : AppColors.text,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildTextField(
+                    controller: _emailController,
+                    hint: 'user@example.com',
+                    icon: Icons.email_outlined,
+                    isDark: isDark,
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 20),
+
+              // Password Field
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Password',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: isDark ? Colors.white : AppColors.text,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildTextField(
+                    controller: _passwordController,
+                    hint: '••••••••',
+                    icon: _showPassword
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    isDark: isDark,
+                    obscure: !_showPassword,
+                    onIconTap: () {
+                      setState(() => _showPassword = !_showPassword);
+                    },
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
+              // Forgot Password Link
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () {
+                    // Forgot password functionality
+                    _showError('Forgot password feature coming soon');
+                  },
+                  child: Text(
+                    'Forgot Password?',
+                    style: TextStyle(color: AppColors.blue, fontSize: 14),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 30),
+
+              // Log In Button
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: _isLoading
+                    ? Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.blue,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Center(
+                          child: CircularProgressIndicator(color: Colors.white),
+                        ),
+                      )
+                    : ElevatedButton(
+                        onPressed: _handleLogin,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.blue,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          'Log In',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+              ),
+
+              const SizedBox(height: 30),
+
+              // Or continue with
+              Row(
+                children: [
+                  Expanded(
+                    child: Divider(
+                      color: isDark ? Colors.grey[700] : Colors.grey[300],
+                      thickness: 1,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(
+                      'Or continue with',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Divider(
+                      color: isDark ? Colors.grey[700] : Colors.grey[300],
+                      thickness: 1,
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 20),
+
+              // Social Login Buttons
+              Row(
+                children: [
+                  // Google Button
+                  Expanded(
+                    child: _buildSocialButton(
+                      onTap: _isGoogleLoading ? null : _handleGoogleSignIn,
+                      isDark: isDark,
+                      isLoading: _isGoogleLoading,
+                      icon: Image.asset(
+                        'assets/images/icon_google.png',
+                        width: 20,
+                        height: 20,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(Icons.g_mobiledata, size: 20);
+                        },
+                      ),
+                      label: 'Google',
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Apple Button
+                  Expanded(
+                    child: _buildSocialButton(
+                      onTap: _isAppleLoading ? null : _handleAppleSignIn,
+                      isDark: isDark,
+                      isLoading: _isAppleLoading,
+                      icon: Icon(
+                        Icons.apple,
+                        size: 20,
+                        color: isDark ? Colors.white : Colors.black,
+                      ),
+                      label: 'Apple',
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 30),
+
+              // Sign Up Link
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "Don't have an account? ",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => Get.toNamed(AppRoutes.register),
+                    child: Text(
+                      'Sign Up',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.blue,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String hint,
+    required IconData icon,
+    required bool isDark,
+    bool obscure = false,
+    VoidCallback? onIconTap,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkCard : Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
+          width: 1,
+        ),
+      ),
+      child: TextField(
+        controller: controller,
+        obscureText: obscure,
+        textInputAction: controller == _passwordController
+            ? TextInputAction.done
+            : TextInputAction.next,
+        onSubmitted: controller == _passwordController
+            ? (_) => _handleLogin()
+            : null,
+        style: TextStyle(
+          color: isDark ? Colors.white : AppColors.text,
+          fontSize: 16,
+        ),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: TextStyle(
+            color: isDark ? Colors.grey[500] : Colors.grey[400],
+            fontSize: 16,
+          ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 16,
+          ),
+          suffixIcon: IconButton(
+            onPressed: onIconTap,
+            icon: Icon(
+              icon,
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
+              size: 20,
             ),
           ),
-        ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSocialButton({
+    required VoidCallback? onTap,
+    required bool isDark,
+    required bool isLoading,
+    required Widget icon,
+    required String label,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 50,
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkCard : Colors.grey[100],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
+            width: 1,
+          ),
+        ),
+        child: isLoading
+            ? const Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Center(child: icon),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: isDark ? Colors.white : AppColors.text,
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }

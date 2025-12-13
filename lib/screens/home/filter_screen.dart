@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../theme/theme_tokens.dart';
-import '../../widgets/bottom_nav.dart';
-import '../../widgets/task_tile.dart';
-import '../../services/task_service.dart';
-import '../../utils/app_routes.dart';
 
 class FilterScreen extends StatefulWidget {
   const FilterScreen({super.key});
@@ -14,12 +10,6 @@ class FilterScreen extends StatefulWidget {
 }
 
 class _FilterScreenState extends State<FilterScreen> {
-  final TaskService _taskService = TaskService();
-
-  List<Map<String, dynamic>> filteredTasks = [];
-  bool loading = true;
-  int navIndex = 3;
-
   // Filter state
   bool filterByPriority = false;
   String selectedPriority = 'medium'; // high, medium, low
@@ -28,118 +18,6 @@ class _FilterScreenState extends State<FilterScreen> {
   bool filterByDate = false;
   DateTime? selectedStartDate;
   DateTime? selectedEndDate;
-
-  Future<void> loadFilteredTasks() async {
-    setState(() => loading = true);
-    try {
-      final allTasks = await _taskService.getAllTasks();
-
-      // Apply filters
-      List<Map<String, dynamic>> result = allTasks;
-
-      // Filter by priority
-      if (filterByPriority) {
-        result = result.where((task) {
-          final taskPriority =
-              task['priority']?.toString().toLowerCase() ?? 'medium';
-          return taskPriority == selectedPriority.toLowerCase();
-        }).toList();
-      }
-
-      // Filter by status
-      if (filterByStatus) {
-        result = result.where((task) {
-          final isDone = task['is_done'] ?? false;
-          return showCompleted ? isDone : !isDone;
-        }).toList();
-      }
-
-      // Filter by date range
-      if (filterByDate && selectedStartDate != null) {
-        result = result.where((task) {
-          final taskDateStr = task['date']?.toString();
-          if (taskDateStr == null) return false;
-
-          try {
-            final taskDate = DateTime.parse("${taskDateStr}T00:00:00Z");
-
-            if (selectedEndDate != null) {
-              // Date range filter
-              return taskDate.isAfter(
-                    selectedStartDate!.subtract(const Duration(days: 1)),
-                  ) &&
-                  taskDate.isBefore(
-                    selectedEndDate!.add(const Duration(days: 1)),
-                  );
-            } else {
-              // Single date filter
-              return taskDate.year == selectedStartDate!.year &&
-                  taskDate.month == selectedStartDate!.month &&
-                  taskDate.day == selectedStartDate!.day;
-            }
-          } catch (e) {
-            return false;
-          }
-        }).toList();
-      }
-
-      setState(() => filteredTasks = result);
-    } catch (e) {
-      debugPrint("Error loading filtered tasks: $e");
-      Get.snackbar(
-        "Error",
-        "Gagal memuat tasks: ${e.toString()}",
-        backgroundColor: Colors.red.withAlpha((0.9 * 255).round()),
-        colorText: Colors.white,
-      );
-    }
-    setState(() => loading = false);
-  }
-
-  Future<void> _toggleTaskCompletion(String taskId, bool currentValue) async {
-    try {
-      await _taskService.updateCompleted(taskId, !currentValue);
-      await loadFilteredTasks();
-    } catch (e, st) {
-      debugPrint("Error update task: $e\n$st");
-      Get.snackbar(
-        "Error",
-        "Terjadi kesalahan saat mengupdate task",
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-    }
-  }
-
-  Future<void> _deleteTask(String taskId, String title) async {
-    final confirm = await Get.dialog(
-      AlertDialog(
-        title: const Text("Hapus Task"),
-        content: Text("Yakin hapus '$title'?"),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(result: false),
-            child: const Text("Batal"),
-          ),
-          ElevatedButton(
-            onPressed: () => Get.back(result: true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text("Hapus", style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm == true) {
-      try {
-        await _taskService.deleteTask(taskId);
-        await loadFilteredTasks();
-        Get.snackbar("Success", "Task berhasil dihapus");
-      } catch (e) {
-        Get.snackbar("Error", "Gagal menghapus: $e");
-      }
-    }
-  }
 
   void _resetFilters() {
     setState(() {
@@ -151,17 +29,10 @@ class _FilterScreenState extends State<FilterScreen> {
       selectedStartDate = null;
       selectedEndDate = null;
     });
-    loadFilteredTasks();
   }
 
   void _applyFilters() {
-    loadFilteredTasks();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    loadFilteredTasks();
+    // Filter preview logic removed - filters will be applied in inbox screen
   }
 
   @override
@@ -185,59 +56,26 @@ class _FilterScreenState extends State<FilterScreen> {
                       color: theme.colorScheme.onSurface,
                     ),
                   ),
-                  Row(
-                    children: [
-                      if (_hasActiveFilters())
-                        GestureDetector(
-                          onTap: _resetFilters,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            margin: const EdgeInsets.only(right: 12),
-                            decoration: BoxDecoration(
-                              color: AppColors.blue.withAlpha(
-                                (0.1 * 255).round(),
-                              ),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              "Reset All",
-                              style: AppStyle.smallGray.copyWith(
-                                color: AppColors.blue,
-                              ),
-                            ),
-                          ),
+                  if (_hasActiveFilters())
+                    GestureDetector(
+                      onTap: _resetFilters,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
                         ),
-                      GestureDetector(
-                        onTap: () {
-                          debugPrint("Navigating to settings...");
-                          Get.toNamed(AppRoutes.settings)?.catchError((error) {
-                            debugPrint("Navigation error: $error");
-                            Get.snackbar(
-                              "Error",
-                              "Gagal membuka pengaturan",
-                              backgroundColor: Colors.red,
-                              colorText: Colors.white,
-                            );
-                          });
-                        },
-                        behavior: HitTestBehavior.opaque,
-                        child: Container(
-                          width: 40,
-                          height: 40,
-                          padding: const EdgeInsets.all(8),
-                          decoration: (isDark ? NeuDark.convex : Neu.convex),
-                          child: Icon(
-                            Icons.settings,
-                            color: theme.colorScheme.onSurface,
-                            size: 20,
+                        decoration: BoxDecoration(
+                          color: AppColors.blue.withAlpha((0.1 * 255).round()),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          "Reset All",
+                          style: AppStyle.smallGray.copyWith(
+                            color: AppColors.blue,
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
                 ],
               ),
 
@@ -435,95 +273,54 @@ class _FilterScreenState extends State<FilterScreen> {
                         ),
                       ),
 
-                      // Results Section
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: (isDark ? NeuDark.concave : Neu.concave)
-                            .copyWith(color: theme.colorScheme.surface),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  "Results",
-                                  style: AppStyle.subtitle.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface, // ikut dark/light
-                                  ),
-                                ),
-                                Text(
-                                  "${filteredTasks.length} task${filteredTasks.length != 1 ? 's' : ''}",
-                                  style: AppStyle.smallGray.copyWith(
-                                    color: AppColors.blue,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            if (!loading && filteredTasks.isEmpty)
-                              Center(
-                                child: Column(
-                                  children: [
-                                    Icon(
-                                      Icons.filter_alt_outlined,
-                                      size: 48,
-                                      color: theme.colorScheme.onSurface
-                                          .withValues(alpha: 0.5),
-                                    ),
-                                    const SizedBox(height: 12),
-                                    const Text(
-                                      "No tasks match your filters",
-                                      style: AppStyle.smallGray,
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      "Try adjusting your filter criteria",
-                                      style: AppStyle.smallGray.copyWith(
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            else if (loading)
-                              const Center(child: CircularProgressIndicator())
-                            else
-                              ...filteredTasks.map(
-                                (task) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 8),
-                                  child: TaskTile(
-                                    task: task,
-                                    onToggleCompletion: _toggleTaskCompletion,
-                                    onDelete: _deleteTask,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
                       const SizedBox(height: 20),
                     ],
+                  ),
+                ),
+              ),
+
+              // Simpan Button
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // Return filter criteria ke inbox
+                      Get.back(
+                        result: {
+                          'filterByPriority': filterByPriority,
+                          'selectedPriority': selectedPriority,
+                          'filterByStatus': filterByStatus,
+                          'showCompleted': showCompleted,
+                          'filterByDate': filterByDate,
+                          'selectedStartDate': selectedStartDate
+                              ?.toIso8601String(),
+                          'selectedEndDate': selectedEndDate?.toIso8601String(),
+                        },
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.blue,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Simpan',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
               ),
             ],
           ),
         ),
-      ),
-
-      bottomNavigationBar: BottomNav(
-        index: navIndex,
-        onTap: (i) {
-          if (i == navIndex) return;
-          setState(() => navIndex = i);
-          if (i == 0) Get.offAllNamed("/inbox");
-          if (i == 1) Get.offAllNamed("/today");
-          if (i == 2) Get.offAllNamed("/upcoming");
-        },
       ),
     );
   }

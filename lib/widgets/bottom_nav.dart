@@ -15,7 +15,7 @@ class BottomNav extends StatelessWidget {
       Icons.inbox_outlined,
       Icons.today,
       Icons.calendar_month_outlined,
-      Icons.filter_list,
+      Icons.settings_outlined,
     ];
 
     return Container(
