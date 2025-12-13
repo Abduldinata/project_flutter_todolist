@@ -21,10 +21,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final ThemeController _themeController = Get.find<ThemeController>();
   final SupabaseService _supabaseService = SupabaseService();
   final _box = GetStorage();
-  
+
   int navIndex = 3;
   Profile? _profile;
-  
+
   // Preferences
   bool _notificationsEnabled = true;
   String _startOfWeek = 'Monday';
@@ -95,7 +95,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showStartOfWeekPicker() {
-    final days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    final days = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ];
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -207,8 +215,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           Text(
                             'Version 2.4.0 (Build 1024)',
                             style: AppStyle.smallGray.copyWith(
-                              color: isDark 
-                                  ? Colors.grey[500] 
+                              color: isDark
+                                  ? Colors.grey[500]
                                   : Colors.grey[600],
                               fontSize: 12,
                             ),
@@ -217,8 +225,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           Text(
                             '© 2023 TASKFLOW INC.',
                             style: AppStyle.smallGray.copyWith(
-                              color: isDark 
-                                  ? Colors.grey[600] 
+                              color: isDark
+                                  ? Colors.grey[600]
                                   : Colors.grey[500],
                               fontSize: 11,
                             ),
@@ -262,8 +270,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildProfileCard(User? user, ColorScheme scheme) {
     final email = user?.email ?? _profile?.email ?? 'user@example.com';
-    final username = _profile?.username ?? 
-        user?.userMetadata?['username']?.toString() ?? 
+    final username =
+        _profile?.username ??
+        user?.userMetadata?['username']?.toString() ??
         'User';
     final avatarUrl = _profile?.avatarUrl;
 
@@ -390,11 +399,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                Icon(
-                  Icons.dark_mode,
-                  color: AppColors.blue,
-                  size: 24,
-                ),
+                Icon(Icons.dark_mode, color: AppColors.blue, size: 24),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -411,39 +416,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Obx(() {
-              final currentMode = _themeController.themeMode.value;
-              return SegmentedButton<ThemeMode>(
-                segments: const [
-                  ButtonSegment<ThemeMode>(
-                    value: ThemeMode.light,
-                    label: Text('Light'),
-                  ),
-                  ButtonSegment<ThemeMode>(
-                    value: ThemeMode.dark,
-                    label: Text('Dark'),
-                  ),
-                  ButtonSegment<ThemeMode>(
-                    value: ThemeMode.system,
-                    label: Text('System'),
-                  ),
-                ],
-                selected: {currentMode},
-                onSelectionChanged: (Set<ThemeMode> newSelection) {
-                  _themeController.setThemeMode(newSelection.first);
-                },
-                style: SegmentedButton.styleFrom(
+            child: Builder(
+              builder: (context) {
+                final buttonStyle = SegmentedButton.styleFrom(
                   selectedBackgroundColor: AppColors.blue,
                   selectedForegroundColor: Colors.white,
-                  backgroundColor: isDark 
-                      ? AppColors.darkSurface 
+                  backgroundColor: isDark
+                      ? AppColors.darkSurface
                       : Colors.grey[200],
-                  foregroundColor: isDark 
-                      ? Colors.grey[300] 
-                      : Colors.grey[700],
-                ),
-              );
-            }),
+                  foregroundColor: isDark ? Colors.grey[300] : Colors.grey[700],
+                );
+                return Obx(
+                  () => SegmentedButton<ThemeMode>(
+                    segments: const [
+                      ButtonSegment<ThemeMode>(
+                        value: ThemeMode.light,
+                        label: Text('Light'),
+                      ),
+                      ButtonSegment<ThemeMode>(
+                        value: ThemeMode.dark,
+                        label: Text('Dark'),
+                      ),
+                      ButtonSegment<ThemeMode>(
+                        value: ThemeMode.system,
+                        label: Text('System'),
+                      ),
+                    ],
+                    selected: {_themeController.themeMode.value},
+                    onSelectionChanged: (Set<ThemeMode> newSelection) {
+                      _themeController.setThemeMode(newSelection.first);
+                    },
+                    style: buttonStyle,
+                  ),
+                );
+              },
+            ),
           ),
           const Divider(height: 1),
           // Accent Color
@@ -451,11 +458,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                Icon(
-                  Icons.palette,
-                  color: Colors.purple[400],
-                  size: 24,
-                ),
+                Icon(Icons.palette, color: Colors.purple[400], size: 24),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(

@@ -43,7 +43,7 @@ class MyApp extends StatelessWidget {
         title: 'To-Do List App',
         theme: AppTheme.light(),
         darkTheme: AppTheme.dark(),
-        themeMode: themeController.theme,
+        themeMode: themeController.themeMode.value,
         defaultTransition: Transition.fadeIn,
         transitionDuration: const Duration(milliseconds: 300),
 
