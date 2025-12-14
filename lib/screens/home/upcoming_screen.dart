@@ -453,37 +453,37 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () async {
-            final result = await Navigator.push(
-              context,
-              MaterialPageRoute(builder: (ctx) => const AddTaskPopup()),
-            );
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (ctx) => const AddTaskPopup()),
+                    );
 
-            if (result != null &&
-                result['text'] != null &&
-                result['date'] != null) {
-              try {
-                await _taskController.addTask(
-                  title: result['text'].toString(),
-                  date: result['date'] as DateTime,
-                  description: result['description']?.toString(),
-                  priority: result['priority']?.toString(),
-                );
-                Get.snackbar(
-                  "Success",
-                  "Task added successfully",
-                  backgroundColor: Colors.green,
-                  colorText: Colors.white,
-                );
-              } catch (e) {
-                Get.snackbar(
-                  "Error",
-                  "Failed to add task: ${e.toString()}",
-                  backgroundColor: Colors.red,
-                  colorText: Colors.white,
-                );
-              }
-            }
-          },
+                    if (result != null &&
+                        result['text'] != null &&
+                        result['date'] != null) {
+                      try {
+                        await _taskController.addTask(
+                          title: result['text'].toString(),
+                          date: result['date'] as DateTime,
+                          description: result['description']?.toString(),
+                          priority: result['priority']?.toString(),
+                        );
+                        Get.snackbar(
+                          "Success",
+                          "Task added successfully",
+                          backgroundColor: Colors.green,
+                          colorText: Colors.white,
+                        );
+                      } catch (e) {
+                        Get.snackbar(
+                          "Error",
+                          "Failed to add task: ${e.toString()}",
+                          backgroundColor: Colors.red,
+                          colorText: Colors.white,
+                        );
+                      }
+                    }
+                  },
           backgroundColor: AppColors.blue,
           tooltip: 'Tambah Task',
           child: const Icon(Icons.add, color: Colors.white),
