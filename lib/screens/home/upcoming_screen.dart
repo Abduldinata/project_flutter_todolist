@@ -5,6 +5,7 @@ import '../../widgets/bottom_nav.dart';
 import '../../widgets/loading_widget.dart';
 import '../../services/task_service.dart';
 import '../add_task/add_task_popup.dart';
+import '../task_detail/task_detail_screen.dart';
 
 class UpcomingScreen extends StatefulWidget {
   const UpcomingScreen({super.key});
@@ -70,6 +71,48 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
       debugPrint("Error parsing date: $e");
     }
     return null;
+  }
+
+  bool _isTodayTask(Map<String, dynamic> task) {
+    final taskDate = _parseDate(task['date']);
+    if (taskDate == null) return false;
+    final now = DateTime.now();
+    return taskDate.year == now.year &&
+        taskDate.month == now.month &&
+        taskDate.day == now.day;
+  }
+
+  bool _isNextWeekTask(Map<String, dynamic> task) {
+    final taskDate = _parseDate(task['date']);
+    if (taskDate == null) return false;
+    final now = DateTime.now();
+    final nextWeekStart = now.add(Duration(days: 7 - now.weekday));
+    return taskDate.isAfter(nextWeekStart.subtract(const Duration(days: 1)));
+  }
+
+  String _getCategoryFromPriority(String? priority) {
+    if (priority == null) return 'Medium';
+    final p = priority.toLowerCase();
+
+    // Return priority directly (High, Medium, Low)
+    if (p == 'high' || p == 'urgent') {
+      return 'High';
+    } else if (p == 'medium') {
+      return 'Medium';
+    } else {
+      return 'Low';
+    }
+  }
+
+  Color _getCategoryColor(String category) {
+    final c = category.toLowerCase();
+    if (c == 'high' || c == 'urgent') {
+      return Colors.red;
+    } else if (c == 'medium') {
+      return AppColors.blue;
+    } else {
+      return Colors.green;
+    }
   }
 
   List<DateTime> _getDateRange() {
@@ -553,130 +596,170 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
   Widget _buildTaskCard(Map<String, dynamic> task, bool isDark) {
     final taskId = task['id']?.toString() ?? '';
     final title = task['title']?.toString() ?? 'No Title';
+    final description = task['description']?.toString();
     final isDone = task['is_done'] ?? false;
     final priority = task['priority']?.toString() ?? 'medium';
+    final category = _getCategoryFromPriority(priority);
+    final isToday = _isTodayTask(task);
+    final isNextWeek = _isNextWeekTask(task);
+    final isHighPriority =
+        priority.toLowerCase() == 'high' || priority.toLowerCase() == 'urgent';
 
-    // Mock time and category for now (can be extended later)
-    final time = '10:00 AM'; // Default, can be from task['time'] if available
-    final category = priority == 'high' ? 'Urgent' : 'Work'; // Default category
+    final categoryColor = _getCategoryColor(category);
 
-    final hasHighPriority = priority == 'high' || priority == 'urgent';
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: isDark ? NeuDark.concave : Neu.concave,
-      child: Row(
-        children: [
-          // Checkbox
-          GestureDetector(
-            onTap: () {
-              if (taskId.isNotEmpty) {
-                _toggleTaskCompletion(taskId, isDone);
-              }
-            },
-            child: Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                color: isDone ? AppColors.blue : Colors.transparent,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isDone
-                      ? AppColors.blue
-                      : (isDark ? Colors.grey[600]! : Colors.grey[400]!),
-                  width: 2,
-                ),
-              ),
-              child: isDone
-                  ? const Icon(Icons.check, size: 16, color: Colors.white)
-                  : null,
-            ),
-          ),
-          const SizedBox(width: 16),
-          // Task Content
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+    return GestureDetector(
+      onTap: () {
+        Get.to(() => TaskDetailScreen(task: task));
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: isDark ? NeuDark.concave : Neu.concave,
+        child: Row(
+          children: [
+            // Checkbox
+            GestureDetector(
+              onTap: () {
+                if (taskId.isNotEmpty) {
+                  _toggleTaskCompletion(taskId, isDone);
+                }
+              },
+              child: Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: isDone ? AppColors.blue : Colors.transparent,
+                  shape: BoxShape.circle,
+                  border: Border.all(
                     color: isDone
-                        ? (isDark ? Colors.grey[600] : Colors.grey[400])
-                        : (isDark ? Colors.white : AppColors.text),
-                    decoration: isDone ? TextDecoration.lineThrough : null,
+                        ? AppColors.blue
+                        : (isDark ? Colors.grey[600]! : Colors.grey[400]!),
+                    width: 2,
                   ),
                 ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.access_time,
-                      size: 14,
-                      color: isDark ? Colors.grey[500] : Colors.grey[600],
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      time,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isDark ? Colors.grey[500] : Colors.grey[600],
+                child: isDone
+                    ? const Icon(Icons.check, size: 16, color: Colors.white)
+                    : null,
+              ),
+            ),
+            const SizedBox(width: 16),
+            // Task Content
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title with Priority and Due Date on the right
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          title,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: isDone
+                                ? (isDark ? Colors.grey[600] : Colors.grey[400])
+                                : (isDark ? Colors.white : AppColors.text),
+                            decoration: isDone
+                                ? TextDecoration.lineThrough
+                                : null,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      width: 4,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: isDark ? Colors.grey[500] : Colors.grey[600],
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    if (hasHighPriority)
+                      const SizedBox(width: 6),
+                      // Priority Tag
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
+                          horizontal: 10,
+                          vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.red,
+                          color: categoryColor.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Text(
-                          'Urgent',
+                        child: Text(
+                          category,
                           style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: categoryColor,
                           ),
                         ),
-                      )
-                    else
-                      Text(
-                        category,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isDark ? Colors.grey[400] : Colors.grey[600],
-                        ),
                       ),
+                      const SizedBox(width: 6),
+                      // Date/Status Info
+                      if (isToday)
+                        Text(
+                          'Due Today',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          ),
+                        )
+                      else if (isNextWeek)
+                        Text(
+                          'Next Week',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          ),
+                        )
+                      else if (isHighPriority)
+                        Row(
+                          children: [
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: const BoxDecoration(
+                                color: Colors.orange,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'High Priority',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                  // Description below title
+                  if (description != null && description.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      description,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDone
+                            ? (isDark ? Colors.grey[600] : Colors.grey[400])
+                            : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                        height: 1.4,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ],
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          // Flag Icon
-          Icon(
-            Icons.flag,
-            color: hasHighPriority
-                ? Colors.orange
-                : (isDark ? Colors.grey[600] : Colors.grey[400]),
-            size: 20,
-          ),
-        ],
+            // Flag/Icon
+            Icon(
+              isHighPriority ? Icons.flag : Icons.flag_outlined,
+              color: isHighPriority
+                  ? Colors.orange
+                  : (isDark ? Colors.grey[600] : Colors.grey[400]),
+              size: 20,
+            ),
+          ],
+        ),
       ),
     );
   }

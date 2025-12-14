@@ -232,3 +232,266 @@ class SearchLoading extends StatelessWidget {
     );
   }
 }
+
+// Loading skeleton untuk today screen - hanya task cards
+class TodayTaskLoading extends StatelessWidget {
+  final bool isDark;
+
+  const TodayTaskLoading({super.key, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // High Priority Section skeleton
+        Row(
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: const BoxDecoration(
+                color: Colors.red,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 8),
+            CardLoading(
+              height: 14,
+              width: 100,
+              borderRadius: BorderRadius.circular(7),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        // Task cards skeleton
+        ...List.generate(
+          2,
+          (index) => Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(16),
+            decoration: isDark ? NeuDark.concave : Neu.concave,
+            child: Row(
+              children: [
+                CardLoading(
+                  height: 24,
+                  width: 24,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: CardLoading(
+                              height: 20,
+                              width: double.infinity,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          CardLoading(
+                            height: 20,
+                            width: 60,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          const SizedBox(width: 6),
+                          CardLoading(
+                            height: 16,
+                            width: 70,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      CardLoading(
+                        height: 16,
+                        width: 200,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                CardLoading(
+                  height: 20,
+                  width: 20,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // Upcoming Section skeleton
+        Row(
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: AppColors.blue,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 8),
+            CardLoading(
+              height: 14,
+              width: 80,
+              borderRadius: BorderRadius.circular(7),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        // Task cards skeleton
+        ...List.generate(
+          2,
+          (index) => Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(16),
+            decoration: isDark ? NeuDark.concave : Neu.concave,
+            child: Row(
+              children: [
+                CardLoading(
+                  height: 24,
+                  width: 24,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: CardLoading(
+                              height: 20,
+                              width: double.infinity,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          CardLoading(
+                            height: 20,
+                            width: 60,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          const SizedBox(width: 6),
+                          CardLoading(
+                            height: 16,
+                            width: 70,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      CardLoading(
+                        height: 16,
+                        width: 180,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                CardLoading(
+                  height: 20,
+                  width: 20,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // History Section skeleton
+        Row(
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: isDark ? Colors.grey[600] : Colors.grey[400],
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 8),
+            CardLoading(
+              height: 14,
+              width: 70,
+              borderRadius: BorderRadius.circular(7),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        // Task cards skeleton
+        ...List.generate(
+          2,
+          (index) => Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(16),
+            decoration: isDark ? NeuDark.concave : Neu.concave,
+            child: Row(
+              children: [
+                CardLoading(
+                  height: 24,
+                  width: 24,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: CardLoading(
+                              height: 20,
+                              width: double.infinity,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          CardLoading(
+                            height: 20,
+                            width: 60,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          const SizedBox(width: 6),
+                          CardLoading(
+                            height: 16,
+                            width: 70,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      CardLoading(
+                        height: 16,
+                        width: 180,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                CardLoading(
+                  height: 20,
+                  width: 20,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}

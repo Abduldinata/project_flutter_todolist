@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../theme/theme_tokens.dart';
 import '../../widgets/add_task_button.dart';
 import '../../widgets/bottom_nav.dart';
+import '../../widgets/loading_widget.dart';
 import '../../services/task_service.dart';
 import '../../services/supabase_service.dart';
 import '../../models/profile_model.dart';
@@ -146,6 +147,12 @@ class _TodayScreenState extends State<TodayScreen> {
     }).toList();
   }
 
+  List<Map<String, dynamic>> _getCompletedTasks() {
+    return tasks.where((task) {
+      return (task['is_done'] ?? false) == true;
+    }).toList();
+  }
+
   double _getProgressPercentage() {
     if (tasks.isEmpty) return 0.0;
     final completed = tasks
@@ -161,6 +168,7 @@ class _TodayScreenState extends State<TodayScreen> {
 
     final highPriorityTasks = _getHighPriorityTasks();
     final upcomingTasks = _getUpcomingTasks();
+    final completedTasks = _getCompletedTasks();
     final progress = _getProgressPercentage();
     final completedCount = tasks
         .where((task) => (task['is_done'] ?? false) == true)
@@ -265,7 +273,7 @@ class _TodayScreenState extends State<TodayScreen> {
               const SizedBox(height: 24),
 
               // Daily Progress Card
-              if (tasks.isNotEmpty)
+              if (tasks.isNotEmpty && !loading)
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: isDark ? NeuDark.concave : Neu.concave,
@@ -346,91 +354,130 @@ class _TodayScreenState extends State<TodayScreen> {
                   ),
                 ),
 
-              if (tasks.isNotEmpty) const SizedBox(height: 24),
+              if (tasks.isNotEmpty && !loading) const SizedBox(height: 24),
 
-              // High Priority Section
-              if (highPriorityTasks.isNotEmpty) ...[
-                Row(
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'HIGH PRIORITY',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                ...highPriorityTasks.map(
-                  (task) => _buildTaskCard(task, isDark, isHighPriority: true),
-                ),
-                const SizedBox(height: 24),
-              ],
-
-              // Upcoming Section
-              if (upcomingTasks.isNotEmpty) ...[
-                Row(
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: AppColors.blue,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'UPCOMING',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                ...upcomingTasks.map(
-                  (task) => _buildTaskCard(task, isDark, isHighPriority: false),
-                ),
-              ],
-
-              // Empty State
-              if (tasks.isEmpty && !loading) ...[
-                const SizedBox(height: 40),
-                Center(
-                  child: Column(
+              // Loading State - hanya task cards
+              if (loading) ...[
+                TodayTaskLoading(isDark: isDark),
+              ] else ...[
+                // High Priority Section
+                if (highPriorityTasks.isNotEmpty) ...[
+                  Row(
                     children: [
-                      Icon(
-                        Icons.check_circle_outline,
-                        size: 64,
-                        color: isDark ? Colors.grey[600] : Colors.grey[400],
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(width: 8),
                       Text(
-                        'No tasks for today',
+                        'HIGH PRIORITY',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
                           color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          letterSpacing: 1.2,
                         ),
                       ),
                     ],
                   ),
-                ),
+                  const SizedBox(height: 12),
+                  ...highPriorityTasks.map(
+                    (task) =>
+                        _buildTaskCard(task, isDark, isHighPriority: true),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+
+                // Upcoming Section
+                if (upcomingTasks.isNotEmpty) ...[
+                  Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: AppColors.blue,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'UPCOMING',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  ...upcomingTasks.map(
+                    (task) =>
+                        _buildTaskCard(task, isDark, isHighPriority: false),
+                  ),
+                ],
+
+                // History Section
+                if (completedTasks.isNotEmpty) ...[
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.grey[600] : Colors.grey[400],
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'HISTORY',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  ...completedTasks.map(
+                    (task) =>
+                        _buildTaskCard(task, isDark, isHighPriority: false),
+                  ),
+                ],
+
+                // Empty State
+                if (tasks.isEmpty) ...[
+                  const SizedBox(height: 40),
+                  Center(
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.check_circle_outline,
+                          size: 64,
+                          color: isDark ? Colors.grey[600] : Colors.grey[400],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No tasks for today',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ],
           ),
@@ -501,13 +548,16 @@ class _TodayScreenState extends State<TodayScreen> {
   }) {
     final taskId = task['id']?.toString() ?? '';
     final title = task['title']?.toString() ?? 'No Title';
+    final description = task['description']?.toString();
     final isDone = task['is_done'] ?? false;
     final priority = task['priority']?.toString() ?? 'medium';
-
-    // Mock time and category (can be extended later)
-    final time = isHighPriority ? '10:00 AM' : '5:30 PM';
     final category = _getCategoryFromPriority(priority);
-    final showAnytime = category == 'Habit';
+    final isToday = _isTodayTask(task);
+    final isNextWeek = _isNextWeekTask(task);
+    final isHighPriorityTask =
+        priority.toLowerCase() == 'high' || priority.toLowerCase() == 'urgent';
+
+    final categoryColor = _getCategoryColor(category);
 
     return GestureDetector(
       onTap: () {
@@ -550,58 +600,115 @@ class _TodayScreenState extends State<TodayScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: isDone
-                          ? (isDark ? Colors.grey[600] : Colors.grey[400])
-                          : (isDark ? Colors.white : AppColors.text),
-                      decoration: isDone ? TextDecoration.lineThrough : null,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
+                  // Title with Priority and Due Date on the right
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Icon(
-                        showAnytime ? Icons.all_inclusive : Icons.access_time,
-                        size: 14,
-                        color: isHighPriority
-                            ? Colors.red
-                            : (isDark ? Colors.grey[500] : Colors.grey[600]),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        showAnytime ? 'Anytime' : time,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isHighPriority
-                              ? Colors.red
-                              : (isDark ? Colors.grey[500] : Colors.grey[600]),
+                      Flexible(
+                        child: Text(
+                          title,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: isDone
+                                ? (isDark ? Colors.grey[600] : Colors.grey[400])
+                                : (isDark ? Colors.white : AppColors.text),
+                            decoration: isDone
+                                ? TextDecoration.lineThrough
+                                : null,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 6),
+                      // Priority Tag
                       Container(
-                        width: 4,
-                        height: 4,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
-                          color: isDark ? Colors.grey[500] : Colors.grey[600],
-                          shape: BoxShape.circle,
+                          color: categoryColor.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          category,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: categoryColor,
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '#$category',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      const SizedBox(width: 6),
+                      // Date/Status Info
+                      if (isToday)
+                        Text(
+                          'Due Today',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          ),
+                        )
+                      else if (isNextWeek)
+                        Text(
+                          'Next Week',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          ),
+                        )
+                      else if (isHighPriorityTask)
+                        Row(
+                          children: [
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: const BoxDecoration(
+                                color: Colors.orange,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'High Priority',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
                     ],
                   ),
+                  // Description below title
+                  if (description != null && description.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      description,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDone
+                            ? (isDark ? Colors.grey[600] : Colors.grey[400])
+                            : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                        height: 1.4,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ],
               ),
+            ),
+            // Flag/Icon
+            Icon(
+              isHighPriorityTask ? Icons.flag : Icons.flag_outlined,
+              color: isHighPriorityTask
+                  ? Colors.orange
+                  : (isDark ? Colors.grey[600] : Colors.grey[400]),
+              size: 20,
             ),
           ],
         ),
@@ -609,13 +716,71 @@ class _TodayScreenState extends State<TodayScreen> {
     );
   }
 
-  String _getCategoryFromPriority(String? priority) {
-    if (priority == null) return 'Work';
-    if (priority.toLowerCase() == 'high' ||
-        priority.toLowerCase() == 'urgent') {
-      return 'Work';
+  bool _isTodayTask(Map<String, dynamic> task) {
+    final taskDate = _parseDate(task['date']);
+    if (taskDate == null) return false;
+
+    final now = DateTime.now();
+    return taskDate.year == now.year &&
+        taskDate.month == now.month &&
+        taskDate.day == now.day;
+  }
+
+  bool _isNextWeekTask(Map<String, dynamic> task) {
+    final taskDate = _parseDate(task['date']);
+    if (taskDate == null) return false;
+
+    final now = DateTime.now();
+    final nextWeek = now.add(const Duration(days: 7));
+    return taskDate.year == nextWeek.year &&
+        taskDate.month == nextWeek.month &&
+        taskDate.day == nextWeek.day;
+  }
+
+  DateTime? _parseDate(dynamic dateValue) {
+    if (dateValue == null) return null;
+    try {
+      final dateStr = dateValue.toString().split('T')[0];
+      final parts = dateStr.split('-');
+      if (parts.length == 3) {
+        return DateTime(
+          int.parse(parts[0]),
+          int.parse(parts[1]),
+          int.parse(parts[2]),
+        );
+      }
+    } catch (e) {
+      debugPrint("Error parsing date: $e");
     }
-    // Default categories based on task title or other logic
-    return 'Personal'; // Can be extended to detect from title or other fields
+    return null;
+  }
+
+  String _getCategoryFromPriority(String? priority) {
+    if (priority == null) return 'Medium';
+    final p = priority.toLowerCase();
+
+    // Return priority directly (High, Medium, Low)
+    if (p == 'high' || p == 'urgent') {
+      return 'High';
+    } else if (p == 'medium') {
+      return 'Medium';
+    } else if (p == 'low') {
+      return 'Low';
+    }
+    return 'Medium';
+  }
+
+  Color _getCategoryColor(String category) {
+    switch (category.toLowerCase()) {
+      case 'high':
+      case 'urgent':
+        return Colors.red;
+      case 'medium':
+        return AppColors.blue;
+      case 'low':
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
   }
 }

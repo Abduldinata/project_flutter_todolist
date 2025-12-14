@@ -21,11 +21,12 @@ class _InboxScreenState extends State<InboxScreen> {
   List<Map<String, dynamic>> allTasks = [];
   bool loading = true;
   int navIndex = 0;
-  String selectedFilter = 'All';
+  String selectedStatusFilter = 'All'; // All atau History
+  String selectedPriorityFilter = 'All'; // All, High, Medium, Low
   String searchQuery = '';
 
-  // Filter berdasarkan priority yang ada di backend
-  final List<String> filters = ['All', 'High', 'Medium', 'Low'];
+  // Filter buttons (satu baris seperti sebelumnya)
+  final List<String> filters = ['All', 'High', 'Medium', 'Low', 'History'];
 
   // Filter tanggal
   DateTime? selectedStartDate;
@@ -199,33 +200,36 @@ class _InboxScreenState extends State<InboxScreen> {
       }).toList();
     }
 
-    // Apply simple priority filter from horizontal buttons
-    // Only filter incomplete tasks if search is not active
-    // If search is active, show all matching tasks (including completed)
-    if (searchQuery.isEmpty) {
-      final incompleteTasks = result
-          .where((task) => (task['is_done'] ?? false) == false)
+    // Apply status filter (All atau History)
+    List<Map<String, dynamic>> statusFilteredTasks;
+    if (selectedStatusFilter == 'History') {
+      // Filter completed tasks
+      statusFilteredTasks = result
+          .where((task) => (task['is_done'] ?? false) == true)
           .toList();
-
-      if (selectedFilter == 'All') {
-        return incompleteTasks;
-      }
-
-      return incompleteTasks.where((task) {
-        final priority = task['priority']?.toString() ?? 'medium';
-        return priority.toLowerCase() == selectedFilter.toLowerCase();
-      }).toList();
     } else {
-      // If search is active, apply priority filter on search results
-      if (selectedFilter == 'All') {
-        return result;
+      // selectedStatusFilter == 'All'
+      // Show incomplete tasks only (if no search)
+      if (searchQuery.isEmpty) {
+        statusFilteredTasks = result
+            .where((task) => (task['is_done'] ?? false) == false)
+            .toList();
+      } else {
+        // If search is active, show all matching tasks
+        statusFilteredTasks = result;
       }
-
-      return result.where((task) {
-        final priority = task['priority']?.toString() ?? 'medium';
-        return priority.toLowerCase() == selectedFilter.toLowerCase();
-      }).toList();
     }
+
+    // Apply priority filter (All, High, Medium, Low)
+    if (selectedPriorityFilter == 'All') {
+      return statusFilteredTasks;
+    }
+
+    return statusFilteredTasks.where((task) {
+      final priority = task['priority']?.toString() ?? 'medium';
+      final category = _getCategoryFromPriority(priority);
+      return category.toLowerCase() == selectedPriorityFilter.toLowerCase();
+    }).toList();
   }
 
   String _getFormattedDate() {
@@ -566,7 +570,7 @@ class _InboxScreenState extends State<InboxScreen> {
 
             const SizedBox(height: 16),
 
-            // Filter Buttons
+            // Filter Buttons (satu baris seperti sebelumnya)
             SizedBox(
               height: 40,
               child: ListView.builder(
@@ -575,11 +579,41 @@ class _InboxScreenState extends State<InboxScreen> {
                 itemCount: filters.length,
                 itemBuilder: (context, index) {
                   final filter = filters[index];
-                  final isSelected = selectedFilter == filter;
+
+                  // Tentukan apakah filter ini selected
+                  bool isSelected = false;
+                  if (filter == 'All') {
+                    isSelected =
+                        selectedStatusFilter == 'All' &&
+                        selectedPriorityFilter == 'All';
+                  } else if (filter == 'History') {
+                    isSelected = selectedStatusFilter == 'History';
+                  } else {
+                    // High, Medium, Low
+                    isSelected = selectedPriorityFilter == filter;
+                  }
 
                   return GestureDetector(
                     onTap: () {
-                      setState(() => selectedFilter = filter);
+                      setState(() {
+                        if (filter == 'All') {
+                          // Reset semua filter
+                          selectedStatusFilter = 'All';
+                          selectedPriorityFilter = 'All';
+                        } else if (filter == 'History') {
+                          // Toggle History (status filter)
+                          selectedStatusFilter =
+                              selectedStatusFilter == 'History'
+                              ? 'All'
+                              : 'History';
+                          // Priority filter tetap (jika sudah dipilih sebelumnya)
+                        } else {
+                          // High, Medium, Low (priority filter)
+                          selectedPriorityFilter =
+                              selectedPriorityFilter == filter ? 'All' : filter;
+                          // Status filter tetap (jika History sudah dipilih sebelumnya)
+                        }
+                      });
                     },
                     child: Container(
                       margin: const EdgeInsets.only(right: 12),

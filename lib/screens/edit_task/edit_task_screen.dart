@@ -108,38 +108,58 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
     }
   }
 
-  Widget _buildPriorityButton(Priority priority, String label) {
+  Widget _buildPriorityButton(BuildContext context, Priority priority) {
+    final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    bool isSelected = _selectedPriority == priority;
-    Color accentColor;
+    final isSelected = _selectedPriority == priority;
 
+    final bgColor = isSelected ? scheme.primary : scheme.surface;
+    final textColor = isSelected
+        ? scheme.onPrimary
+        : scheme.onSurface.withValues(alpha: 0.8);
+
+    String label;
     switch (priority) {
       case Priority.high:
-        accentColor = Colors.red.shade600;
+        label = "High";
         break;
       case Priority.medium:
-        accentColor = Colors.orange.shade600;
+        label = "Medium";
         break;
       case Priority.low:
-        accentColor = Colors.green.shade600;
+        label = "Low";
         break;
     }
 
     return GestureDetector(
       onTap: () => setState(() => _selectedPriority = priority),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: isSelected
-            ? (isDark ? NeuDark.pressed : Neu.pressed).copyWith(
-                color: accentColor.withAlpha((0.8 * 255).round()),
-              )
-            : (isDark ? NeuDark.convex : Neu.convex),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        clipBehavior: Clip.antiAlias,
+        decoration:
+            (isSelected
+                    ? (isDark ? NeuDark.pressed : Neu.pressed)
+                    : (isDark ? NeuDark.convex : Neu.convex))
+                .copyWith(
+                  color: bgColor,
+                  border: Border.all(
+                    color: isSelected
+                        ? (isDark
+                              ? scheme.primary.withValues(alpha: 0.5)
+                              : scheme.primary.withValues(alpha: 0.3))
+                        : (isDark
+                              ? Colors.white.withValues(alpha: 0.1)
+                              : Colors.grey.withValues(alpha: 0.2)),
+                    width: isSelected ? 1.5 : 1,
+                  ),
+                ),
         child: Text(
           label,
           style: AppStyle.normal.copyWith(
-            color: isSelected ? Colors.white : AppColors.text,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            color: textColor,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
           ),
+          textAlign: TextAlign.center,
         ),
       ),
     );
@@ -147,9 +167,16 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    final surface = scheme.surface;
+    final textColor = scheme.onSurface;
+    final hintColor = scheme.onSurface.withValues(alpha: 0.55);
+
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: isDark ? AppColors.darkBg : AppColors.bg,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20),
@@ -163,11 +190,19 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: isDark ? NeuDark.convex : Neu.convex,
-                      child: const Icon(Icons.arrow_back),
+                      child: Icon(
+                        Icons.arrow_back,
+                        color: isDark ? Colors.white : AppColors.text,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 16),
-                  const Text("Edit Task", style: AppStyle.title),
+                  Text(
+                    "Edit Task",
+                    style: AppStyle.title.copyWith(
+                      color: isDark ? Colors.white : AppColors.text,
+                    ),
+                  ),
                   const Spacer(),
                   if (_loading) const LoadingWidget(width: 24, height: 24),
                 ],
@@ -177,20 +212,47 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
               Expanded(
                 child: SingleChildScrollView(
                   child: Container(
-                    padding: const EdgeInsets.all(22),
-                    decoration: isDark ? NeuDark.concave : Neu.concave,
+                    padding: const EdgeInsets.all(24),
+                    clipBehavior: Clip.antiAlias,
+                    decoration: (isDark ? NeuDark.concave : Neu.concave)
+                        .copyWith(
+                          color: surface,
+                          border: Border.all(
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.15)
+                                : Colors.grey.withValues(alpha: 0.25),
+                            width: 1.5,
+                          ),
+                        ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Title
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          decoration: isDark ? NeuDark.convex : Neu.convex,
+                          clipBehavior: Clip.antiAlias,
+                          decoration: (isDark ? NeuDark.convex : Neu.convex)
+                              .copyWith(
+                                color: surface,
+                                border: Border.all(
+                                  color: isDark
+                                      ? Colors.white.withValues(alpha: 0.1)
+                                      : Colors.grey.withValues(alpha: 0.2),
+                                  width: 1,
+                                ),
+                              ),
                           child: TextField(
                             controller: _titleCtrl,
-                            decoration: const InputDecoration(
-                              hintText: "Nama Tugas",
+                            style: AppStyle.normal.copyWith(color: textColor),
+                            decoration: InputDecoration(
+                              hintText: "Nama Tugas*",
                               border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 16,
+                              ),
+                              hintStyle: AppStyle.smallGray.copyWith(
+                                color: hintColor,
+                              ),
                             ),
                           ),
                         ),
@@ -198,28 +260,48 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
 
                         // Description
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          decoration: isDark ? NeuDark.convex : Neu.convex,
+                          clipBehavior: Clip.antiAlias,
+                          decoration: (isDark ? NeuDark.convex : Neu.convex)
+                              .copyWith(
+                                color: surface,
+                                border: Border.all(
+                                  color: isDark
+                                      ? Colors.white.withValues(alpha: 0.1)
+                                      : Colors.grey.withValues(alpha: 0.2),
+                                  width: 1,
+                                ),
+                              ),
                           child: TextField(
                             controller: _descCtrl,
                             maxLines: 3,
-                            decoration: const InputDecoration(
-                              hintText: "Deskripsi (Opsional)",
+                            style: AppStyle.normal.copyWith(color: textColor),
+                            decoration: InputDecoration(
+                              hintText: "Deskripsi/Catatan (Opsional)",
                               border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 16,
+                              ),
+                              hintStyle: AppStyle.smallGray.copyWith(
+                                color: hintColor,
+                              ),
                             ),
                           ),
                         ),
                         const SizedBox(height: 18),
 
                         // Priority
-                        const Text("Prioritas:", style: AppStyle.subtitle),
+                        Text(
+                          "Prioritas:",
+                          style: AppStyle.subtitle.copyWith(color: textColor),
+                        ),
                         const SizedBox(height: 8),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            _buildPriorityButton(Priority.high, "Tinggi"),
-                            _buildPriorityButton(Priority.medium, "Sedang"),
-                            _buildPriorityButton(Priority.low, "Rendah"),
+                            _buildPriorityButton(context, Priority.high),
+                            _buildPriorityButton(context, Priority.medium),
+                            _buildPriorityButton(context, Priority.low),
                           ],
                         ),
                         const SizedBox(height: 18),
@@ -227,12 +309,33 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                         // Date
                         GestureDetector(
                           onTap: () async {
-                            DateTime? picked = await showDatePicker(
+                            final picked = await showDatePicker(
                               context: context,
                               initialDate: _selectedDate,
-                              firstDate: DateTime(2000),
-                              lastDate: DateTime(2100),
+                              firstDate: DateTime.now().subtract(
+                                const Duration(days: 365),
+                              ),
+                              lastDate: DateTime.now().add(
+                                const Duration(days: 365),
+                              ),
+                              builder: (context, child) {
+                                return Theme(
+                                  data: theme.copyWith(
+                                    dialogTheme: DialogThemeData(
+                                      backgroundColor: scheme.surface,
+                                    ),
+                                    colorScheme: isDark
+                                        ? scheme.copyWith(
+                                            surface: scheme.surface,
+                                            onSurface: Colors.white,
+                                          )
+                                        : scheme,
+                                  ),
+                                  child: child!,
+                                );
+                              },
                             );
+
                             if (picked != null) {
                               setState(() => _selectedDate = picked);
                             }
@@ -240,20 +343,33 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                           child: Container(
                             width: double.infinity,
                             padding: const EdgeInsets.symmetric(
-                              vertical: 14,
+                              vertical: 16,
                               horizontal: 16,
                             ),
-                            decoration: isDark ? NeuDark.convex : Neu.convex,
+                            clipBehavior: Clip.antiAlias,
+                            decoration: (isDark ? NeuDark.convex : Neu.convex)
+                                .copyWith(
+                                  color: surface,
+                                  border: Border.all(
+                                    color: isDark
+                                        ? Colors.white.withValues(alpha: 0.1)
+                                        : Colors.grey.withValues(alpha: 0.2),
+                                    width: 1,
+                                  ),
+                                ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  "Tanggal: ${_formatDate(_selectedDate)}",
-                                  style: AppStyle.normal,
+                                  "Jatuh Tempo: ${_formatDate(_selectedDate)}",
+                                  style: AppStyle.normal.copyWith(
+                                    color: textColor,
+                                  ),
                                 ),
                                 Icon(
                                   Icons.calendar_today_outlined,
-                                  color: AppColors.text,
+                                  color: textColor,
+                                  size: 20,
                                 ),
                               ],
                             ),
@@ -271,14 +387,30 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 14,
-                                  horizontal: 26,
+                                  horizontal: 28,
                                 ),
-                                decoration: isDark
-                                    ? NeuDark.convex
-                                    : Neu.convex,
-                                child: const Text(
+                                clipBehavior: Clip.antiAlias,
+                                decoration:
+                                    (isDark ? NeuDark.convex : Neu.convex)
+                                        .copyWith(
+                                          color: surface,
+                                          border: Border.all(
+                                            color: isDark
+                                                ? Colors.white.withValues(
+                                                    alpha: 0.1,
+                                                  )
+                                                : Colors.grey.withValues(
+                                                    alpha: 0.2,
+                                                  ),
+                                            width: 1,
+                                          ),
+                                        ),
+                                child: Text(
                                   "Batal",
-                                  style: AppStyle.normal,
+                                  style: AppStyle.normal.copyWith(
+                                    color: textColor,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
                             ),
@@ -289,19 +421,27 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 14,
-                                  horizontal: 26,
+                                  horizontal: 28,
                                 ),
+                                clipBehavior: Clip.antiAlias,
                                 decoration:
                                     (isDark ? NeuDark.convex : Neu.convex)
                                         .copyWith(
+                                          color: surface,
+                                          border: Border.all(
+                                            color: scheme.primary.withValues(
+                                              alpha: 0.4,
+                                            ),
+                                            width: 1.5,
+                                          ),
                                           boxShadow: [
                                             ...?(isDark
                                                     ? NeuDark.convex
                                                     : Neu.convex)
                                                 .boxShadow,
                                             BoxShadow(
-                                              color: AppColors.blue.withAlpha(
-                                                (0.3 * 255).round(),
+                                              color: scheme.primary.withValues(
+                                                alpha: 0.35,
                                               ),
                                               offset: const Offset(0, 4),
                                               blurRadius: 10,
@@ -311,7 +451,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                                 child: Text(
                                   "Simpan",
                                   style: AppStyle.normal.copyWith(
-                                    color: AppColors.blue,
+                                    color: scheme.primary,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
