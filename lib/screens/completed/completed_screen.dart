@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../theme/theme_tokens.dart';
 import '../../widgets/task_tile.dart';
+import '../../widgets/loading_widget.dart';
 import '../../services/task_service.dart';
 
 class CompletedScreen extends StatefulWidget {
@@ -203,8 +204,11 @@ class _CompletedScreenState extends State<CompletedScreen> {
   }
 
   Widget _buildTaskList() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     if (loading) {
-      return const Center(child: CircularProgressIndicator());
+      return TaskCardLoading(isDark: isDark);
     }
 
     if (tasks.isEmpty) {

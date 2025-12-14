@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../theme/theme_tokens.dart';
 import '../../widgets/add_task_button.dart';
 import '../../widgets/bottom_nav.dart';
+import '../../widgets/loading_widget.dart';
 import '../../services/task_service.dart';
 import '../add_task/add_task_popup.dart';
 import '../task_detail/task_detail_screen.dart';
@@ -17,10 +18,12 @@ class InboxScreen extends StatefulWidget {
 
 class _InboxScreenState extends State<InboxScreen> {
   final TaskService _taskService = TaskService();
+  final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> allTasks = [];
   bool loading = true;
   int navIndex = 0;
   String selectedFilter = 'All';
+  String searchQuery = '';
 
   // Filter berdasarkan priority yang ada di backend
   final List<String> filters = ['All', 'High', 'Medium', 'Low'];
@@ -32,6 +35,17 @@ class _InboxScreenState extends State<InboxScreen> {
   void initState() {
     super.initState();
     loadTasks();
+    _searchController.addListener(() {
+      setState(() {
+        searchQuery = _searchController.text;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> loadTasks() async {
@@ -212,6 +226,16 @@ class _InboxScreenState extends State<InboxScreen> {
       }).toList();
     }
 
+    // Apply search filter if search query exists
+    if (searchQuery.isNotEmpty) {
+      final query = searchQuery.toLowerCase().trim();
+      result = result.where((task) {
+        final title = task['title']?.toString().toLowerCase() ?? '';
+        final description = task['description']?.toString().toLowerCase() ?? '';
+        return title.contains(query) || description.contains(query);
+      }).toList();
+    }
+
     return result;
   }
 
@@ -318,6 +342,61 @@ class _InboxScreenState extends State<InboxScreen> {
               ),
             ),
 
+            // Search Bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Container(
+                decoration: (isDark ? NeuDark.convex : Neu.convex).copyWith(
+                  border: Border.all(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : Colors.grey.withValues(alpha: 0.2),
+                    width: 1,
+                  ),
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : AppColors.text,
+                    fontSize: 16,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Search tasks...',
+                    hintStyle: TextStyle(
+                      color: isDark ? Colors.grey[500] : Colors.grey[400],
+                      fontSize: 16,
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      size: 20,
+                    ),
+                    suffixIcon: searchQuery.isNotEmpty
+                        ? IconButton(
+                            onPressed: () {
+                              _searchController.clear();
+                            },
+                            icon: Icon(
+                              Icons.clear,
+                              color: isDark
+                                  ? Colors.grey[400]
+                                  : Colors.grey[600],
+                              size: 20,
+                            ),
+                          )
+                        : null,
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
             // Filter Buttons
             SizedBox(
               height: 40,
@@ -370,20 +449,24 @@ class _InboxScreenState extends State<InboxScreen> {
             // Task List
             Expanded(
               child: loading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? TaskCardLoading(isDark: isDark)
                   : filteredTasks.isEmpty
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.inbox_outlined,
+                            searchQuery.isNotEmpty
+                                ? Icons.search_off
+                                : Icons.inbox_outlined,
                             size: 64,
                             color: isDark ? Colors.grey[600] : Colors.grey[400],
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            'No tasks',
+                            searchQuery.isNotEmpty
+                                ? 'No tasks found for "$searchQuery"'
+                                : 'No tasks',
                             style: TextStyle(
                               color: isDark
                                   ? Colors.grey[400]

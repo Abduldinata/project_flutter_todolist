@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../theme/theme_tokens.dart';
 import '../../widgets/bottom_nav.dart';
+import '../../widgets/loading_widget.dart';
 import '../../services/task_service.dart';
 import '../add_task/add_task_popup.dart';
 
@@ -286,7 +287,9 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
                               boxShadow: isSelected
                                   ? [
                                       BoxShadow(
-                                        color: AppColors.blue.withValues(alpha: 0.3),
+                                        color: AppColors.blue.withValues(
+                                          alpha: 0.3,
+                                        ),
                                         blurRadius: 8,
                                         spreadRadius: 2,
                                       ),
@@ -349,7 +352,7 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
             // Task List
             Expanded(
               child: loading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? TaskCardLoading(isDark: isDark)
                   : tasks.isEmpty
                   ? Center(
                       child: Column(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../widgets/neumorphic_dialog.dart';
+import '../../widgets/loading_widget.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/app_routes.dart';
 import '../../theme/theme_tokens.dart';
@@ -17,7 +18,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _service = SupabaseService();
-  
+
   bool _isLoading = false;
   bool _isGoogleLoading = false;
   final bool _isAppleLoading = false;
@@ -69,7 +70,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         if (mounted) {
           NeumorphicDialog.show(
             title: 'Success',
-            message: 'Account created successfully! Please check your email for verification.',
+            message:
+                'Account created successfully! Please check your email for verification.',
             type: DialogType.success,
           );
 
@@ -302,7 +304,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     isDark: isDark,
                     obscure: !_showConfirmPassword,
                     onIconTap: () {
-                      setState(() => _showConfirmPassword = !_showConfirmPassword);
+                      setState(
+                        () => _showConfirmPassword = !_showConfirmPassword,
+                      );
                     },
                   ),
                 ],
@@ -323,12 +327,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       height: 24,
                       margin: const EdgeInsets.only(right: 12, top: 2),
                       decoration: BoxDecoration(
-                        color: _agreeToTerms ? AppColors.blue : Colors.transparent,
+                        color: _agreeToTerms
+                            ? AppColors.blue
+                            : Colors.transparent,
                         borderRadius: BorderRadius.circular(4),
                         border: Border.all(
                           color: _agreeToTerms
                               ? AppColors.blue
-                              : (isDark ? Colors.grey[600]! : Colors.grey[400]!),
+                              : (isDark
+                                    ? Colors.grey[600]!
+                                    : Colors.grey[400]!),
                           width: 2,
                         ),
                       ),
@@ -398,15 +406,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 width: double.infinity,
                 height: 50,
                 child: _isLoading
-                    ? Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.blue,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Center(
-                          child: CircularProgressIndicator(color: Colors.white),
-                        ),
-                      )
+                    ? const LoadingButton()
                     : ElevatedButton(
                         onPressed: _handleRegister,
                         style: ElevatedButton.styleFrom(
@@ -616,7 +616,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 child: SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  child: LoadingWidget(width: 20, height: 20),
                 ),
               )
             : Row(

@@ -3,6 +3,7 @@ import 'package:get/get.dart'; // Required for Get.snackbar()
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../services/supabase_service.dart';
 import '../../theme/theme_tokens.dart';
+import '../../widgets/loading_widget.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -81,7 +82,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       if (mounted) {
         // Tampilkan snackbar success
         Get.snackbar("Success", "Password berhasil diubah!");
-        
+
         // Kembali ke halaman sebelumnya (Profile Screen)
         if (Navigator.canPop(context)) {
           Navigator.pop(context);
@@ -163,11 +164,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: AppColors.blue,
-                      size: 20,
-                    ),
+                    Icon(Icons.info_outline, color: AppColors.blue, size: 20),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
@@ -206,7 +203,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     isDark: isDark,
                     obscure: !_showCurrentPassword,
                     onIconTap: () {
-                      setState(() => _showCurrentPassword = !_showCurrentPassword);
+                      setState(
+                        () => _showCurrentPassword = !_showCurrentPassword,
+                      );
                     },
                   ),
                 ],
@@ -266,7 +265,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     isDark: isDark,
                     obscure: !_showConfirmPassword,
                     onIconTap: () {
-                      setState(() => _showConfirmPassword = !_showConfirmPassword);
+                      setState(
+                        () => _showConfirmPassword = !_showConfirmPassword,
+                      );
                     },
                   ),
                 ],
@@ -279,15 +280,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 width: double.infinity,
                 height: 50,
                 child: _isLoading
-                    ? Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.blue,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Center(
-                          child: CircularProgressIndicator(color: Colors.white),
-                        ),
-                      )
+                    ? const LoadingButton()
                     : ElevatedButton(
                         onPressed: _changePassword,
                         style: ElevatedButton.styleFrom(
@@ -366,4 +359,3 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     );
   }
 }
-

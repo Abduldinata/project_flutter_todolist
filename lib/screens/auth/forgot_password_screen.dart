@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../services/supabase_service.dart';
 import '../../theme/theme_tokens.dart';
+import '../../widgets/loading_widget.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -120,11 +121,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: AppColors.blue,
-                      size: 20,
-                    ),
+                    Icon(Icons.info_outline, color: AppColors.blue, size: 20),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
@@ -202,15 +199,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 width: double.infinity,
                 height: 50,
                 child: _isLoading
-                    ? Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.blue,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Center(
-                          child: CircularProgressIndicator(color: Colors.white),
-                        ),
-                      )
+                    ? const LoadingButton()
                     : ElevatedButton(
                         onPressed: _resetPassword,
                         style: ElevatedButton.styleFrom(
@@ -237,4 +226,3 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     );
   }
 }
-

@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../theme/theme_tokens.dart';
 import '../../services/task_service.dart';
 import '../../widgets/task_tile.dart';
+import '../../widgets/loading_widget.dart';
 
 class SearchPopup extends StatefulWidget {
   const SearchPopup({super.key});
@@ -265,7 +266,7 @@ class _SearchPopupState extends State<SearchPopup> {
     final scheme = Theme.of(context).colorScheme;
 
     if (searching) {
-      return const Center(child: CircularProgressIndicator());
+      return const SearchLoading();
     }
 
     if (!hasSearched) {

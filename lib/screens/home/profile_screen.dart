@@ -9,6 +9,7 @@ import '../../models/profile_model.dart';
 import '../../services/supabase_service.dart';
 import '../../theme/theme_tokens.dart';
 import '../../utils/app_routes.dart';
+import '../../widgets/loading_widget.dart';
 import '../auth/change_password_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -136,9 +137,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (_isLoading) {
       return Scaffold(
         backgroundColor: isDark ? AppColors.darkBg : AppColors.bg,
-        body: Center(
-          child: CircularProgressIndicator(color: colorScheme.primary),
-        ),
+        body: ProfileLoading(isDark: isDark),
       );
     }
 
@@ -190,9 +189,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 (p!.avatarUrl ?? '').isNotEmpty)
                             ? NetworkImage(p.avatarUrl!)
                             : null,
-                        backgroundColor: isDark ? AppColors.darkCard : Colors.white,
+                        backgroundColor: isDark
+                            ? AppColors.darkCard
+                            : Colors.white,
                         child:
-                            (p?.avatarUrl == null || (p!.avatarUrl ?? '').isEmpty)
+                            (p?.avatarUrl == null ||
+                                (p!.avatarUrl ?? '').isEmpty)
                             ? Icon(
                                 Icons.person,
                                 size: 60,
@@ -450,7 +452,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ? () async {
               final picked = await showDatePicker(
                 context: context,
-                initialDate: _dateOfBirth ?? DateTime.now().subtract(const Duration(days: 365 * 25)),
+                initialDate:
+                    _dateOfBirth ??
+                    DateTime.now().subtract(const Duration(days: 365 * 25)),
                 firstDate: DateTime(1900),
                 lastDate: DateTime.now(),
                 builder: (context, child) {
@@ -526,20 +530,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
       'September',
       'October',
       'November',
-      'December'
+      'December',
     ];
     return months[month - 1];
   }
 
   Widget _buildAccountOptions(bool isDark, ColorScheme colorScheme) {
     final user = Supabase.instance.client.auth.currentUser;
-    final providers = user?.appMetadata != null 
+    final providers = user?.appMetadata != null
         ? user!.appMetadata['providers'] as List<dynamic>?
         : null;
-    final linkedAccounts = providers?.map((p) {
-      final str = p.toString();
-      return str.isNotEmpty ? str[0].toUpperCase() + str.substring(1) : str;
-    }).join(', ') ?? '';
+    final linkedAccounts =
+        providers
+            ?.map((p) {
+              final str = p.toString();
+              return str.isNotEmpty
+                  ? str[0].toUpperCase() + str.substring(1)
+                  : str;
+            })
+            .join(', ') ??
+        '';
 
     return Column(
       children: [
@@ -547,7 +557,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           "Change Password",
           icon: Icons.lock_outline,
           onTap: () {
-            debugPrint('Change Password tapped - navigating to ${AppRoutes.changePassword}');
+            debugPrint(
+              'Change Password tapped - navigating to ${AppRoutes.changePassword}',
+            );
             try {
               // Gunakan Navigator.push sebagai alternatif yang lebih reliable
               Navigator.push(
@@ -604,7 +616,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ElevatedButton(
                     onPressed: () {
                       Get.back();
-                      Get.snackbar("Info", "Delete Account feature coming soon");
+                      Get.snackbar(
+                        "Info",
+                        "Delete Account feature coming soon",
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
@@ -648,14 +663,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   Icon(
                     icon,
-                    color: textColor ?? (isDark ? AppColors.darkText : AppColors.text),
+                    color:
+                        textColor ??
+                        (isDark ? AppColors.darkText : AppColors.text),
                     size: 20,
                   ),
                   const SizedBox(width: 12),
                   Text(
                     title,
                     style: AppStyle.normal.copyWith(
-                      color: textColor ?? (isDark ? AppColors.darkText : AppColors.text),
+                      color:
+                          textColor ??
+                          (isDark ? AppColors.darkText : AppColors.text),
                     ),
                   ),
                 ],

@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../widgets/neumorphic_dialog.dart';
+import '../../widgets/loading_widget.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/app_routes.dart';
 import '../../theme/theme_tokens.dart';
@@ -338,15 +339,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 width: double.infinity,
                 height: 50,
                 child: _isLoading
-                    ? Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.blue,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Center(
-                          child: CircularProgressIndicator(color: Colors.white),
-                        ),
-                      )
+                    ? const LoadingButton()
                     : ElevatedButton(
                         onPressed: _handleLogin,
                         style: ElevatedButton.styleFrom(
@@ -553,13 +546,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
         child: isLoading
-            ? const Center(
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              )
+            ? const Center(child: LoadingWidget(width: 20, height: 20))
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

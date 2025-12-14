@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../services/supabase_service.dart';
 import '../../theme/theme_tokens.dart';
+import '../../widgets/loading_widget.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   final String? token;
@@ -283,15 +284,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 width: double.infinity,
                 height: 50,
                 child: _isLoading
-                    ? Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.blue,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Center(
-                          child: CircularProgressIndicator(color: Colors.white),
-                        ),
-                      )
+                    ? const LoadingButton()
                     : ElevatedButton(
                         onPressed: _isTokenValid ? _resetPassword : null,
                         style: ElevatedButton.styleFrom(

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../theme/theme_tokens.dart';
 import '../../services/task_service.dart';
+import '../../widgets/loading_widget.dart';
 
 enum Priority { high, medium, low }
 
@@ -168,7 +169,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                   const SizedBox(width: 16),
                   const Text("Edit Task", style: AppStyle.title),
                   const Spacer(),
-                  if (_loading) const CircularProgressIndicator(),
+                  if (_loading) const LoadingWidget(width: 24, height: 24),
                 ],
               ),
               const SizedBox(height: 24),
