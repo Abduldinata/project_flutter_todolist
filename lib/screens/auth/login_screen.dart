@@ -9,6 +9,8 @@ import '../../widgets/loading_widget.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/app_routes.dart';
 import '../../theme/theme_tokens.dart';
+import '../../controllers/task_controller.dart';
+import '../../controllers/profile_controller.dart';
 import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -75,6 +77,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (response.user != null) {
         if (mounted) {
+          // Force refresh controllers untuk memastikan data baru dimuat
+          try {
+            final taskController = Get.find<TaskController>();
+            final profileController = Get.find<ProfileController>();
+            await taskController.loadAllTasks(forceRefresh: true);
+            await profileController.loadProfile(forceRefresh: true);
+          } catch (e) {
+            debugPrint("Error refreshing controllers after login: $e");
+          }
+
           NeumorphicDialog.show(
             title: 'Success',
             message: 'Login successful! Welcome back.',
@@ -102,6 +114,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!kIsWeb && response.user != null) {
         if (mounted) {
+          // Force refresh controllers untuk memastikan data baru dimuat
+          try {
+            final taskController = Get.find<TaskController>();
+            final profileController = Get.find<ProfileController>();
+            await taskController.loadAllTasks(forceRefresh: true);
+            await profileController.loadProfile(forceRefresh: true);
+          } catch (e) {
+            debugPrint("Error refreshing controllers after Google login: $e");
+          }
+
           NeumorphicDialog.show(
             title: 'Success',
             message: 'Google sign in successful!',

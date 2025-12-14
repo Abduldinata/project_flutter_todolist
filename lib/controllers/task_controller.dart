@@ -378,4 +378,13 @@ class TaskController extends GetxController {
   Future<void> refreshTasks() async {
     await loadAllTasks(forceRefresh: true);
   }
+
+  // Clear all data (untuk logout)
+  void clearAllData() {
+    allTasks.clear();
+    isLoading.value = false;
+    isOfflineMode.value = false;
+    lastRefreshTime.value = '';
+    _lastLoadTime = null;
+  }
 }

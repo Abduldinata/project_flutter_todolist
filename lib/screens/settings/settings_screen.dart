@@ -9,6 +9,8 @@ import '../../widgets/bottom_nav.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/app_routes.dart';
 import '../../controllers/profile_controller.dart';
+import '../../controllers/task_controller.dart';
+import '../../auth_storage.dart';
 import '../home/profile_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -91,7 +93,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     if (confirm == true) {
       try {
+        // 1. Clear SharedPreferences storage
+        await AuthStorage.logout();
+
+        // 2. Clear controller state
+        final taskController = Get.find<TaskController>();
+        final profileController = Get.find<ProfileController>();
+        taskController.clearAllData();
+        profileController.clearAllData();
+
+        // 3. Sign out dari Supabase
         await _supabaseService.signOut();
+
+        // 4. Navigate ke login screen
         Get.offAllNamed(AppRoutes.login);
       } catch (e) {
         Get.snackbar(

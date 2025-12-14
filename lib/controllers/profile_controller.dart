@@ -82,4 +82,11 @@ class ProfileController extends GetxController {
   Future<void> refreshProfile() async {
     await loadProfile(forceRefresh: true);
   }
+
+  // Clear all data (untuk logout)
+  void clearAllData() {
+    profile.value = null;
+    isLoading.value = false;
+    _lastLoadTime = null;
+  }
 }
