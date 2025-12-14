@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../theme/theme_tokens.dart';
@@ -167,12 +166,6 @@ class _InboxScreenState extends State<InboxScreen> {
             title.contains(query) ||
             description.contains(query) ||
             priority.contains(query);
-
-        // Debug print untuk membantu troubleshooting
-        if (kDebugMode && matches) {
-          debugPrint('Search match found: ${task['title']}');
-        }
-
         return matches;
       }).toList();
     }
@@ -717,6 +710,7 @@ class _InboxScreenState extends State<InboxScreen> {
   Widget _buildInboxTaskCard(Map<String, dynamic> task, bool isDark) {
     final taskId = task['id']?.toString() ?? '';
     final title = task['title']?.toString() ?? 'No Title';
+    final description = task['description']?.toString();
     final isDone = task['is_done'] ?? false;
     final priority = task['priority']?.toString() ?? 'medium';
     final category = _getCategoryFromPriority(priority);
@@ -768,21 +762,28 @@ class _InboxScreenState extends State<InboxScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: isDone
-                          ? (isDark ? Colors.grey[600] : Colors.grey[400])
-                          : (isDark ? Colors.white : AppColors.text),
-                      decoration: isDone ? TextDecoration.lineThrough : null,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
+                  // Title with Priority and Due Date on the right
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // Category Tag
+                      Flexible(
+                        child: Text(
+                          title,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: isDone
+                                ? (isDark ? Colors.grey[600] : Colors.grey[400])
+                                : (isDark ? Colors.white : AppColors.text),
+                            decoration: isDone
+                                ? TextDecoration.lineThrough
+                                : null,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      // Priority Tag
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 10,
@@ -801,7 +802,7 @@ class _InboxScreenState extends State<InboxScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 6),
                       // Date/Status Info
                       if (isToday)
                         Text(
@@ -818,11 +819,10 @@ class _InboxScreenState extends State<InboxScreen> {
                             fontSize: 12,
                             color: isDark ? Colors.grey[400] : Colors.grey[600],
                           ),
-                        ),
-                      if (isHighPriority && !isToday && !isNextWeek)
+                        )
+                      else if (isHighPriority)
                         Row(
                           children: [
-                            const SizedBox(width: 8),
                             Container(
                               width: 6,
                               height: 6,
@@ -845,6 +845,22 @@ class _InboxScreenState extends State<InboxScreen> {
                         ),
                     ],
                   ),
+                  // Description below title
+                  if (description != null && description.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      description,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDone
+                            ? (isDark ? Colors.grey[600] : Colors.grey[400])
+                            : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                        height: 1.4,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ],
               ),
             ),
