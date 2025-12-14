@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../theme/theme_tokens.dart';
@@ -118,37 +119,62 @@ class _InboxScreenState extends State<InboxScreen> {
   }
 
   String _getCategoryFromPriority(String? priority) {
-    if (priority == null) return 'Work';
+    if (priority == null) return 'Medium';
     final p = priority.toLowerCase();
 
-    // Map priority ke category yang lebih user-friendly
+    // Return priority directly (High, Medium, Low)
     if (p == 'high' || p == 'urgent') {
-      return 'Urgent';
+      return 'High';
     } else if (p == 'medium') {
-      return 'Work';
+      return 'Medium';
     } else if (p == 'low') {
-      return 'Personal';
+      return 'Low';
     }
-    return 'Work';
+    return 'Medium';
   }
 
   Color _getCategoryColor(String category) {
-    switch (category) {
-      case 'Work':
-        return AppColors.blue;
-      case 'Personal':
-        return Colors.purple;
-      case 'Health':
-        return Colors.green;
-      case 'Urgent':
+    switch (category.toLowerCase()) {
+      case 'high':
+      case 'urgent':
         return Colors.red;
+      case 'medium':
+        return AppColors.blue;
+      case 'low':
+        return Colors.green;
       default:
         return Colors.grey;
     }
   }
 
   List<Map<String, dynamic>> _getFilteredTasks() {
+    // Start with all tasks
     List<Map<String, dynamic>> result = List.from(allTasks);
+
+    // Apply search filter FIRST if search query exists
+    // This ensures search works on all tasks before other filters
+    if (searchQuery.isNotEmpty && searchQuery.trim().isNotEmpty) {
+      final query = searchQuery.toLowerCase().trim();
+      result = result.where((task) {
+        final title = (task['title']?.toString() ?? '').toLowerCase();
+        final description = (task['description']?.toString() ?? '')
+            .toLowerCase();
+        final priority = (task['priority']?.toString() ?? '').toLowerCase();
+
+        // Search in title, description, and priority
+        final matches =
+            title.contains(query) ||
+            description.contains(query) ||
+            priority.contains(query);
+
+        // Debug print untuk membantu troubleshooting
+        if (kDebugMode && matches) {
+          debugPrint('Search match found: ${task['title']}');
+        }
+
+        return matches;
+      }).toList();
+    }
 
     // Apply filter criteria from filter screen if available
     if (filterCriteria != null) {
@@ -212,28 +238,32 @@ class _InboxScreenState extends State<InboxScreen> {
       }
     } else {
       // Apply simple priority filter from horizontal buttons
-      final incompleteTasks = result
-          .where((task) => (task['is_done'] ?? false) == false)
-          .toList();
+      // Only filter incomplete tasks if search is not active
+      // If search is active, show all matching tasks (including completed)
+      if (searchQuery.isEmpty) {
+        final incompleteTasks = result
+            .where((task) => (task['is_done'] ?? false) == false)
+            .toList();
 
-      if (selectedFilter == 'All') {
-        return incompleteTasks;
+        if (selectedFilter == 'All') {
+          return incompleteTasks;
+        }
+
+        return incompleteTasks.where((task) {
+          final priority = task['priority']?.toString() ?? 'medium';
+          return priority.toLowerCase() == selectedFilter.toLowerCase();
+        }).toList();
+      } else {
+        // If search is active, apply priority filter on search results
+        if (selectedFilter == 'All') {
+          return result;
+        }
+
+        return result.where((task) {
+          final priority = task['priority']?.toString() ?? 'medium';
+          return priority.toLowerCase() == selectedFilter.toLowerCase();
+        }).toList();
       }
-
-      return incompleteTasks.where((task) {
-        final priority = task['priority']?.toString() ?? 'medium';
-        return priority.toLowerCase() == selectedFilter.toLowerCase();
-      }).toList();
-    }
-
-    // Apply search filter if search query exists
-    if (searchQuery.isNotEmpty) {
-      final query = searchQuery.toLowerCase().trim();
-      result = result.where((task) {
-        final title = task['title']?.toString().toLowerCase() ?? '';
-        final description = task['description']?.toString().toLowerCase() ?? '';
-        return title.contains(query) || description.contains(query);
-      }).toList();
     }
 
     return result;
