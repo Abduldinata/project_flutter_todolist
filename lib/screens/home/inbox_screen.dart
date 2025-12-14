@@ -8,7 +8,6 @@ import '../../widgets/loading_widget.dart';
 import '../../services/task_service.dart';
 import '../add_task/add_task_popup.dart';
 import '../task_detail/task_detail_screen.dart';
-import '../home/filter_screen.dart';
 
 class InboxScreen extends StatefulWidget {
   const InboxScreen({super.key});
@@ -29,8 +28,10 @@ class _InboxScreenState extends State<InboxScreen> {
   // Filter berdasarkan priority yang ada di backend
   final List<String> filters = ['All', 'High', 'Medium', 'Low'];
 
-  // Filter criteria dari filter screen
-  Map<String, dynamic>? filterCriteria;
+  // Filter tanggal
+  DateTime? selectedStartDate;
+  DateTime? selectedEndDate;
+  bool isDateFilterActive = false;
 
   @override
   void initState() {
@@ -176,97 +177,62 @@ class _InboxScreenState extends State<InboxScreen> {
       }).toList();
     }
 
-    // Apply filter criteria from filter screen if available
-    if (filterCriteria != null) {
-      // Filter by priority
-      if (filterCriteria!['filterByPriority'] == true) {
-        final selectedPriority =
-            filterCriteria!['selectedPriority']?.toString().toLowerCase() ??
-            'medium';
-        result = result.where((task) {
-          final taskPriority =
-              task['priority']?.toString().toLowerCase() ?? 'medium';
-          return taskPriority == selectedPriority;
-        }).toList();
-      }
+    // Apply date filter if active
+    if (isDateFilterActive && selectedStartDate != null) {
+      result = result.where((task) {
+        final taskDateStr = task['date']?.toString();
+        if (taskDateStr == null) return false;
 
-      // Filter by status
-      if (filterCriteria!['filterByStatus'] == true) {
-        final showCompleted = filterCriteria!['showCompleted'] == true;
-        result = result.where((task) {
-          final isDone = task['is_done'] ?? false;
-          return showCompleted ? isDone : !isDone;
-        }).toList();
-      }
-
-      // Filter by date range
-      if (filterCriteria!['filterByDate'] == true &&
-          filterCriteria!['selectedStartDate'] != null) {
         try {
-          final startDate = DateTime.parse(
-            filterCriteria!['selectedStartDate'],
-          );
-          final endDateStr = filterCriteria!['selectedEndDate'];
+          final taskDate = DateTime.parse("${taskDateStr}T00:00:00Z");
 
-          result = result.where((task) {
-            final taskDateStr = task['date']?.toString();
-            if (taskDateStr == null) return false;
-
-            try {
-              final taskDate = DateTime.parse("${taskDateStr}T00:00:00Z");
-
-              if (endDateStr != null) {
-                // Date range filter
-                final endDate = DateTime.parse(endDateStr);
-                return taskDate.isAfter(
-                      startDate.subtract(const Duration(days: 1)),
-                    ) &&
-                    taskDate.isBefore(endDate.add(const Duration(days: 1)));
-              } else {
-                // Single date filter
-                return taskDate.year == startDate.year &&
-                    taskDate.month == startDate.month &&
-                    taskDate.day == startDate.day;
-              }
-            } catch (e) {
-              return false;
-            }
-          }).toList();
+          if (selectedEndDate != null) {
+            // Date range filter
+            return taskDate.isAfter(
+                  selectedStartDate!.subtract(const Duration(days: 1)),
+                ) &&
+                taskDate.isBefore(
+                  selectedEndDate!.add(const Duration(days: 1)),
+                );
+          } else {
+            // Single date filter
+            return taskDate.year == selectedStartDate!.year &&
+                taskDate.month == selectedStartDate!.month &&
+                taskDate.day == selectedStartDate!.day;
+          }
         } catch (e) {
-          debugPrint("Error parsing filter dates: $e");
+          return false;
         }
-      }
-    } else {
-      // Apply simple priority filter from horizontal buttons
-      // Only filter incomplete tasks if search is not active
-      // If search is active, show all matching tasks (including completed)
-      if (searchQuery.isEmpty) {
-        final incompleteTasks = result
-            .where((task) => (task['is_done'] ?? false) == false)
-            .toList();
-
-        if (selectedFilter == 'All') {
-          return incompleteTasks;
-        }
-
-        return incompleteTasks.where((task) {
-          final priority = task['priority']?.toString() ?? 'medium';
-          return priority.toLowerCase() == selectedFilter.toLowerCase();
-        }).toList();
-      } else {
-        // If search is active, apply priority filter on search results
-        if (selectedFilter == 'All') {
-          return result;
-        }
-
-        return result.where((task) {
-          final priority = task['priority']?.toString() ?? 'medium';
-          return priority.toLowerCase() == selectedFilter.toLowerCase();
-        }).toList();
-      }
+      }).toList();
     }
 
-    return result;
+    // Apply simple priority filter from horizontal buttons
+    // Only filter incomplete tasks if search is not active
+    // If search is active, show all matching tasks (including completed)
+    if (searchQuery.isEmpty) {
+      final incompleteTasks = result
+          .where((task) => (task['is_done'] ?? false) == false)
+          .toList();
+
+      if (selectedFilter == 'All') {
+        return incompleteTasks;
+      }
+
+      return incompleteTasks.where((task) {
+        final priority = task['priority']?.toString() ?? 'medium';
+        return priority.toLowerCase() == selectedFilter.toLowerCase();
+      }).toList();
+    } else {
+      // If search is active, apply priority filter on search results
+      if (selectedFilter == 'All') {
+        return result;
+      }
+
+      return result.where((task) {
+        final priority = task['priority']?.toString() ?? 'medium';
+        return priority.toLowerCase() == selectedFilter.toLowerCase();
+      }).toList();
+    }
   }
 
   String _getFormattedDate() {
@@ -300,6 +266,24 @@ class _InboxScreenState extends State<InboxScreen> {
 
   int _getRemainingTasksCount() {
     return allTasks.where((task) => (task['is_done'] ?? false) == false).length;
+  }
+
+  String _formatDate(DateTime date) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 
   @override
@@ -344,26 +328,6 @@ class _InboxScreenState extends State<InboxScreen> {
                               ),
                             ),
                           ],
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () async {
-                          final result = await Get.to(
-                            () => const FilterScreen(),
-                          );
-                          if (result != null &&
-                              result is Map<String, dynamic>) {
-                            setState(() {
-                              filterCriteria = result;
-                              // Reset simple filter when using advanced filter
-                              selectedFilter = 'All';
-                            });
-                          }
-                        },
-                        icon: Icon(
-                          Icons.tune,
-                          color: isDark ? Colors.grey[400] : Colors.grey[600],
-                          size: 24,
                         ),
                       ),
                     ],
@@ -422,6 +386,188 @@ class _InboxScreenState extends State<InboxScreen> {
                     ),
                   ),
                 ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Date Filter
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () async {
+                        DateTime? picked = await showDatePicker(
+                          context: context,
+                          initialDate: selectedStartDate ?? DateTime.now(),
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2100),
+                          builder: (context, child) {
+                            return Theme(
+                              data: Theme.of(context).copyWith(
+                                colorScheme: isDark
+                                    ? Theme.of(context).colorScheme.copyWith(
+                                        surface: Theme.of(
+                                          context,
+                                        ).colorScheme.surface,
+                                        onSurface: Colors.white,
+                                      )
+                                    : Theme.of(context).colorScheme,
+                              ),
+                              child: child!,
+                            );
+                          },
+                        );
+
+                        if (picked != null) {
+                          setState(() {
+                            selectedStartDate = picked;
+                            selectedEndDate = null;
+                            isDateFilterActive = true;
+                          });
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        decoration: (isDark ? NeuDark.convex : Neu.convex)
+                            .copyWith(
+                              border: Border.all(
+                                color: isDateFilterActive
+                                    ? AppColors.blue
+                                    : (isDark
+                                          ? Colors.white.withValues(alpha: 0.1)
+                                          : Colors.grey.withValues(alpha: 0.2)),
+                                width: isDateFilterActive ? 2 : 1,
+                              ),
+                            ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.calendar_today_outlined,
+                              size: 18,
+                              color: isDateFilterActive
+                                  ? AppColors.blue
+                                  : (isDark
+                                        ? Colors.grey[400]
+                                        : Colors.grey[600]),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                selectedStartDate == null
+                                    ? 'Filter by Date'
+                                    : _formatDate(selectedStartDate!),
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: isDateFilterActive
+                                      ? AppColors.blue
+                                      : (isDark
+                                            ? Colors.grey[400]
+                                            : Colors.grey[600]),
+                                  fontWeight: isDateFilterActive
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (isDateFilterActive) ...[
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () async {
+                        DateTime? picked = await showDatePicker(
+                          context: context,
+                          initialDate:
+                              selectedEndDate ??
+                              (selectedStartDate ?? DateTime.now()),
+                          firstDate: selectedStartDate ?? DateTime(2000),
+                          lastDate: DateTime(2100),
+                          builder: (context, child) {
+                            return Theme(
+                              data: Theme.of(context).copyWith(
+                                colorScheme: isDark
+                                    ? Theme.of(context).colorScheme.copyWith(
+                                        surface: Theme.of(
+                                          context,
+                                        ).colorScheme.surface,
+                                        onSurface: Colors.white,
+                                      )
+                                    : Theme.of(context).colorScheme,
+                              ),
+                              child: child!,
+                            );
+                          },
+                        );
+
+                        if (picked != null) {
+                          setState(() {
+                            selectedEndDate = picked;
+                          });
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        decoration: (isDark ? NeuDark.convex : Neu.convex)
+                            .copyWith(
+                              border: Border.all(
+                                color: AppColors.blue,
+                                width: 2,
+                              ),
+                            ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.calendar_today_outlined,
+                              size: 18,
+                              color: AppColors.blue,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              selectedEndDate == null
+                                  ? 'End Date'
+                                  : _formatDate(selectedEndDate!),
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: AppColors.blue,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          selectedStartDate = null;
+                          selectedEndDate = null;
+                          isDateFilterActive = false;
+                        });
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(Icons.close, size: 18, color: Colors.red),
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
 
