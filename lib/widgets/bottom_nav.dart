@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_nav_bar/google_nav_bar.dart';
 import '../theme/theme_tokens.dart';
 
 class BottomNav extends StatelessWidget {
@@ -11,17 +12,11 @@ class BottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    List<IconData> icons = [
-      Icons.inbox_outlined,
-      Icons.today,
-      Icons.calendar_month_outlined,
-      Icons.settings_outlined,
-    ];
-
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      margin: const EdgeInsets.only(bottom: 8, left: 12, right: 12),
       decoration: BoxDecoration(
         color: isDark ? Theme.of(context).colorScheme.surface : Colors.white,
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withAlpha((0.3 * 255).round()),
@@ -29,25 +24,24 @@ class BottomNav extends StatelessWidget {
             blurRadius: 8,
           ),
         ],
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: List.generate(
-          icons.length,
-          (i) => GestureDetector(
-            onTap: () => onTap(i),
-            child: Icon(
-              icons[i],
-              size: 30,
-              color: i == index
-                  ? AppColors.blue
-                  : (isDark ? Colors.grey[400] : AppColors.gray),
-            ),
-          ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: GNav(
+          selectedIndex: index,
+          onTabChange: onTap,
+          backgroundColor: Colors.transparent,
+          color: isDark ? Colors.grey[400] : AppColors.gray,
+          activeColor: AppColors.blue,
+          tabBackgroundColor: isDark ? AppColors.darkCard : AppColors.lightGray,
+          gap: 8,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          tabs: const [
+            GButton(icon: Icons.inbox_outlined, text: 'Inbox'),
+            GButton(icon: Icons.today, text: 'Today'),
+            GButton(icon: Icons.calendar_month_outlined, text: 'Upcoming'),
+            GButton(icon: Icons.settings_outlined, text: 'Settings'),
+          ],
         ),
       ),
     );

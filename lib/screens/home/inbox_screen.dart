@@ -87,7 +87,7 @@ class _InboxScreenState extends State<InboxScreen> {
   bool _isTodayTask(Map<String, dynamic> task) {
     final taskDate = _parseDate(task['date']);
     if (taskDate == null) return false;
-    
+
     final now = DateTime.now();
     return taskDate.year == now.year &&
         taskDate.month == now.month &&
@@ -97,7 +97,7 @@ class _InboxScreenState extends State<InboxScreen> {
   bool _isNextWeekTask(Map<String, dynamic> task) {
     final taskDate = _parseDate(task['date']);
     if (taskDate == null) return false;
-    
+
     final now = DateTime.now();
     final nextWeekStart = now.add(Duration(days: 7 - now.weekday));
     return taskDate.isAfter(nextWeekStart.subtract(const Duration(days: 1)));
@@ -106,7 +106,7 @@ class _InboxScreenState extends State<InboxScreen> {
   String _getCategoryFromPriority(String? priority) {
     if (priority == null) return 'Work';
     final p = priority.toLowerCase();
-    
+
     // Map priority ke category yang lebih user-friendly
     if (p == 'high' || p == 'urgent') {
       return 'Urgent';
@@ -140,9 +140,12 @@ class _InboxScreenState extends State<InboxScreen> {
     if (filterCriteria != null) {
       // Filter by priority
       if (filterCriteria!['filterByPriority'] == true) {
-        final selectedPriority = filterCriteria!['selectedPriority']?.toString().toLowerCase() ?? 'medium';
+        final selectedPriority =
+            filterCriteria!['selectedPriority']?.toString().toLowerCase() ??
+            'medium';
         result = result.where((task) {
-          final taskPriority = task['priority']?.toString().toLowerCase() ?? 'medium';
+          final taskPriority =
+              task['priority']?.toString().toLowerCase() ?? 'medium';
           return taskPriority == selectedPriority;
         }).toList();
       }
@@ -157,11 +160,14 @@ class _InboxScreenState extends State<InboxScreen> {
       }
 
       // Filter by date range
-      if (filterCriteria!['filterByDate'] == true && filterCriteria!['selectedStartDate'] != null) {
+      if (filterCriteria!['filterByDate'] == true &&
+          filterCriteria!['selectedStartDate'] != null) {
         try {
-          final startDate = DateTime.parse(filterCriteria!['selectedStartDate']);
+          final startDate = DateTime.parse(
+            filterCriteria!['selectedStartDate'],
+          );
           final endDateStr = filterCriteria!['selectedEndDate'];
-          
+
           result = result.where((task) {
             final taskDateStr = task['date']?.toString();
             if (taskDateStr == null) return false;
@@ -172,7 +178,9 @@ class _InboxScreenState extends State<InboxScreen> {
               if (endDateStr != null) {
                 // Date range filter
                 final endDate = DateTime.parse(endDateStr);
-                return taskDate.isAfter(startDate.subtract(const Duration(days: 1))) &&
+                return taskDate.isAfter(
+                      startDate.subtract(const Duration(days: 1)),
+                    ) &&
                     taskDate.isBefore(endDate.add(const Duration(days: 1)));
               } else {
                 // Single date filter
@@ -190,14 +198,14 @@ class _InboxScreenState extends State<InboxScreen> {
       }
     } else {
       // Apply simple priority filter from horizontal buttons
-      final incompleteTasks = result.where((task) => 
-        (task['is_done'] ?? false) == false
-      ).toList();
+      final incompleteTasks = result
+          .where((task) => (task['is_done'] ?? false) == false)
+          .toList();
 
       if (selectedFilter == 'All') {
         return incompleteTasks;
       }
-      
+
       return incompleteTasks.where((task) {
         final priority = task['priority']?.toString() ?? 'medium';
         return priority.toLowerCase() == selectedFilter.toLowerCase();
@@ -209,9 +217,30 @@ class _InboxScreenState extends State<InboxScreen> {
 
   String _getFormattedDate() {
     final now = DateTime.now();
-    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
+    const days = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+
     return '${days[now.weekday - 1]}, ${months[now.month - 1]} ${now.day}';
   }
 
@@ -255,7 +284,9 @@ class _InboxScreenState extends State<InboxScreen> {
                               '${_getFormattedDate()} • ${_getRemainingTasksCount()} tasks remaining',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                color: isDark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
                               ),
                             ),
                           ],
@@ -263,8 +294,11 @@ class _InboxScreenState extends State<InboxScreen> {
                       ),
                       IconButton(
                         onPressed: () async {
-                          final result = await Get.to(() => const FilterScreen());
-                          if (result != null && result is Map<String, dynamic>) {
+                          final result = await Get.to(
+                            () => const FilterScreen(),
+                          );
+                          if (result != null &&
+                              result is Map<String, dynamic>) {
                             setState(() {
                               filterCriteria = result;
                               // Reset simple filter when using advanced filter
@@ -319,7 +353,9 @@ class _InboxScreenState extends State<InboxScreen> {
                             fontWeight: FontWeight.w500,
                             color: isSelected
                                 ? Colors.white
-                                : (isDark ? Colors.grey[300] : Colors.grey[700]),
+                                : (isDark
+                                      ? Colors.grey[300]
+                                      : Colors.grey[700]),
                           ),
                         ),
                       ),
@@ -336,35 +372,37 @@ class _InboxScreenState extends State<InboxScreen> {
               child: loading
                   ? const Center(child: CircularProgressIndicator())
                   : filteredTasks.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.inbox_outlined,
-                                size: 64,
-                                color: isDark ? Colors.grey[600] : Colors.grey[400],
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'No tasks',
-                                style: TextStyle(
-                                  color: isDark ? Colors.grey[400] : Colors.grey[600],
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ],
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.inbox_outlined,
+                            size: 64,
+                            color: isDark ? Colors.grey[600] : Colors.grey[400],
                           ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          physics: const BouncingScrollPhysics(),
-                          itemCount: filteredTasks.length,
-                          itemBuilder: (context, index) {
-                            final task = filteredTasks[index];
-                            return _buildInboxTaskCard(task, isDark);
-                          },
-                        ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No tasks',
+                            style: TextStyle(
+                              color: isDark
+                                  ? Colors.grey[400]
+                                  : Colors.grey[600],
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: filteredTasks.length,
+                      itemBuilder: (context, index) {
+                        final task = filteredTasks[index];
+                        return _buildInboxTaskCard(task, isDark);
+                      },
+                    ),
             ),
           ],
         ),
@@ -425,8 +463,8 @@ class _InboxScreenState extends State<InboxScreen> {
     final category = _getCategoryFromPriority(priority);
     final isToday = _isTodayTask(task);
     final isNextWeek = _isNextWeekTask(task);
-    final isHighPriority = priority.toLowerCase() == 'high' || 
-                          priority.toLowerCase() == 'urgent';
+    final isHighPriority =
+        priority.toLowerCase() == 'high' || priority.toLowerCase() == 'urgent';
 
     final categoryColor = _getCategoryColor(category);
 
@@ -539,7 +577,9 @@ class _InboxScreenState extends State<InboxScreen> {
                               'High Priority',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                color: isDark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
                               ),
                             ),
                           ],

@@ -20,7 +20,7 @@ class TodayScreen extends StatefulWidget {
 class _TodayScreenState extends State<TodayScreen> {
   final TaskService _taskService = TaskService();
   final SupabaseService _supabaseService = SupabaseService();
-  
+
   List<Map<String, dynamic>> tasks = [];
   Profile? _profile;
   bool loading = true;
@@ -101,9 +101,30 @@ class _TodayScreenState extends State<TodayScreen> {
 
   String _getFormattedDate() {
     final now = DateTime.now();
-    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
+    const days = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+
     return '${days[now.weekday - 1]}, ${months[now.month - 1]} ${now.day}';
   }
 
@@ -111,7 +132,8 @@ class _TodayScreenState extends State<TodayScreen> {
     return tasks.where((task) {
       if ((task['is_done'] ?? false) == true) return false;
       final priority = task['priority']?.toString() ?? 'medium';
-      return priority.toLowerCase() == 'high' || priority.toLowerCase() == 'urgent';
+      return priority.toLowerCase() == 'high' ||
+          priority.toLowerCase() == 'urgent';
     }).toList();
   }
 
@@ -119,13 +141,16 @@ class _TodayScreenState extends State<TodayScreen> {
     return tasks.where((task) {
       if ((task['is_done'] ?? false) == true) return false;
       final priority = task['priority']?.toString() ?? 'medium';
-      return priority.toLowerCase() != 'high' && priority.toLowerCase() != 'urgent';
+      return priority.toLowerCase() != 'high' &&
+          priority.toLowerCase() != 'urgent';
     }).toList();
   }
 
   double _getProgressPercentage() {
     if (tasks.isEmpty) return 0.0;
-    final completed = tasks.where((task) => (task['is_done'] ?? false) == true).length;
+    final completed = tasks
+        .where((task) => (task['is_done'] ?? false) == true)
+        .length;
     return completed / tasks.length;
   }
 
@@ -137,7 +162,9 @@ class _TodayScreenState extends State<TodayScreen> {
     final highPriorityTasks = _getHighPriorityTasks();
     final upcomingTasks = _getUpcomingTasks();
     final progress = _getProgressPercentage();
-    final completedCount = tasks.where((task) => (task['is_done'] ?? false) == true).length;
+    final completedCount = tasks
+        .where((task) => (task['is_done'] ?? false) == true)
+        .length;
     final remainingCount = tasks.length - completedCount;
 
     return Scaffold(
@@ -158,12 +185,14 @@ class _TodayScreenState extends State<TodayScreen> {
                       CircleAvatar(
                         radius: 24,
                         backgroundColor: AppColors.blue.withValues(alpha: 0.1),
-                        backgroundImage: _profile?.avatarUrl != null && 
-                            _profile!.avatarUrl!.isNotEmpty
+                        backgroundImage:
+                            _profile?.avatarUrl != null &&
+                                _profile!.avatarUrl!.isNotEmpty
                             ? NetworkImage(_profile!.avatarUrl!)
                             : null,
-                        child: _profile?.avatarUrl == null || 
-                            _profile!.avatarUrl!.isEmpty
+                        child:
+                            _profile?.avatarUrl == null ||
+                                _profile!.avatarUrl!.isEmpty
                             ? Text(
                                 _profile?.username.isNotEmpty == true
                                     ? _profile!.username[0].toUpperCase()
@@ -185,7 +214,9 @@ class _TodayScreenState extends State<TodayScreen> {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
-                              color: isDark ? Colors.grey[400] : Colors.grey[600],
+                              color: isDark
+                                  ? Colors.grey[400]
+                                  : Colors.grey[600],
                               letterSpacing: 1.2,
                             ),
                           ),
@@ -295,14 +326,18 @@ class _TodayScreenState extends State<TodayScreen> {
                             '$completedCount of ${tasks.length} completed',
                             style: TextStyle(
                               fontSize: 12,
-                              color: isDark ? Colors.grey[400] : Colors.grey[600],
+                              color: isDark
+                                  ? Colors.grey[400]
+                                  : Colors.grey[600],
                             ),
                           ),
                           Text(
                             '$remainingCount remaining',
                             style: TextStyle(
                               fontSize: 12,
-                              color: isDark ? Colors.grey[400] : Colors.grey[600],
+                              color: isDark
+                                  ? Colors.grey[400]
+                                  : Colors.grey[600],
                             ),
                           ),
                         ],
@@ -338,7 +373,9 @@ class _TodayScreenState extends State<TodayScreen> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                ...highPriorityTasks.map((task) => _buildTaskCard(task, isDark, isHighPriority: true)),
+                ...highPriorityTasks.map(
+                  (task) => _buildTaskCard(task, isDark, isHighPriority: true),
+                ),
                 const SizedBox(height: 24),
               ],
 
@@ -367,7 +404,9 @@ class _TodayScreenState extends State<TodayScreen> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                ...upcomingTasks.map((task) => _buildTaskCard(task, isDark, isHighPriority: false)),
+                ...upcomingTasks.map(
+                  (task) => _buildTaskCard(task, isDark, isHighPriority: false),
+                ),
               ],
 
               // Empty State
@@ -455,12 +494,16 @@ class _TodayScreenState extends State<TodayScreen> {
     );
   }
 
-  Widget _buildTaskCard(Map<String, dynamic> task, bool isDark, {required bool isHighPriority}) {
+  Widget _buildTaskCard(
+    Map<String, dynamic> task,
+    bool isDark, {
+    required bool isHighPriority,
+  }) {
     final taskId = task['id']?.toString() ?? '';
     final title = task['title']?.toString() ?? 'No Title';
     final isDone = task['is_done'] ?? false;
     final priority = task['priority']?.toString() ?? 'medium';
-    
+
     // Mock time and category (can be extended later)
     final time = isHighPriority ? '10:00 AM' : '5:30 PM';
     final category = _getCategoryFromPriority(priority);
@@ -568,7 +611,8 @@ class _TodayScreenState extends State<TodayScreen> {
 
   String _getCategoryFromPriority(String? priority) {
     if (priority == null) return 'Work';
-    if (priority.toLowerCase() == 'high' || priority.toLowerCase() == 'urgent') {
+    if (priority.toLowerCase() == 'high' ||
+        priority.toLowerCase() == 'urgent') {
       return 'Work';
     }
     // Default categories based on task title or other logic
