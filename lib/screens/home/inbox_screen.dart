@@ -4,7 +4,7 @@ import '../../theme/theme_tokens.dart';
 import '../../widgets/add_task_button.dart';
 import '../../widgets/bottom_nav.dart';
 import '../../widgets/loading_widget.dart';
-import '../../services/task_service.dart';
+import '../../controllers/task_controller.dart';
 import '../add_task/add_task_popup.dart';
 import '../task_detail/task_detail_screen.dart';
 
@@ -16,10 +16,8 @@ class InboxScreen extends StatefulWidget {
 }
 
 class _InboxScreenState extends State<InboxScreen> {
-  final TaskService _taskService = TaskService();
+  final TaskController _taskController = Get.find<TaskController>();
   final TextEditingController _searchController = TextEditingController();
-  List<Map<String, dynamic>> allTasks = [];
-  bool loading = true;
   int navIndex = 0;
   String selectedStatusFilter = 'All'; // All atau History
   String selectedPriorityFilter = 'All'; // All, High, Medium, Low
@@ -36,7 +34,8 @@ class _InboxScreenState extends State<InboxScreen> {
   @override
   void initState() {
     super.initState();
-    loadTasks();
+    // Pastikan tasks di-load (akan skip jika cache masih valid)
+    _taskController.loadAllTasks();
     _searchController.addListener(() {
       setState(() {
         searchQuery = _searchController.text;
@@ -50,28 +49,9 @@ class _InboxScreenState extends State<InboxScreen> {
     super.dispose();
   }
 
-  Future<void> loadTasks() async {
-    setState(() => loading = true);
-    try {
-      final fetchedTasks = await _taskService.getAllTasks();
-      setState(() => allTasks = fetchedTasks);
-    } catch (e) {
-      debugPrint("Error loading inbox tasks: $e");
-      Get.snackbar(
-        "Error",
-        "Failed to load tasks: ${e.toString()}",
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-    } finally {
-      setState(() => loading = false);
-    }
-  }
-
   Future<void> _toggleTaskCompletion(String taskId, bool currentValue) async {
     try {
-      await _taskService.updateCompleted(taskId, !currentValue);
-      await loadTasks();
+      await _taskController.toggleTaskCompletion(taskId, currentValue);
     } catch (e) {
       Get.snackbar(
         "Error",
@@ -149,8 +129,8 @@ class _InboxScreenState extends State<InboxScreen> {
   }
 
   List<Map<String, dynamic>> _getFilteredTasks() {
-    // Start with all tasks
-    List<Map<String, dynamic>> result = List.from(allTasks);
+    // Start with all tasks from controller
+    List<Map<String, dynamic>> result = List.from(_taskController.allTasks);
 
     // Apply search filter FIRST if search query exists
     // This ensures search works on all tasks before other filters
@@ -262,7 +242,9 @@ class _InboxScreenState extends State<InboxScreen> {
   }
 
   int _getRemainingTasksCount() {
-    return allTasks.where((task) => (task['is_done'] ?? false) == false).length;
+    return _taskController.allTasks
+        .where((task) => (task['is_done'] ?? false) == false)
+        .length;
   }
 
   String _formatDate(DateTime date) {
@@ -288,457 +270,524 @@ class _InboxScreenState extends State<InboxScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final filteredTasks = _getFilteredTasks();
+    return Obx(() {
+      final filteredTasks = _getFilteredTasks();
 
-    return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBg : AppColors.bg,
-      body: SafeArea(
-        child: Column(
+      return Scaffold(
+        backgroundColor: isDark ? AppColors.darkBg : AppColors.bg,
+        body: Column(
           children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            // Offline indicator banner
+            Obx(() {
+              if (_taskController.isOfflineMode.value) {
+                return Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 16,
+                  ),
+                  color: Colors.orange.withValues(alpha: 0.9),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Inbox',
-                              style: AppStyle.title.copyWith(
-                                color: isDark ? Colors.white : AppColors.text,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${_getFormattedDate()} • ${_getRemainingTasksCount()} tasks remaining',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: isDark
-                                    ? Colors.grey[400]
-                                    : Colors.grey[600],
-                              ),
-                            ),
-                          ],
+                      const Icon(Icons.wifi_off, color: Colors.white, size: 18),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Offline Mode - View only',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
+                );
+              }
+              return const SizedBox.shrink();
+            }),
+            Expanded(
+              child: SafeArea(
+                child: Column(
+                  children: [
+                    // Header
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Inbox',
+                                      style: AppStyle.title.copyWith(
+                                        color: isDark
+                                            ? Colors.white
+                                            : AppColors.text,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${_getFormattedDate()} • ${_getRemainingTasksCount()} tasks remaining',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: isDark
+                                            ? Colors.grey[400]
+                                            : Colors.grey[600],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
 
-            // Search Bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Container(
-                decoration: (isDark ? NeuDark.convex : Neu.convex).copyWith(
-                  border: Border.all(
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.1)
-                        : Colors.grey.withValues(alpha: 0.2),
-                    width: 1,
-                  ),
-                ),
-                child: TextField(
-                  controller: _searchController,
-                  style: TextStyle(
-                    color: isDark ? Colors.white : AppColors.text,
-                    fontSize: 16,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'Search tasks...',
-                    hintStyle: TextStyle(
-                      color: isDark ? Colors.grey[500] : Colors.grey[400],
-                      fontSize: 16,
-                    ),
-                    prefixIcon: Icon(
-                      Icons.search,
-                      color: isDark ? Colors.grey[400] : Colors.grey[600],
-                      size: 20,
-                    ),
-                    suffixIcon: searchQuery.isNotEmpty
-                        ? IconButton(
-                            onPressed: () {
-                              _searchController.clear();
-                            },
-                            icon: Icon(
-                              Icons.clear,
+                    // Search Bar
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Container(
+                        decoration: (isDark ? NeuDark.convex : Neu.convex)
+                            .copyWith(
+                              border: Border.all(
+                                color: isDark
+                                    ? Colors.white.withValues(alpha: 0.1)
+                                    : Colors.grey.withValues(alpha: 0.2),
+                                width: 1,
+                              ),
+                            ),
+                        child: TextField(
+                          controller: _searchController,
+                          style: TextStyle(
+                            color: isDark ? Colors.white : AppColors.text,
+                            fontSize: 16,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'Search tasks...',
+                            hintStyle: TextStyle(
+                              color: isDark
+                                  ? Colors.grey[500]
+                                  : Colors.grey[400],
+                              fontSize: 16,
+                            ),
+                            prefixIcon: Icon(
+                              Icons.search,
                               color: isDark
                                   ? Colors.grey[400]
                                   : Colors.grey[600],
                               size: 20,
                             ),
-                          )
-                        : null,
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Date Filter
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () async {
-                        DateTime? picked = await showDatePicker(
-                          context: context,
-                          initialDate: selectedStartDate ?? DateTime.now(),
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2100),
-                          builder: (context, child) {
-                            return Theme(
-                              data: Theme.of(context).copyWith(
-                                colorScheme: isDark
-                                    ? Theme.of(context).colorScheme.copyWith(
-                                        surface: Theme.of(
-                                          context,
-                                        ).colorScheme.surface,
-                                        onSurface: Colors.white,
-                                      )
-                                    : Theme.of(context).colorScheme,
-                              ),
-                              child: child!,
-                            );
-                          },
-                        );
-
-                        if (picked != null) {
-                          setState(() {
-                            selectedStartDate = picked;
-                            selectedEndDate = null;
-                            isDateFilterActive = true;
-                          });
-                        }
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
+                            suffixIcon: searchQuery.isNotEmpty
+                                ? IconButton(
+                                    onPressed: () {
+                                      _searchController.clear();
+                                    },
+                                    icon: Icon(
+                                      Icons.clear,
+                                      color: isDark
+                                          ? Colors.grey[400]
+                                          : Colors.grey[600],
+                                      size: 20,
+                                    ),
+                                  )
+                                : null,
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                          ),
                         ),
-                        decoration: (isDark ? NeuDark.convex : Neu.convex)
-                            .copyWith(
-                              border: Border.all(
-                                color: isDateFilterActive
-                                    ? AppColors.blue
-                                    : (isDark
-                                          ? Colors.white.withValues(alpha: 0.1)
-                                          : Colors.grey.withValues(alpha: 0.2)),
-                                width: isDateFilterActive ? 2 : 1,
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Date Filter
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () async {
+                                DateTime? picked = await showDatePicker(
+                                  context: context,
+                                  initialDate:
+                                      selectedStartDate ?? DateTime.now(),
+                                  firstDate: DateTime(2000),
+                                  lastDate: DateTime(2100),
+                                  builder: (context, child) {
+                                    return Theme(
+                                      data: Theme.of(context).copyWith(
+                                        colorScheme: isDark
+                                            ? Theme.of(
+                                                context,
+                                              ).colorScheme.copyWith(
+                                                surface: Theme.of(
+                                                  context,
+                                                ).colorScheme.surface,
+                                                onSurface: Colors.white,
+                                              )
+                                            : Theme.of(context).colorScheme,
+                                      ),
+                                      child: child!,
+                                    );
+                                  },
+                                );
+
+                                if (picked != null) {
+                                  setState(() {
+                                    selectedStartDate = picked;
+                                    selectedEndDate = null;
+                                    isDateFilterActive = true;
+                                  });
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                                decoration:
+                                    (isDark ? NeuDark.convex : Neu.convex)
+                                        .copyWith(
+                                          border: Border.all(
+                                            color: isDateFilterActive
+                                                ? AppColors.blue
+                                                : (isDark
+                                                      ? Colors.white.withValues(
+                                                          alpha: 0.1,
+                                                        )
+                                                      : Colors.grey.withValues(
+                                                          alpha: 0.2,
+                                                        )),
+                                            width: isDateFilterActive ? 2 : 1,
+                                          ),
+                                        ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.calendar_today_outlined,
+                                      size: 18,
+                                      color: isDateFilterActive
+                                          ? AppColors.blue
+                                          : (isDark
+                                                ? Colors.grey[400]
+                                                : Colors.grey[600]),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        selectedStartDate == null
+                                            ? 'Filter by Date'
+                                            : _formatDate(selectedStartDate!),
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: isDateFilterActive
+                                              ? AppColors.blue
+                                              : (isDark
+                                                    ? Colors.grey[400]
+                                                    : Colors.grey[600]),
+                                          fontWeight: isDateFilterActive
+                                              ? FontWeight.w600
+                                              : FontWeight.normal,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.calendar_today_outlined,
-                              size: 18,
-                              color: isDateFilterActive
-                                  ? AppColors.blue
-                                  : (isDark
-                                        ? Colors.grey[400]
-                                        : Colors.grey[600]),
+                          ),
+                          if (isDateFilterActive) ...[
+                            const SizedBox(width: 8),
+                            GestureDetector(
+                              onTap: () async {
+                                DateTime? picked = await showDatePicker(
+                                  context: context,
+                                  initialDate:
+                                      selectedEndDate ??
+                                      (selectedStartDate ?? DateTime.now()),
+                                  firstDate:
+                                      selectedStartDate ?? DateTime(2000),
+                                  lastDate: DateTime(2100),
+                                  builder: (context, child) {
+                                    return Theme(
+                                      data: Theme.of(context).copyWith(
+                                        colorScheme: isDark
+                                            ? Theme.of(
+                                                context,
+                                              ).colorScheme.copyWith(
+                                                surface: Theme.of(
+                                                  context,
+                                                ).colorScheme.surface,
+                                                onSurface: Colors.white,
+                                              )
+                                            : Theme.of(context).colorScheme,
+                                      ),
+                                      child: child!,
+                                    );
+                                  },
+                                );
+
+                                if (picked != null) {
+                                  setState(() {
+                                    selectedEndDate = picked;
+                                  });
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                                decoration:
+                                    (isDark ? NeuDark.convex : Neu.convex)
+                                        .copyWith(
+                                          border: Border.all(
+                                            color: AppColors.blue,
+                                            width: 2,
+                                          ),
+                                        ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.calendar_today_outlined,
+                                      size: 18,
+                                      color: AppColors.blue,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      selectedEndDate == null
+                                          ? 'End Date'
+                                          : _formatDate(selectedEndDate!),
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: AppColors.blue,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
                             const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                selectedStartDate == null
-                                    ? 'Filter by Date'
-                                    : _formatDate(selectedStartDate!),
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: isDateFilterActive
-                                      ? AppColors.blue
-                                      : (isDark
-                                            ? Colors.grey[400]
-                                            : Colors.grey[600]),
-                                  fontWeight: isDateFilterActive
-                                      ? FontWeight.w600
-                                      : FontWeight.normal,
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  selectedStartDate = null;
+                                  selectedEndDate = null;
+                                  isDateFilterActive = false;
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  Icons.close,
+                                  size: 18,
+                                  color: Colors.red,
                                 ),
                               ),
                             ),
                           ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (isDateFilterActive) ...[
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: () async {
-                        DateTime? picked = await showDatePicker(
-                          context: context,
-                          initialDate:
-                              selectedEndDate ??
-                              (selectedStartDate ?? DateTime.now()),
-                          firstDate: selectedStartDate ?? DateTime(2000),
-                          lastDate: DateTime(2100),
-                          builder: (context, child) {
-                            return Theme(
-                              data: Theme.of(context).copyWith(
-                                colorScheme: isDark
-                                    ? Theme.of(context).colorScheme.copyWith(
-                                        surface: Theme.of(
-                                          context,
-                                        ).colorScheme.surface,
-                                        onSurface: Colors.white,
-                                      )
-                                    : Theme.of(context).colorScheme,
-                              ),
-                              child: child!,
-                            );
-                          },
-                        );
-
-                        if (picked != null) {
-                          setState(() {
-                            selectedEndDate = picked;
-                          });
-                        }
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        decoration: (isDark ? NeuDark.convex : Neu.convex)
-                            .copyWith(
-                              border: Border.all(
-                                color: AppColors.blue,
-                                width: 2,
-                              ),
-                            ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.calendar_today_outlined,
-                              size: 18,
-                              color: AppColors.blue,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              selectedEndDate == null
-                                  ? 'End Date'
-                                  : _formatDate(selectedEndDate!),
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: AppColors.blue,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          selectedStartDate = null;
-                          selectedEndDate = null;
-                          isDateFilterActive = false;
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.red.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(Icons.close, size: 18, color: Colors.red),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Filter Buttons (satu baris seperti sebelumnya)
-            SizedBox(
-              height: 40,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                itemCount: filters.length,
-                itemBuilder: (context, index) {
-                  final filter = filters[index];
-
-                  // Tentukan apakah filter ini selected
-                  bool isSelected = false;
-                  if (filter == 'All') {
-                    isSelected =
-                        selectedStatusFilter == 'All' &&
-                        selectedPriorityFilter == 'All';
-                  } else if (filter == 'History') {
-                    isSelected = selectedStatusFilter == 'History';
-                  } else {
-                    // High, Medium, Low
-                    isSelected = selectedPriorityFilter == filter;
-                  }
-
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        if (filter == 'All') {
-                          // Reset semua filter
-                          selectedStatusFilter = 'All';
-                          selectedPriorityFilter = 'All';
-                        } else if (filter == 'History') {
-                          // Toggle History (status filter)
-                          selectedStatusFilter =
-                              selectedStatusFilter == 'History'
-                              ? 'All'
-                              : 'History';
-                          // Priority filter tetap (jika sudah dipilih sebelumnya)
-                        } else {
-                          // High, Medium, Low (priority filter)
-                          selectedPriorityFilter =
-                              selectedPriorityFilter == filter ? 'All' : filter;
-                          // Status filter tetap (jika History sudah dipilih sebelumnya)
-                        }
-                      });
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.only(right: 12),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? AppColors.blue
-                            : (isDark ? AppColors.darkCard : Colors.grey[200]),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Center(
-                        child: Text(
-                          filter,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: isSelected
-                                ? Colors.white
-                                : (isDark
-                                      ? Colors.grey[300]
-                                      : Colors.grey[700]),
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // Task List
-            Expanded(
-              child: loading
-                  ? TaskCardLoading(isDark: isDark)
-                  : filteredTasks.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            searchQuery.isNotEmpty
-                                ? Icons.search_off
-                                : Icons.inbox_outlined,
-                            size: 64,
-                            color: isDark ? Colors.grey[600] : Colors.grey[400],
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            searchQuery.isNotEmpty
-                                ? 'No tasks found for "$searchQuery"'
-                                : 'No tasks',
-                            style: TextStyle(
-                              color: isDark
-                                  ? Colors.grey[400]
-                                  : Colors.grey[600],
-                              fontSize: 16,
-                            ),
-                          ),
                         ],
                       ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      physics: const BouncingScrollPhysics(),
-                      itemCount: filteredTasks.length,
-                      itemBuilder: (context, index) {
-                        final task = filteredTasks[index];
-                        return _buildInboxTaskCard(task, isDark);
-                      },
                     ),
+
+                    const SizedBox(height: 16),
+
+                    // Filter Buttons (satu baris seperti sebelumnya)
+                    SizedBox(
+                      height: 40,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        itemCount: filters.length,
+                        itemBuilder: (context, index) {
+                          final filter = filters[index];
+
+                          // Tentukan apakah filter ini selected
+                          bool isSelected = false;
+                          if (filter == 'All') {
+                            isSelected =
+                                selectedStatusFilter == 'All' &&
+                                selectedPriorityFilter == 'All';
+                          } else if (filter == 'History') {
+                            isSelected = selectedStatusFilter == 'History';
+                          } else {
+                            // High, Medium, Low
+                            isSelected = selectedPriorityFilter == filter;
+                          }
+
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                if (filter == 'All') {
+                                  // Reset semua filter
+                                  selectedStatusFilter = 'All';
+                                  selectedPriorityFilter = 'All';
+                                } else if (filter == 'History') {
+                                  // Toggle History (status filter)
+                                  selectedStatusFilter =
+                                      selectedStatusFilter == 'History'
+                                      ? 'All'
+                                      : 'History';
+                                  // Priority filter tetap (jika sudah dipilih sebelumnya)
+                                } else {
+                                  // High, Medium, Low (priority filter)
+                                  selectedPriorityFilter =
+                                      selectedPriorityFilter == filter
+                                      ? 'All'
+                                      : filter;
+                                  // Status filter tetap (jika History sudah dipilih sebelumnya)
+                                }
+                              });
+                            },
+                            child: Container(
+                              margin: const EdgeInsets.only(right: 12),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? AppColors.blue
+                                    : (isDark
+                                          ? AppColors.darkCard
+                                          : Colors.grey[200]),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  filter,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : (isDark
+                                              ? Colors.grey[300]
+                                              : Colors.grey[700]),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Task List
+                    Expanded(
+                      child: _taskController.isLoading.value
+                          ? TaskCardLoading(isDark: isDark)
+                          : filteredTasks.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    searchQuery.isNotEmpty
+                                        ? Icons.search_off
+                                        : Icons.inbox_outlined,
+                                    size: 64,
+                                    color: isDark
+                                        ? Colors.grey[600]
+                                        : Colors.grey[400],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    searchQuery.isNotEmpty
+                                        ? 'No tasks found for "$searchQuery"'
+                                        : 'No tasks',
+                                    style: TextStyle(
+                                      color: isDark
+                                          ? Colors.grey[400]
+                                          : Colors.grey[600],
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                              ),
+                              physics: const BouncingScrollPhysics(),
+                              itemCount: filteredTasks.length,
+                              itemBuilder: (context, index) {
+                                final task = filteredTasks[index];
+                                return _buildInboxTaskCard(task, isDark);
+                              },
+                            ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
-      ),
-      floatingActionButton: AddTaskButton(
-        onTap: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (ctx) => const AddTaskPopup()),
-          );
+        floatingActionButton: AddTaskButton(
+          onTap: () async {
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (ctx) => const AddTaskPopup()),
+            );
 
-          if (result != null &&
-              result['text'] != null &&
-              result['date'] != null) {
-            try {
-              await _taskService.insertTask(
-                title: result['text'].toString(),
-                date: result['date'] as DateTime,
-                description: result['description']?.toString(),
-                priority: result['priority']?.toString(),
-              );
-              await loadTasks();
-              Get.snackbar(
-                "Success",
-                "Task added successfully",
-                backgroundColor: Colors.green,
-                colorText: Colors.white,
-              );
-            } catch (e) {
-              Get.snackbar(
-                "Error",
-                "Failed to add task: ${e.toString()}",
-                backgroundColor: Colors.red,
-                colorText: Colors.white,
-              );
+            if (result != null &&
+                result['text'] != null &&
+                result['date'] != null) {
+              try {
+                await _taskController.addTask(
+                  title: result['text'].toString(),
+                  date: result['date'] as DateTime,
+                  description: result['description']?.toString(),
+                  priority: result['priority']?.toString(),
+                );
+                Get.snackbar(
+                  "Success",
+                  "Task added successfully",
+                  backgroundColor: Colors.green,
+                  colorText: Colors.white,
+                );
+              } catch (e) {
+                Get.snackbar(
+                  "Error",
+                  "Failed to add task: ${e.toString()}",
+                  backgroundColor: Colors.red,
+                  colorText: Colors.white,
+                );
+              }
             }
-          }
-        },
-      ),
-      bottomNavigationBar: BottomNav(
-        index: navIndex,
-        onTap: (i) {
-          if (i == navIndex) return;
-          setState(() => navIndex = i);
-          if (i == 1) Get.offAllNamed("/today");
-          if (i == 2) Get.offAllNamed("/upcoming");
-          if (i == 3) Get.offAllNamed("/settings");
-        },
-      ),
-    );
+          },
+        ),
+        bottomNavigationBar: BottomNav(
+          index: navIndex,
+          onTap: (i) {
+            if (i == navIndex) return;
+            setState(() => navIndex = i);
+            if (i == 1) Get.offAllNamed("/today");
+            if (i == 2) Get.offAllNamed("/upcoming");
+            if (i == 3) Get.offAllNamed("/settings");
+          },
+        ),
+      );
+    });
   }
 
   Widget _buildInboxTaskCard(Map<String, dynamic> task, bool isDark) {

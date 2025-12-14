@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import '../../theme/theme_tokens.dart';
 import '../../widgets/bottom_nav.dart';
 import '../../widgets/loading_widget.dart';
-import '../../services/task_service.dart';
+import '../../controllers/task_controller.dart';
 import '../add_task/add_task_popup.dart';
 import '../task_detail/task_detail_screen.dart';
 
@@ -15,44 +15,16 @@ class UpcomingScreen extends StatefulWidget {
 }
 
 class _UpcomingScreenState extends State<UpcomingScreen> {
-  final TaskService _taskService = TaskService();
+  final TaskController _taskController = Get.find<TaskController>();
 
-  List<Map<String, dynamic>> tasks = [];
-  bool loading = true;
   int navIndex = 2;
   DateTime? selectedDate;
 
   @override
   void initState() {
     super.initState();
-    loadTasks();
-  }
-
-  Future<void> loadTasks() async {
-    setState(() => loading = true);
-    try {
-      final fetchedTasks = await _taskService.getUpcomingTasks();
-      setState(() {
-        tasks = fetchedTasks;
-        if (fetchedTasks.isNotEmpty && selectedDate == null) {
-          // Set selected date to first upcoming date
-          final firstDate = _parseDate(fetchedTasks[0]['date']);
-          if (firstDate != null) {
-            selectedDate = firstDate;
-          }
-        }
-      });
-    } catch (e) {
-      debugPrint("Error loading upcoming tasks: $e");
-      Get.snackbar(
-        "Error",
-        "Failed to load tasks: ${e.toString()}",
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-    } finally {
-      setState(() => loading = false);
-    }
+    // Pastikan tasks di-load (akan skip jika cache masih valid)
+    _taskController.loadAllTasks();
   }
 
   DateTime? _parseDate(dynamic dateValue) {
@@ -185,7 +157,9 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
     return '${months[nextWeekStart.month - 1]} ${nextWeekStart.day} - ${months[nextWeekEnd.month - 1]} ${nextWeekEnd.day}';
   }
 
-  Map<String, List<Map<String, dynamic>>> _groupTasksByDate() {
+  Map<String, List<Map<String, dynamic>>> _groupTasksByDate(
+    List<Map<String, dynamic>> tasks,
+  ) {
     final grouped = <String, List<Map<String, dynamic>>>{};
 
     for (final task in tasks) {
@@ -229,7 +203,7 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
     return grouped;
   }
 
-  int _getNextWeekTaskCount() {
+  int _getNextWeekTaskCount(List<Map<String, dynamic>> tasks) {
     final now = DateTime.now();
     final nextWeekStart = now.add(Duration(days: 7 - now.weekday));
 
@@ -242,8 +216,7 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
 
   Future<void> _toggleTaskCompletion(String taskId, bool currentValue) async {
     try {
-      await _taskService.updateCompleted(taskId, !currentValue);
-      await loadTasks();
+      await _taskController.toggleTaskCompletion(taskId, currentValue);
     } catch (e) {
       Get.snackbar(
         "Error",
@@ -259,223 +232,278 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBg : AppColors.bg,
-      body: SafeArea(
-        child: Column(
+    return Obx(() {
+      final tasks = _taskController.getUpcomingTasks();
+
+      // Set selected date jika belum ada dan tasks tidak kosong
+      if (tasks.isNotEmpty && selectedDate == null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final firstDate = _parseDate(tasks[0]['date']);
+          if (firstDate != null) {
+            setState(() {
+              selectedDate = firstDate;
+            });
+          }
+        });
+      }
+
+      return Scaffold(
+        backgroundColor: isDark ? AppColors.darkBg : AppColors.bg,
+        body: Column(
           children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Upcoming',
-                    style: AppStyle.title.copyWith(
-                      color: isDark ? Colors.white : AppColors.text,
-                    ),
+            // Offline indicator banner
+            Obx(() {
+              if (_taskController.isOfflineMode.value) {
+                return Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 16,
                   ),
-                  Icon(
-                    Icons.calendar_today,
-                    color: isDark ? Colors.grey[400] : Colors.grey[600],
-                    size: 24,
+                  color: Colors.orange.withValues(alpha: 0.9),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.wifi_off, color: Colors.white, size: 18),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Offline Mode - View only',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-
-            // Date Selector
-            SizedBox(
-              height: 80,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                itemCount: _getDateRange().length,
-                itemBuilder: (context, index) {
-                  final date = _getDateRange()[index];
-                  final isSelected =
-                      selectedDate != null &&
-                      selectedDate!.year == date.year &&
-                      selectedDate!.month == date.month &&
-                      selectedDate!.day == date.day;
-                  final hasTasks = tasks.any((task) {
-                    final taskDate = _parseDate(task['date']);
-                    return taskDate != null &&
-                        taskDate.year == date.year &&
-                        taskDate.month == date.month &&
-                        taskDate.day == date.day;
-                  });
-
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() => selectedDate = date);
-                    },
-                    child: Container(
-                      width: 60,
-                      margin: const EdgeInsets.only(right: 12),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                );
+              }
+              return const SizedBox.shrink();
+            }),
+            Expanded(
+              child: SafeArea(
+                child: Column(
+                  children: [
+                    // Header
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Container(
-                            width: 50,
-                            height: 50,
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? AppColors.blue
-                                  : (isDark
-                                        ? AppColors.darkCard
-                                        : Colors.white),
-                              shape: BoxShape.circle,
-                              boxShadow: isSelected
-                                  ? [
-                                      BoxShadow(
-                                        color: AppColors.blue.withValues(
-                                          alpha: 0.3,
-                                        ),
-                                        blurRadius: 8,
-                                        spreadRadius: 2,
-                                      ),
-                                    ]
-                                  : null,
+                          Text(
+                            'Upcoming',
+                            style: AppStyle.title.copyWith(
+                              color: isDark ? Colors.white : AppColors.text,
                             ),
-                            child: Center(
+                          ),
+                          Icon(
+                            Icons.calendar_today,
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                            size: 24,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Date Selector
+                    SizedBox(
+                      height: 80,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        itemCount: _getDateRange().length,
+                        itemBuilder: (context, index) {
+                          final date = _getDateRange()[index];
+                          final isSelected =
+                              selectedDate != null &&
+                              selectedDate!.year == date.year &&
+                              selectedDate!.month == date.month &&
+                              selectedDate!.day == date.day;
+                          final hasTasks = tasks.any((task) {
+                            final taskDate = _parseDate(task['date']);
+                            return taskDate != null &&
+                                taskDate.year == date.year &&
+                                taskDate.month == date.month &&
+                                taskDate.day == date.day;
+                          });
+
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() => selectedDate = date);
+                            },
+                            child: Container(
+                              width: 60,
+                              margin: const EdgeInsets.only(right: 12),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Text(
-                                    _getDayName(date),
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
+                                  Container(
+                                    width: 50,
+                                    height: 50,
+                                    decoration: BoxDecoration(
                                       color: isSelected
-                                          ? Colors.white
+                                          ? AppColors.blue
                                           : (isDark
-                                                ? Colors.grey[400]
-                                                : Colors.grey[700]),
+                                                ? AppColors.darkCard
+                                                : Colors.white),
+                                      shape: BoxShape.circle,
+                                      boxShadow: isSelected
+                                          ? [
+                                              BoxShadow(
+                                                color: AppColors.blue
+                                                    .withValues(alpha: 0.3),
+                                                blurRadius: 8,
+                                                spreadRadius: 2,
+                                              ),
+                                            ]
+                                          : null,
+                                    ),
+                                    child: Center(
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            _getDayName(date),
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                              color: isSelected
+                                                  ? Colors.white
+                                                  : (isDark
+                                                        ? Colors.grey[400]
+                                                        : Colors.grey[700]),
+                                            ),
+                                          ),
+                                          Text(
+                                            _getDayNumber(date),
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                              color: isSelected
+                                                  ? Colors.white
+                                                  : (isDark
+                                                        ? Colors.white
+                                                        : AppColors.text),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                  Text(
-                                    _getDayNumber(date),
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: isSelected
-                                          ? Colors.white
-                                          : (isDark
+                                  const SizedBox(height: 4),
+                                  Container(
+                                    width: 6,
+                                    height: 6,
+                                    decoration: BoxDecoration(
+                                      color: hasTasks
+                                          ? (isSelected
                                                 ? Colors.white
-                                                : AppColors.text),
+                                                : AppColors.blue)
+                                          : Colors.transparent,
+                                      shape: BoxShape.circle,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: BoxDecoration(
-                              color: hasTasks
-                                  ? (isSelected ? Colors.white : AppColors.blue)
-                                  : Colors.transparent,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ],
+                          );
+                        },
                       ),
                     ),
-                  );
-                },
+
+                    const SizedBox(height: 20),
+
+                    // Task List
+                    Expanded(
+                      child: _taskController.isLoading.value
+                          ? TaskCardLoading(isDark: isDark)
+                          : tasks.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.calendar_today_outlined,
+                                    size: 64,
+                                    color: isDark
+                                        ? Colors.grey[600]
+                                        : Colors.grey[400],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'No upcoming tasks',
+                                    style: TextStyle(
+                                      color: isDark
+                                          ? Colors.grey[400]
+                                          : Colors.grey[600],
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : _buildTaskList(isDark, tasks),
+                    ),
+                  ],
+                ),
               ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // Task List
-            Expanded(
-              child: loading
-                  ? TaskCardLoading(isDark: isDark)
-                  : tasks.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.calendar_today_outlined,
-                            size: 64,
-                            color: isDark ? Colors.grey[600] : Colors.grey[400],
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'No upcoming tasks',
-                            style: TextStyle(
-                              color: isDark
-                                  ? Colors.grey[400]
-                                  : Colors.grey[600],
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : _buildTaskList(isDark),
             ),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (ctx) => const AddTaskPopup()),
-          );
+        floatingActionButton: FloatingActionButton(
+          onPressed: () async {
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (ctx) => const AddTaskPopup()),
+            );
 
-          if (result != null &&
-              result['text'] != null &&
-              result['date'] != null) {
-            try {
-              await _taskService.insertTask(
-                title: result['text'].toString(),
-                date: result['date'] as DateTime,
-                description: result['description']?.toString(),
-                priority: result['priority']?.toString(),
-              );
-              await loadTasks();
-              Get.snackbar(
-                "Success",
-                "Task added successfully",
-                backgroundColor: Colors.green,
-                colorText: Colors.white,
-              );
-            } catch (e) {
-              Get.snackbar(
-                "Error",
-                "Failed to add task: ${e.toString()}",
-                backgroundColor: Colors.red,
-                colorText: Colors.white,
-              );
+            if (result != null &&
+                result['text'] != null &&
+                result['date'] != null) {
+              try {
+                await _taskController.addTask(
+                  title: result['text'].toString(),
+                  date: result['date'] as DateTime,
+                  description: result['description']?.toString(),
+                  priority: result['priority']?.toString(),
+                );
+                Get.snackbar(
+                  "Success",
+                  "Task added successfully",
+                  backgroundColor: Colors.green,
+                  colorText: Colors.white,
+                );
+              } catch (e) {
+                Get.snackbar(
+                  "Error",
+                  "Failed to add task: ${e.toString()}",
+                  backgroundColor: Colors.red,
+                  colorText: Colors.white,
+                );
+              }
             }
-          }
-        },
-        backgroundColor: AppColors.blue,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
-      bottomNavigationBar: BottomNav(
-        index: navIndex,
-        onTap: (i) {
-          if (i == navIndex) return;
-          setState(() => navIndex = i);
-          if (i == 0) Get.offAllNamed("/inbox");
-          if (i == 1) Get.offAllNamed("/today");
-          if (i == 3) Get.offAllNamed("/settings");
-        },
-      ),
-    );
+          },
+          backgroundColor: AppColors.blue,
+          tooltip: 'Tambah Task',
+          child: const Icon(Icons.add, color: Colors.white),
+        ),
+        bottomNavigationBar: BottomNav(
+          index: navIndex,
+          onTap: (i) {
+            if (i == navIndex) return;
+            setState(() => navIndex = i);
+            if (i == 0) Get.offAllNamed("/inbox");
+            if (i == 1) Get.offAllNamed("/today");
+            if (i == 3) Get.offAllNamed("/settings");
+          },
+        ),
+      );
+    });
   }
 
-  Widget _buildTaskList(bool isDark) {
-    final grouped = _groupTasksByDate();
+  Widget _buildTaskList(bool isDark, List<Map<String, dynamic>> tasks) {
+    final grouped = _groupTasksByDate(tasks);
     final sortedKeys = grouped.keys.toList()
       ..sort((a, b) {
         if (a == 'tomorrow') return -1;
@@ -495,7 +523,7 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
       itemBuilder: (context, index) {
         if (index == sortedKeys.length) {
           // Next Week Summary Card
-          final nextWeekCount = _getNextWeekTaskCount();
+          final nextWeekCount = _getNextWeekTaskCount(tasks);
           if (nextWeekCount == 0) return const SizedBox.shrink();
 
           return Padding(

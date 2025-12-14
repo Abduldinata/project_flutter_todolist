@@ -8,7 +8,7 @@ import '../../theme/theme_controller.dart';
 import '../../widgets/bottom_nav.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/app_routes.dart';
-import '../../models/profile_model.dart';
+import '../../controllers/profile_controller.dart';
 import '../home/profile_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -20,11 +20,11 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   final ThemeController _themeController = Get.find<ThemeController>();
+  final ProfileController _profileController = Get.find<ProfileController>();
   final SupabaseService _supabaseService = SupabaseService();
   final _box = GetStorage();
 
   int navIndex = 3;
-  Profile? _profile;
 
   // Preferences
   bool _notificationsEnabled = true;
@@ -38,7 +38,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadProfile();
+    // Hanya load jika data belum ada atau cache sudah expired
+    if (_profileController.profile.value == null) {
+      _profileController.loadProfile();
+    }
     _loadPreferences();
     _loadPackageInfo();
   }
@@ -54,19 +57,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
     } catch (e) {
       debugPrint("Error loading package info: $e");
-    }
-  }
-
-  Future<void> _loadProfile() async {
-    try {
-      final data = await _supabaseService.getProfile();
-      if (data != null && mounted) {
-        setState(() {
-          _profile = Profile.fromJson(data);
-        });
-      }
-    } catch (e) {
-      debugPrint("Error loading profile: $e");
     }
   }
 
@@ -115,6 +105,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showStartOfWeekPicker() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final days = [
       'Monday',
       'Tuesday',
@@ -152,132 +143,123 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  bool get isDark {
-    final theme = Theme.of(context);
-    return theme.brightness == Brightness.dark;
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final user = Supabase.instance.client.auth.currentUser;
 
-    return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBg : AppColors.bg,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Get.back(),
-                    icon: Icon(
-                      Icons.arrow_back,
-                      color: isDark ? Colors.white : AppColors.text,
-                    ),
-                  ),
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        'Settings',
-                        style: AppStyle.title.copyWith(
-                          color: isDark ? Colors.white : AppColors.text,
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Obx(() {
+      return Scaffold(
+        backgroundColor: isDark ? AppColors.darkBg : AppColors.bg,
+        body: SafeArea(
+          child: Column(
+            children: [
+              // Header
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          'Settings',
+                          style: AppStyle.title.copyWith(
+                            color: isDark ? Colors.white : AppColors.text,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 48), // Balance for back button
-                ],
-              ),
-            ),
-
-            // Content
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // User Profile Section
-                    _buildProfileCard(user, scheme),
-                    const SizedBox(height: 32),
-
-                    // Personalization Section
-                    _buildSectionTitle('PERSONALIZATION'),
-                    const SizedBox(height: 12),
-                    _buildPersonalizationCard(scheme),
-                    const SizedBox(height: 32),
-
-                    // Preferences Section
-                    _buildSectionTitle('PREFERENCES'),
-                    const SizedBox(height: 12),
-                    _buildPreferencesCard(scheme),
-                    const SizedBox(height: 32),
-
-                    // Support & About Section
-                    _buildSectionTitle('SUPPORT & ABOUT'),
-                    const SizedBox(height: 12),
-                    _buildSupportCard(scheme),
-                    const SizedBox(height: 32),
-
-                    // Log Out Button
-                    _buildLogOutButton(),
-                    const SizedBox(height: 20),
-
-                    // Version & Copyright
-                    Center(
-                      child: Column(
-                        children: [
-                          Text(
-                            'Version $_version (Build $_buildNumber)',
-                            style: AppStyle.smallGray.copyWith(
-                              color: isDark
-                                  ? Colors.grey[500]
-                                  : Colors.grey[600],
-                              fontSize: 12,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '© 2025 Project UAS\nSyachrul, Aziz, Ilyas',
-                            textAlign: TextAlign.center,
-                            style: AppStyle.smallGray.copyWith(
-                              color: isDark
-                                  ? Colors.grey[600]
-                                  : Colors.grey[500],
-                              fontSize: 11,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
                   ],
                 ),
               ),
-            ),
-          ],
+
+              // Content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // User Profile Section
+                      _buildProfileCard(user, scheme, isDark),
+                      const SizedBox(height: 32),
+
+                      // Personalization Section
+                      _buildSectionTitle('PERSONALIZATION', isDark),
+                      const SizedBox(height: 12),
+                      _buildPersonalizationCard(scheme, isDark),
+                      const SizedBox(height: 32),
+
+                      // Preferences Section
+                      _buildSectionTitle('PREFERENCES', isDark),
+                      const SizedBox(height: 12),
+                      _buildPreferencesCard(scheme, isDark),
+                      const SizedBox(height: 32),
+
+                      // Support & About Section
+                      _buildSectionTitle('SUPPORT & ABOUT', isDark),
+                      const SizedBox(height: 12),
+                      _buildSupportCard(scheme, isDark),
+                      const SizedBox(height: 32),
+
+                      // Log Out Button
+                      _buildLogOutButton(isDark),
+                      const SizedBox(height: 20),
+
+                      // Version & Copyright
+                      Center(
+                        child: Column(
+                          children: [
+                            Text(
+                              'Version $_version (Build $_buildNumber)',
+                              style: AppStyle.smallGray.copyWith(
+                                color: isDark
+                                    ? Colors.grey[500]
+                                    : Colors.grey[600],
+                                fontSize: 12,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              '© 2025 Project UAS\nSyachrul, Aziz, Ilyas',
+                              textAlign: TextAlign.center,
+                              style: AppStyle.smallGray.copyWith(
+                                color: isDark
+                                    ? Colors.grey[600]
+                                    : Colors.grey[500],
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-      bottomNavigationBar: BottomNav(
-        index: navIndex,
-        onTap: (i) {
-          if (i == navIndex) return;
-          setState(() => navIndex = i);
-          if (i == 0) Get.offAllNamed("/inbox");
-          if (i == 1) Get.offAllNamed("/today");
-          if (i == 2) Get.offAllNamed("/upcoming");
-          if (i == 3) Get.offAllNamed("/settings");
-        },
-      ),
-    );
+        bottomNavigationBar: BottomNav(
+          index: navIndex,
+          onTap: (i) {
+            if (i == navIndex) return;
+            setState(() => navIndex = i);
+            if (i == 0) Get.offAllNamed("/inbox");
+            if (i == 1) Get.offAllNamed("/today");
+            if (i == 2) Get.offAllNamed("/upcoming");
+            if (i == 3) Get.offAllNamed("/settings");
+          },
+        ),
+      );
+    });
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(String title, bool isDark) {
     return Text(
       title,
       style: TextStyle(
@@ -289,13 +271,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildProfileCard(User? user, ColorScheme scheme) {
-    final email = user?.email ?? _profile?.email ?? 'user@example.com';
+  Widget _buildProfileCard(User? user, ColorScheme scheme, bool isDark) {
+    final profile = _profileController.profile.value;
+    final email = user?.email ?? profile?.email ?? 'user@example.com';
     final username =
-        _profile?.username ??
+        profile?.username ??
         user?.userMetadata?['username']?.toString() ??
         'User';
-    final avatarUrl = _profile?.avatarUrl;
+    final avatarUrl = profile?.avatarUrl;
 
     return GestureDetector(
       onTap: () {
@@ -410,7 +393,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildPersonalizationCard(ColorScheme scheme) {
+  Widget _buildPersonalizationCard(ColorScheme scheme, bool isDark) {
     return Container(
       decoration: isDark ? NeuDark.concave : Neu.concave,
       child: Column(
@@ -527,7 +510,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildPreferencesCard(ColorScheme scheme) {
+  Widget _buildPreferencesCard(ColorScheme scheme, bool isDark) {
     return Container(
       decoration: isDark ? NeuDark.concave : Neu.concave,
       child: Column(
@@ -537,6 +520,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             icon: Icons.notifications,
             iconColor: Colors.red,
             title: 'Notifications',
+            isDark: isDark,
             trailing: Switch(
               value: _notificationsEnabled,
               onChanged: (value) {
@@ -552,6 +536,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             icon: Icons.calendar_today,
             iconColor: Colors.green,
             title: 'Start of Week',
+            isDark: isDark,
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -577,6 +562,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             icon: Icons.volume_up,
             iconColor: Colors.orange,
             title: 'Sound Effects',
+            isDark: isDark,
             trailing: Switch(
               value: _soundEffectsEnabled,
               onChanged: (value) {
@@ -595,6 +581,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required IconData icon,
     required Color iconColor,
     required String title,
+    required bool isDark,
     required Widget trailing,
     VoidCallback? onTap,
   }) {
@@ -623,7 +610,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildSupportCard(ColorScheme scheme) {
+  Widget _buildSupportCard(ColorScheme scheme, bool isDark) {
     return Container(
       decoration: isDark ? NeuDark.concave : Neu.concave,
       child: Column(
@@ -632,6 +619,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             icon: Icons.help_outline,
             iconColor: AppColors.blue,
             title: 'Help Center',
+            isDark: isDark,
             onTap: () {
               Get.snackbar(
                 'Info',
@@ -646,6 +634,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             icon: Icons.lock_outline,
             iconColor: Colors.teal,
             title: 'Privacy Policy',
+            isDark: isDark,
             onTap: () {
               Get.snackbar(
                 'Info',
@@ -660,6 +649,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             icon: Icons.description_outlined,
             iconColor: Colors.grey,
             title: 'Terms of Service',
+            isDark: isDark,
             onTap: () {
               Get.snackbar(
                 'Info',
@@ -678,6 +668,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required IconData icon,
     required Color iconColor,
     required String title,
+    required bool isDark,
     required VoidCallback onTap,
   }) {
     return InkWell(
@@ -708,7 +699,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildLogOutButton() {
+  Widget _buildLogOutButton(bool isDark) {
     return GestureDetector(
       onTap: _handleLogout,
       child: Container(

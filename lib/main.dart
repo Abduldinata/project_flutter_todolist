@@ -9,6 +9,9 @@ import 'utils/constants.dart';
 import 'utils/app_routes.dart';
 import 'theme/theme_app.dart';
 import 'theme/theme_controller.dart';
+import 'controllers/task_controller.dart';
+import 'controllers/profile_controller.dart';
+import 'services/connectivity_service.dart';
 
 // screens
 import 'screens/auth/login_screen.dart';
@@ -86,6 +89,11 @@ void _setupDeepLinkHandler() {
 
 class MyApp extends StatelessWidget {
   final ThemeController themeController = Get.put(ThemeController());
+  final ConnectivityService connectivityService = Get.put(
+    ConnectivityService(),
+  );
+  final TaskController taskController = Get.put(TaskController());
+  final ProfileController profileController = Get.put(ProfileController());
   final String initialRoute;
 
   MyApp({super.key, required this.initialRoute});

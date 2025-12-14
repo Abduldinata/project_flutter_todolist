@@ -5,8 +5,8 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../models/profile_model.dart';
 import '../../services/supabase_service.dart';
+import '../../controllers/profile_controller.dart';
 import '../../theme/theme_tokens.dart';
 import '../../utils/app_routes.dart';
 import '../../widgets/loading_widget.dart';
@@ -20,10 +20,9 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  final ProfileController _profileController = Get.find<ProfileController>();
   final SupabaseService _supabaseService = SupabaseService();
-  Profile? _profile;
 
-  bool _isLoading = true;
   bool _isEditing = false;
 
   final TextEditingController _usernameController = TextEditingController();
@@ -36,31 +35,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _loadProfile();
+    // Hanya load jika data belum ada atau cache sudah expired
+    if (_profileController.profile.value == null) {
+      _profileController.loadProfile().then((_) {
+        _updateControllers();
+      });
+    } else {
+      _updateControllers();
+    }
+
+    // Listen untuk perubahan profile
+    ever(_profileController.profile, (_) {
+      _updateControllers();
+    });
   }
 
-  Future<void> _loadProfile() async {
-    setState(() => _isLoading = true);
-    try {
-      final data = await _supabaseService.getProfile();
-      if (data != null) {
-        final p = Profile.fromJson(data);
-        final user = Supabase.instance.client.auth.currentUser;
-        setState(() {
-          _profile = p;
-          _usernameController.text = p.username;
-          _hobbyController.text = p.hobby ?? '';
-          _bioController.text = p.bio ?? '';
-          _emailController.text = p.email ?? user?.email ?? '';
-          _phoneController.text = p.phone ?? '';
-          _dateOfBirth = p.dateOfBirth;
-        });
-      }
-    } catch (e) {
-      Get.snackbar("Error", "$e");
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+  void _updateControllers() {
+    final p = _profileController.profile.value;
+    if (p != null) {
+      final user = Supabase.instance.client.auth.currentUser;
+      _usernameController.text = p.username;
+      _hobbyController.text = p.hobby ?? '';
+      _bioController.text = p.bio ?? '';
+      _emailController.text = p.email ?? user?.email ?? '';
+      _phoneController.text = p.phone ?? '';
+      _dateOfBirth = p.dateOfBirth;
     }
+  }
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _hobbyController.dispose();
+    _bioController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    super.dispose();
   }
 
   Future<void> _uploadAvatar() async {
@@ -88,12 +98,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       }
 
-      await _supabaseService.updateProfile(
-        username: _profile?.username ?? '',
-        avatarUrl: imageUrl,
-      );
+      final currentProfile = _profileController.profile.value;
+      if (currentProfile != null) {
+        await _profileController.updateProfile(
+          username: currentProfile.username,
+          avatarUrl: imageUrl,
+        );
+      }
 
-      await _loadProfile();
       Get.snackbar("Sukses", "Avatar diperbarui");
     } catch (e) {
       Get.snackbar("Error", "$e");
@@ -108,7 +120,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     try {
-      await _supabaseService.updateProfile(
+      await _profileController.updateProfile(
         username: username,
         bio: _bioController.text.trim().isEmpty
             ? null
@@ -122,7 +134,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         dateOfBirth: _dateOfBirth,
       );
       setState(() => _isEditing = false);
-      await _loadProfile();
+      _updateControllers();
       Get.snackbar("Sukses", "Profil diperbarui");
     } catch (e) {
       Get.snackbar("Error", "$e");
@@ -134,252 +146,258 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colorScheme = Theme.of(context).colorScheme;
 
-    if (_isLoading) {
+    return Obx(() {
+      if (_profileController.isLoading.value) {
+        return Scaffold(
+          backgroundColor: isDark ? AppColors.darkBg : AppColors.bg,
+          body: ProfileLoading(isDark: isDark),
+        );
+      }
+
+      final p = _profileController.profile.value;
+
       return Scaffold(
         backgroundColor: isDark ? AppColors.darkBg : AppColors.bg,
-        body: ProfileLoading(isDark: isDark),
-      );
-    }
-
-    final p = _profile;
-
-    return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBg : AppColors.bg,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              // Header
-              Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Get.back(),
-                    icon: Icon(Icons.arrow_back),
-                    color: isDark ? AppColors.darkText : AppColors.text,
-                  ),
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        _isEditing ? "Edit Profile" : "Profile",
-                        style: AppStyle.title.copyWith(
-                          color: isDark ? AppColors.darkText : AppColors.text,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 48), // Balance for back button
-                ],
-              ),
-              const SizedBox(height: 20),
-
-              // AVATAR with camera icon overlay
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  GestureDetector(
-                    onTap: _isEditing ? _uploadAvatar : null,
-                    child: Container(
-                      decoration: isDark ? NeuDark.convex : Neu.convex,
-                      padding: const EdgeInsets.all(8),
-                      child: CircleAvatar(
-                        radius: 60,
-                        backgroundImage:
-                            (p?.avatarUrl != null &&
-                                (p!.avatarUrl ?? '').isNotEmpty)
-                            ? NetworkImage(p.avatarUrl!)
-                            : null,
-                        backgroundColor: isDark
-                            ? AppColors.darkCard
-                            : Colors.white,
-                        child:
-                            (p?.avatarUrl == null ||
-                                (p!.avatarUrl ?? '').isEmpty)
-                            ? Icon(
-                                Icons.person,
-                                size: 60,
-                                color: isDark
-                                    ? AppColors.darkText.withValues(alpha: 0.5)
-                                    : Colors.grey,
-                              )
-                            : null,
-                      ),
-                    ),
-                  ),
-                  if (_isEditing)
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: GestureDetector(
-                        onTap: _uploadAvatar,
-                        child: Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: AppColors.blue,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: isDark ? AppColors.darkCard : Colors.white,
-                              width: 3,
-                            ),
-                          ),
-                          child: const Icon(
-                            Icons.camera_alt,
-                            size: 18,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
-              // USERNAME with PRO badge (optional)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    p?.username ?? "",
-                    style: AppStyle.subtitle.copyWith(
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                // Header
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => Get.back(),
+                      icon: Icon(Icons.arrow_back),
                       color: isDark ? AppColors.darkText : AppColors.text,
                     ),
-                  ),
-                  // PRO Badge (optional - bisa diaktifkan jika ada premium)
-                  // const SizedBox(width: 8),
-                  // Container(
-                  //   padding: const EdgeInsets.symmetric(
-                  //     horizontal: 8,
-                  //     vertical: 4,
-                  //   ),
-                  //   decoration: BoxDecoration(
-                  //     color: AppColors.blue,
-                  //     borderRadius: BorderRadius.circular(12),
-                  //   ),
-                  //   child: const Text(
-                  //     'PRO',
-                  //     style: TextStyle(
-                  //       color: Colors.white,
-                  //       fontSize: 10,
-                  //       fontWeight: FontWeight.bold,
-                  //     ),
-                  //   ),
-                  // ),
-                ],
-              ),
-
-              if (_isEditing) ...[
-                const SizedBox(height: 8),
-                GestureDetector(
-                  onTap: _uploadAvatar,
-                  child: Text(
-                    "Change Profile Photo",
-                    style: TextStyle(
-                      color: AppColors.blue,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          _isEditing ? "Edit Profile" : "Profile",
+                          style: AppStyle.title.copyWith(
+                            color: isDark ? AppColors.darkText : AppColors.text,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 48), // Balance for back button
+                  ],
                 ),
-              ],
+                const SizedBox(height: 20),
 
-              const SizedBox(height: 32),
-
-              // PERSONAL DETAILS Section
-              _buildSectionTitle("PERSONAL DETAILS"),
-              const SizedBox(height: 12),
-              _tile(
-                "Name",
-                _usernameController,
-                editable: _isEditing,
-                isDark: isDark,
-                colorScheme: colorScheme,
-              ),
-              const SizedBox(height: 16),
-              _tile(
-                "Bio",
-                _bioController,
-                editable: _isEditing,
-                maxLines: 3,
-                isDark: isDark,
-                colorScheme: colorScheme,
-              ),
-              const SizedBox(height: 16),
-              _buildDateOfBirthTile(isDark, colorScheme),
-              const SizedBox(height: 32),
-
-              // CONTACT INFO Section
-              _buildSectionTitle("CONTACT INFO"),
-              const SizedBox(height: 12),
-              _tile(
-                "Email",
-                _emailController,
-                editable: false, // Email usually not editable
-                isDark: isDark,
-                colorScheme: colorScheme,
-              ),
-              const SizedBox(height: 16),
-              _tile(
-                "Phone",
-                _phoneController,
-                editable: _isEditing,
-                isDark: isDark,
-                colorScheme: colorScheme,
-              ),
-              const SizedBox(height: 32),
-
-              // ACCOUNT Section
-              _buildSectionTitle("ACCOUNT"),
-              const SizedBox(height: 12),
-              _buildAccountOptions(isDark, colorScheme),
-              const SizedBox(height: 32),
-
-              // Save Changes Button (only when editing)
-              if (_isEditing)
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _save,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.blue,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                // AVATAR with camera icon overlay
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    GestureDetector(
+                      onTap: _isEditing ? _uploadAvatar : null,
+                      child: Container(
+                        decoration: isDark ? NeuDark.convex : Neu.convex,
+                        padding: const EdgeInsets.all(8),
+                        child: CircleAvatar(
+                          radius: 60,
+                          backgroundImage:
+                              (p?.avatarUrl != null &&
+                                  (p!.avatarUrl ?? '').isNotEmpty)
+                              ? NetworkImage(p.avatarUrl!)
+                              : null,
+                          backgroundColor: isDark
+                              ? AppColors.darkCard
+                              : Colors.white,
+                          child:
+                              (p?.avatarUrl == null ||
+                                  (p!.avatarUrl ?? '').isEmpty)
+                              ? Icon(
+                                  Icons.person,
+                                  size: 60,
+                                  color: isDark
+                                      ? AppColors.darkText.withValues(
+                                          alpha: 0.5,
+                                        )
+                                      : Colors.grey,
+                                )
+                              : null,
+                        ),
                       ),
                     ),
-                    child: const Text(
-                      'Save Changes',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                    if (_isEditing)
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: GestureDetector(
+                          onTap: _uploadAvatar,
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: AppColors.blue,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isDark
+                                    ? AppColors.darkCard
+                                    : Colors.white,
+                                width: 3,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.camera_alt,
+                              size: 18,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
+                // USERNAME with PRO badge (optional)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      p?.username ?? "",
+                      style: AppStyle.subtitle.copyWith(
+                        color: isDark ? AppColors.darkText : AppColors.text,
                       ),
                     ),
-                  ),
-                )
-              else
-                GestureDetector(
-                  onTap: () => setState(() => _isEditing = true),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    width: double.infinity,
-                    decoration: isDark ? NeuDark.convex : Neu.convex,
+                    // PRO Badge (optional - bisa diaktifkan jika ada premium)
+                    // const SizedBox(width: 8),
+                    // Container(
+                    //   padding: const EdgeInsets.symmetric(
+                    //     horizontal: 8,
+                    //     vertical: 4,
+                    //   ),
+                    //   decoration: BoxDecoration(
+                    //     color: AppColors.blue,
+                    //     borderRadius: BorderRadius.circular(12),
+                    //   ),
+                    //   child: const Text(
+                    //     'PRO',
+                    //     style: TextStyle(
+                    //       color: Colors.white,
+                    //       fontSize: 10,
+                    //       fontWeight: FontWeight.bold,
+                    //     ),
+                    //   ),
+                    // ),
+                  ],
+                ),
+
+                if (_isEditing) ...[
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: _uploadAvatar,
                     child: Text(
-                      "Edit Profile",
-                      textAlign: TextAlign.center,
-                      style: AppStyle.normal.copyWith(
-                        color: colorScheme.primary,
-                        fontWeight: FontWeight.w600,
+                      "Change Profile Photo",
+                      style: TextStyle(
+                        color: AppColors.blue,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
+                ],
+
+                const SizedBox(height: 32),
+
+                // PERSONAL DETAILS Section
+                _buildSectionTitle("PERSONAL DETAILS", isDark),
+                const SizedBox(height: 12),
+                _tile(
+                  "Name",
+                  _usernameController,
+                  editable: _isEditing,
+                  isDark: isDark,
+                  colorScheme: colorScheme,
                 ),
-            ],
+                const SizedBox(height: 16),
+                _tile(
+                  "Bio",
+                  _bioController,
+                  editable: _isEditing,
+                  maxLines: 3,
+                  isDark: isDark,
+                  colorScheme: colorScheme,
+                ),
+                const SizedBox(height: 16),
+                _buildDateOfBirthTile(isDark, colorScheme),
+                const SizedBox(height: 32),
+
+                // CONTACT INFO Section
+                _buildSectionTitle("CONTACT INFO", isDark),
+                const SizedBox(height: 12),
+                _tile(
+                  "Email",
+                  _emailController,
+                  editable: false, // Email usually not editable
+                  isDark: isDark,
+                  colorScheme: colorScheme,
+                ),
+                const SizedBox(height: 16),
+                _tile(
+                  "Phone",
+                  _phoneController,
+                  editable: _isEditing,
+                  isDark: isDark,
+                  colorScheme: colorScheme,
+                ),
+                const SizedBox(height: 32),
+
+                // ACCOUNT Section
+                _buildSectionTitle("ACCOUNT", isDark),
+                const SizedBox(height: 12),
+                _buildAccountOptions(isDark, colorScheme),
+                const SizedBox(height: 32),
+
+                // Save Changes Button (only when editing)
+                if (_isEditing)
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _save,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.blue,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Save Changes',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  GestureDetector(
+                    onTap: () => setState(() => _isEditing = true),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      width: double.infinity,
+                      decoration: isDark ? NeuDark.convex : Neu.convex,
+                      child: Text(
+                        "Edit Profile",
+                        textAlign: TextAlign.center,
+                        style: AppStyle.normal.copyWith(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   Widget _tile(
@@ -433,8 +451,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  Widget _buildSectionTitle(String title, bool isDark) {
     return Text(
       title,
       style: TextStyle(
