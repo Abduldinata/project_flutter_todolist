@@ -22,6 +22,9 @@ import 'screens/home/inbox_screen.dart';
 import 'screens/home/today_screen.dart';
 import 'screens/home/upcoming_screen.dart';
 import 'screens/settings/settings_screen.dart';
+import 'screens/settings/help_center_screen.dart';
+import 'screens/settings/privacy_policy_screen.dart';
+import 'screens/settings/terms_of_service_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -137,6 +140,9 @@ class MyApp extends StatelessWidget {
           GetPage(name: AppRoutes.today, page: () => const TodayScreen()),
           GetPage(name: AppRoutes.upcoming, page: () => const UpcomingScreen()),
           GetPage(name: AppRoutes.settings, page: () => const SettingsScreen()),
+          GetPage(name: AppRoutes.helpCenter, page: () => const HelpCenterScreen()),
+          GetPage(name: AppRoutes.privacyPolicy, page: () => const PrivacyPolicyScreen()),
+          GetPage(name: AppRoutes.termsOfService, page: () => const TermsOfServiceScreen()),
         ],
       ),
     );

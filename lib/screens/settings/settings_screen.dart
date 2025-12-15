@@ -635,12 +635,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: 'Help Center',
             isDark: isDark,
             onTap: () {
-              Get.snackbar(
-                'Info',
-                'Help Center coming soon',
-                backgroundColor: AppColors.blue,
-                colorText: Colors.white,
-              );
+              Get.toNamed(AppRoutes.helpCenter);
             },
           ),
           const Divider(height: 1),
@@ -650,12 +645,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: 'Privacy Policy',
             isDark: isDark,
             onTap: () {
-              Get.snackbar(
-                'Info',
-                'Privacy Policy coming soon',
-                backgroundColor: AppColors.blue,
-                colorText: Colors.white,
-              );
+              Get.toNamed(AppRoutes.privacyPolicy);
             },
           ),
           const Divider(height: 1),
@@ -665,12 +655,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: 'Terms of Service',
             isDark: isDark,
             onTap: () {
-              Get.snackbar(
-                'Info',
-                'Terms of Service coming soon',
-                backgroundColor: AppColors.blue,
-                colorText: Colors.white,
-              );
+              Get.toNamed(AppRoutes.termsOfService);
             },
           ),
         ],

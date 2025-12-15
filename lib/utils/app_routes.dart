@@ -10,4 +10,7 @@ class AppRoutes {
   static const settings = '/settings';
   static const changePassword = '/change-password';
   static const resetPassword = '/reset-password';
+  static const helpCenter = '/help-center';
+  static const privacyPolicy = '/privacy-policy';
+  static const termsOfService = '/terms-of-service';
 }
