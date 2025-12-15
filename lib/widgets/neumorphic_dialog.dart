@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../theme/theme_tokens.dart';
-import 'neumorphic_button.dart';
 
 class NeumorphicDialog extends StatelessWidget {
   final String title;
@@ -47,13 +46,7 @@ class NeumorphicDialog extends StatelessWidget {
       elevation: 0,
       child: Container(
         padding: const EdgeInsets.all(24),
-        decoration: isDark
-            ? BoxDecoration(
-                color: const Color(0xFF2C2C2C),
-                borderRadius: BorderRadius.circular(25),
-                border: Border.all(color: Colors.grey[800]!),
-              )
-            : Neu.convex.copyWith(borderRadius: BorderRadius.circular(25)),
+        decoration: FlatStyle.card(isDark: isDark),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -61,26 +54,19 @@ class NeumorphicDialog extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E1E1E) : AppColors.bg,
+                color: type.color.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
-                boxShadow: isDark
-                    ? [
-                        BoxShadow(
-                          color: Colors.black.withAlpha((0.5 * 255).round()),
-                          blurRadius: 8,
-                        ),
-                      ]
-                    : Neu.pressed.boxShadow,
               ),
               child: Icon(type.icon, size: 32, color: type.color),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
             // Title
             Text(
               title,
-              style: AppStyle.title.copyWith(
+              style: TextStyle(
                 fontSize: 20,
+                fontWeight: FontWeight.bold,
                 color: isDark ? Colors.white : AppColors.text,
               ),
               textAlign: TextAlign.center,
@@ -90,28 +76,35 @@ class NeumorphicDialog extends StatelessWidget {
             // Message
             Text(
               message,
-              style: AppStyle.normal.copyWith(
-                color: isDark ? Colors.grey[300] : AppColors.text,
+              style: TextStyle(
+                fontSize: 14,
+                height: 1.5,
+                color: isDark ? Colors.grey[300] : Colors.grey[700],
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
 
             // Buttons
             Row(
               children: [
                 if (onConfirm != null) ...[
                   Expanded(
-                    child: NeumorphicButton(
-                      label: 'Batal',
+                    child: _buildButton(
+                      label: 'Cancel',
+                      isDark: isDark,
+                      isPrimary: false,
                       onTap: () => Get.back(),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 12),
                 ],
                 Expanded(
-                  child: NeumorphicButton(
+                  child: _buildButton(
                     label: confirmText ?? 'OK',
+                    isDark: isDark,
+                    isPrimary: true,
+                    color: type.color,
                     onTap: () {
                       Get.back();
                       if (onConfirm != null) onConfirm!();
@@ -121,6 +114,39 @@ class NeumorphicDialog extends StatelessWidget {
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildButton({
+    required String label,
+    required bool isDark,
+    required bool isPrimary,
+    required VoidCallback onTap,
+    Color? color,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: isPrimary
+              ? (color ?? AppColors.blue)
+              : (isDark ? AppColors.darkSurface : Colors.grey[200]),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: isPrimary
+                  ? Colors.white
+                  : (isDark ? Colors.white : AppColors.text),
+            ),
+          ),
         ),
       ),
     );

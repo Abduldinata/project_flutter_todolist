@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:get/get.dart';
 import '../../widgets/neumorphic_dialog.dart';
-import '../../widgets/loading_widget.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/app_routes.dart';
 import '../../theme/theme_tokens.dart';
@@ -351,46 +351,47 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   Expanded(
                     child: Padding(
-                      padding: const EdgeInsets.only(top: 12),
+                      padding: const EdgeInsets.only(top: 2),
                       child: RichText(
+                        textAlign: TextAlign.left,
                         text: TextSpan(
                           style: TextStyle(
                             fontSize: 14,
-                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                            height: 1.5,
+                            color: isDark ? Colors.grey[300] : Colors.grey[700],
                           ),
                           children: [
                             const TextSpan(text: 'I agree to the '),
-                            WidgetSpan(
-                              child: GestureDetector(
-                                onTap: () {
-                                  // Terms of Service
-                                  _showError('Terms of Service coming soon');
-                                },
-                                child: Text(
-                                  'Terms of Service',
-                                  style: TextStyle(
-                                    color: AppColors.blue,
-                                    fontSize: 14,
-                                  ),
-                                ),
+                            TextSpan(
+                              text: 'Terms of Service',
+                              style: TextStyle(
+                                color: AppColors.blue,
+                                fontSize: 14,
+                                decoration: TextDecoration.underline,
+                                decorationColor: AppColors.blue,
+                                decorationThickness: 1.5,
                               ),
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () {
+                                  Get.toNamed(AppRoutes.termsOfService);
+                                },
                             ),
                             const TextSpan(text: ' and '),
-                            WidgetSpan(
-                              child: GestureDetector(
-                                onTap: () {
-                                  // Privacy Policy
-                                  _showError('Privacy Policy coming soon');
-                                },
-                                child: Text(
-                                  'Privacy Policy.',
-                                  style: TextStyle(
-                                    color: AppColors.blue,
-                                    fontSize: 14,
-                                  ),
-                                ),
+                            TextSpan(
+                              text: 'Privacy Policy',
+                              style: TextStyle(
+                                color: AppColors.blue,
+                                fontSize: 14,
+                                decoration: TextDecoration.underline,
+                                decorationColor: AppColors.blue,
+                                decorationThickness: 1.5,
                               ),
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () {
+                                  Get.toNamed(AppRoutes.privacyPolicy);
+                                },
                             ),
+                            const TextSpan(text: '.'),
                           ],
                         ),
                       ),
@@ -406,7 +407,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 width: double.infinity,
                 height: 50,
                 child: _isLoading
-                    ? const LoadingButton()
+                    ? ElevatedButton(
+                        onPressed: null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.blue,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        ),
+                      )
                     : ElevatedButton(
                         onPressed: _handleRegister,
                         style: ElevatedButton.styleFrom(
@@ -616,7 +637,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 child: SizedBox(
                   width: 20,
                   height: 20,
-                  child: LoadingWidget(width: 20, height: 20),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.blue,
+                  ),
                 ),
               )
             : Row(

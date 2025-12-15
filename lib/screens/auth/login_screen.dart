@@ -5,7 +5,6 @@ import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../widgets/neumorphic_dialog.dart';
-import '../../widgets/loading_widget.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/app_routes.dart';
 import '../../theme/theme_tokens.dart';
@@ -87,12 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
             debugPrint("Error refreshing controllers after login: $e");
           }
 
-          NeumorphicDialog.show(
-            title: 'Success',
-            message: 'Login successful! Welcome back.',
-            type: DialogType.success,
-          );
-
+          Get.snackbar("Success", "Login successful! Welcome back.");
           await Future.delayed(const Duration(milliseconds: 1500));
           Get.offAllNamed(AppRoutes.inbox);
         }
@@ -361,7 +355,27 @@ class _LoginScreenState extends State<LoginScreen> {
                 width: double.infinity,
                 height: 50,
                 child: _isLoading
-                    ? const LoadingButton()
+                    ? ElevatedButton(
+                        onPressed: null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.blue,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        ),
+                      )
                     : ElevatedButton(
                         onPressed: _handleLogin,
                         style: ElevatedButton.styleFrom(
@@ -568,7 +582,16 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
         child: isLoading
-            ? const Center(child: LoadingWidget(width: 20, height: 20))
+            ? const Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.blue,
+                  ),
+                ),
+              )
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

@@ -108,7 +108,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       }
 
-      Get.snackbar("Sukses", "Avatar diperbarui");
+      Get.snackbar("Success", "Avatar diperbarui");
     } catch (e) {
       Get.snackbar("Error", "$e");
     }
@@ -216,6 +216,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   style: TextStyle(
                     fontSize: 16,
                     color: isDark ? Colors.white : AppColors.text,
+                    decoration: TextDecoration.none,
                   ),
                 ),
               ],
