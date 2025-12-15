@@ -107,7 +107,7 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                     // Info Card
                     Container(
                       padding: const EdgeInsets.all(24),
-                      decoration: isDark ? NeuDark.concave : Neu.concave,
+                      decoration: FlatStyle.card(isDark: isDark),
                       child: Column(
                         children: [
                           Container(
@@ -169,12 +169,7 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                     // Additional Info
                     Container(
                       padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? AppColors.darkSurface
-                            : Colors.grey[100]?.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                      decoration: FlatStyle.button(isDark: isDark),
                       child: Row(
                         children: [
                           Icon(

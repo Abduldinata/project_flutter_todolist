@@ -12,6 +12,7 @@ import '../../controllers/profile_controller.dart';
 import '../../controllers/task_controller.dart';
 import '../../auth_storage.dart';
 import '../home/profile_screen.dart';
+import '../../services/sound_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -582,6 +583,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onChanged: (value) {
                 setState(() => _soundEffectsEnabled = value);
                 _savePreference('sound_effects_enabled', value);
+                // Play sound when toggling
+                SoundService().playSound(SoundType.switchToggle);
               },
               activeThumbColor: AppColors.blue,
             ),

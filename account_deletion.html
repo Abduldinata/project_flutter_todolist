@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hapus Akun - To-Do List App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            margin-top: 40px;
+            margin-bottom: 40px;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+        }
+        
+        .section h2 {
+            color: #34495e;
+            margin-bottom: 15px;
+            font-size: 24px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        
+        .section h3 {
+            color: #2c3e50;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        .steps {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .steps ol {
+            margin-left: 20px;
+        }
+        
+        .steps li {
+            margin-bottom: 10px;
+            line-height: 1.8;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .info {
+            background: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .data-list {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .data-list ul {
+            margin-left: 20px;
+        }
+        
+        .data-list li {
+            margin-bottom: 8px;
+        }
+        
+        .button {
+            display: inline-block;
+            background: #e74c3c;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 6px;
+            margin-top: 20px;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        
+        .button:hover {
+            background: #c0392b;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hapus Akun Saya</h1>
+        <p class="subtitle">To-Do List App - Permintaan Penghapusan Akun dan Data</p>
+        
+        <div class="section">
+            <h2>Cara Menghapus Akun Anda</h2>
+            <div class="steps">
+                <ol>
+                    <li>Buka aplikasi <strong>To-Do List</strong> di perangkat Anda</li>
+                    <li>Login ke akun Anda jika belum login</li>
+                    <li>Pergi ke halaman <strong>Settings</strong> (ikon gear di bagian bawah)</li>
+                    <li>Tap pada kartu profil Anda di bagian atas</li>
+                    <li>Scroll ke bawah ke bagian <strong>ACCOUNT</strong></li>
+                    <li>Tap pada opsi <strong>"Delete Account"</strong> (warna merah)</li>
+                    <li>Baca peringatan dengan seksama</li>
+                    <li>Tap <strong>"Delete Account"</strong> untuk konfirmasi</li>
+                    <li>Tunggu proses penghapusan selesai (akan muncul dialog "Deleting account...")</li>
+                    <li>Anda akan otomatis di-logout dan diarahkan ke halaman login</li>
+                </ol>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Data yang Akan Dihapus</h2>
+            <div class="data-list">
+                <p>Ketika Anda menghapus akun, <strong>semua data berikut akan dihapus secara permanen</strong>:</p>
+                <ul>
+                    <li><strong>Data Profil:</strong> Nama pengguna, email, bio, hobby, nomor telepon, tanggal lahir, foto profil</li>
+                    <li><strong>Semua Tugas:</strong> Semua task/todo yang telah Anda buat, termasuk yang sudah selesai dan belum selesai</li>
+                    <li><strong>Data Autentikasi:</strong> Informasi login dan sesi akun Anda</li>
+                    <li><strong>File yang Diunggah:</strong> Foto profil yang telah Anda unggah</li>
+                    <li><strong>Data Lokal:</strong> Semua data yang tersimpan di perangkat Anda</li>
+                </ul>
+            </div>
+            
+            <div class="warning">
+                <strong>⚠️ Peringatan:</strong> Proses penghapusan akun <strong>tidak dapat dibatalkan</strong>. Setelah akun dihapus, semua data Anda akan hilang secara permanen dan tidak dapat dipulihkan.
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Periode Retensi Data</h2>
+            <div class="info">
+                <p><strong>Setelah penghapusan akun:</strong></p>
+                <ul>
+                    <li>Data akan dihapus <strong>segera</strong> setelah Anda mengkonfirmasi penghapusan akun</li>
+                    <li>Tidak ada periode retensi data tambahan</li>
+                    <li>Data tidak akan disimpan untuk keperluan apapun setelah penghapusan</li>
+                    <li>Backup data akan dihapus dalam waktu maksimal <strong>30 hari</strong> setelah penghapusan akun</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Alternatif: Hubungi Support</h2>
+            <p>Jika Anda mengalami kesulitan menghapus akun melalui aplikasi, atau memiliki pertanyaan tentang proses penghapusan, silakan hubungi kami:</p>
+            <div class="info">
+                <p><strong>Email Support:</strong> <a href="mailto:sahtulbb@gmail.com">sahtulbb@gmail.com</a></p>
+                <p><strong>Subjek Email:</strong> "Permintaan Penghapusan Akun"</p>
+                <p>Mohon sertakan email yang terdaftar di akun Anda dalam email permintaan.</p>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Informasi Tambahan</h2>
+            <div class="info">
+                <p><strong>Nama Aplikasi:</strong> To-Do List App</p>
+                <p><strong>Developer:</strong> Syachrul, Aziz, Ilyas</p>
+                <p><strong>Versi:</strong> 1.0.0</p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>&copy; 2025 To-Do List App. All rights reserved.</p>
+            <p>Halaman ini menjelaskan proses penghapusan akun sesuai dengan persyaratan Google Play Store Data Safety.</p>
+        </div>
+    </div>
+</body>
+</html>
+

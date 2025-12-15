@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../theme/theme_tokens.dart';
 import '../../services/task_service.dart';
+import '../../services/sound_service.dart';
 import '../edit_task/edit_task_screen.dart';
 
 class TaskDetailScreen extends StatefulWidget {
@@ -49,6 +50,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       if (taskId != null) {
         await _taskService.updateCompleted(taskId, !currentStatus);
         _refreshTask();
+        // Play sound effect
+        SoundService().playSound(SoundType.complete);
         Get.snackbar(
           "Success",
           currentStatus
@@ -357,6 +360,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                                 await _taskService.deleteTask(
                                   _task['id'].toString(),
                                 );
+                                // Play sound effect
+                                SoundService().playSound(SoundType.delete);
                                 Get.back(); // Kembali ke screen sebelumnya
                                 Get.snackbar(
                                   "Success",

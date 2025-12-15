@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../services/task_service.dart';
 import '../services/connectivity_service.dart';
+import '../services/sound_service.dart';
 import '../auth_storage.dart';
 
 class TaskController extends GetxController {
@@ -275,6 +276,8 @@ class TaskController extends GetxController {
         };
         // Update offline storage juga
         await AuthStorage.saveTasksOffline(allTasks.toList());
+        // Play sound effect
+        SoundService().playSound(SoundType.complete);
       }
     } catch (e) {
       debugPrint("Error toggling task: $e");
@@ -303,6 +306,8 @@ class TaskController extends GetxController {
       );
       // Reload tasks setelah add
       await loadAllTasks(forceRefresh: true);
+      // Play sound effect
+      SoundService().playSound(SoundType.success);
     } catch (e) {
       debugPrint("Error adding task: $e");
       Get.snackbar(
@@ -347,6 +352,7 @@ class TaskController extends GetxController {
   }
 
   // Delete task (disabled saat offline)
+  // Delete task (disabled saat offline)
   Future<void> deleteTask(String taskId) async {
     if (isOfflineMode.value) {
       Get.snackbar(
@@ -363,6 +369,8 @@ class TaskController extends GetxController {
       allTasks.removeWhere((task) => task['id']?.toString() == taskId);
       // Update offline storage
       await AuthStorage.saveTasksOffline(allTasks.toList());
+      // Play sound effect
+      SoundService().playSound(SoundType.delete);
     } catch (e) {
       debugPrint("Error deleting task: $e");
       Get.snackbar(

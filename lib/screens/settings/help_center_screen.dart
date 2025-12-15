@@ -197,7 +197,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
   Widget _buildWelcomeCard(bool isDark) {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: isDark ? NeuDark.concave : Neu.concave,
+      decoration: FlatStyle.card(isDark: isDark),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -250,7 +250,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
     final isExpanded = _expandedSections[question] ?? false;
 
     return Container(
-      decoration: isDark ? NeuDark.concave : Neu.concave,
+      decoration: FlatStyle.card(isDark: isDark),
       child: Column(
         children: [
           InkWell(
@@ -307,7 +307,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
   Widget _buildContactCard(bool isDark) {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: isDark ? NeuDark.concave : Neu.concave,
+      decoration: FlatStyle.card(isDark: isDark),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -381,12 +381,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isDark
-              ? AppColors.darkSurface
-              : Colors.grey[100]?.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(12),
-        ),
+        decoration: FlatStyle.button(isDark: isDark),
         child: Row(
           children: [
             Container(

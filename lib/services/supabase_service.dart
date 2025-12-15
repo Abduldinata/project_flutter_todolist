@@ -290,4 +290,68 @@ class SupabaseService {
   Future<void> deleteTask(int id) async {
     await _client.from('tasks').delete().eq('id', id);
   }
+
+  // ===============================
+  // 🗑️ DELETE ACCOUNT FUNCTIONS
+  // ===============================
+
+  /// Delete user account and all associated data
+  /// This will:
+  /// 1. Delete all user tasks
+  /// 2. Delete user profile
+  /// 3. Delete user avatar from storage (if exists)
+  /// 4. Sign out the user
+  /// Note: To completely remove user from auth, user needs to contact admin
+  /// or use Supabase dashboard
+  Future<void> deleteAccount() async {
+    final user = _client.auth.currentUser;
+    if (user == null) throw Exception('User belum login.');
+
+    try {
+      // 1. Delete all user tasks
+      await _client.from('tasks').delete().eq('user_id', user.id);
+
+      // 2. Delete user avatar from storage (if exists)
+      try {
+        final profile = await getProfile();
+        if (profile != null && profile['avatar_url'] != null) {
+          final avatarUrl = profile['avatar_url'] as String;
+          // Extract file name from URL
+          final fileName = avatarUrl.split('/').last.split('?').first;
+          if (fileName.isNotEmpty) {
+            try {
+              await _client.storage.from('avatars').remove([fileName]);
+            } catch (e) {
+              debugPrint('Warning: Failed to delete avatar: $e');
+              // Continue even if avatar deletion fails
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('Warning: Failed to delete avatar: $e');
+        // Continue even if avatar deletion fails
+      }
+
+      // 3. Delete user profile
+      await _client.from('profiles').delete().eq('id', user.id);
+
+      // 4. Try to delete user from auth using RPC function
+      // This requires a database function to be created in Supabase
+      try {
+        await _client.rpc('delete_user_account', params: {'user_id': user.id});
+        debugPrint('User account deleted from auth successfully');
+      } catch (e) {
+        debugPrint('Warning: Could not delete user from auth: $e');
+        debugPrint('Note: User data has been deleted, but auth account may still exist.');
+        debugPrint('Please create the delete_user_account function in Supabase or contact admin.');
+        // Continue even if RPC fails - data is already deleted
+      }
+
+      // 5. Sign out the user
+      await signOut();
+    } catch (e) {
+      debugPrint('Error deleting account: $e');
+      rethrow;
+    }
+  }
 }

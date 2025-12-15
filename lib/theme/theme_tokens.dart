@@ -317,3 +317,46 @@ class NeuDark {
     borderRadius: BorderRadius.circular(20),
   );
 }
+
+// Flat style tanpa neumorphic (modern flat design)
+class FlatStyle {
+  // Card - untuk card/list items (flat dengan shadow ringan)
+  static BoxDecoration card({required bool isDark}) => BoxDecoration(
+    color: isDark ? AppColors.darkCard : Colors.white,
+    borderRadius: BorderRadius.circular(16),
+    boxShadow: [
+      BoxShadow(
+        color: isDark
+            ? Colors.black.withValues(alpha: 0.3)
+            : Colors.black.withValues(alpha: 0.08),
+        offset: const Offset(0, 2),
+        blurRadius: 8,
+        spreadRadius: 0,
+      ),
+    ],
+  );
+
+  // Input - untuk input fields (flat dengan border)
+  static BoxDecoration input({required bool isDark}) => BoxDecoration(
+    color: isDark ? AppColors.darkCard : Colors.white,
+    borderRadius: BorderRadius.circular(12),
+    border: Border.all(
+      color: isDark
+          ? Colors.white.withValues(alpha: 0.1)
+          : Colors.grey.withValues(alpha: 0.2),
+      width: 1,
+    ),
+  );
+
+  // Button - untuk buttons (flat dengan hover effect)
+  static BoxDecoration button({required bool isDark, Color? color}) => BoxDecoration(
+    color: color ?? (isDark ? AppColors.darkSurface : Colors.grey[100]),
+    borderRadius: BorderRadius.circular(12),
+  );
+
+  // Container - untuk general containers
+  static BoxDecoration container({required bool isDark}) => BoxDecoration(
+    color: isDark ? AppColors.darkCard : Colors.white,
+    borderRadius: BorderRadius.circular(16),
+  );
+}

@@ -7,9 +7,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../services/supabase_service.dart';
 import '../../controllers/profile_controller.dart';
+import '../../controllers/task_controller.dart';
 import '../../theme/theme_tokens.dart';
 import '../../utils/app_routes.dart';
 import '../../widgets/loading_widget.dart';
+import '../../auth_storage.dart';
 import '../auth/change_password_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -138,6 +140,136 @@ class _ProfileScreenState extends State<ProfileScreen> {
       Get.snackbar("Sukses", "Profil diperbarui");
     } catch (e) {
       Get.snackbar("Error", "$e");
+    }
+  }
+
+  Future<void> _handleDeleteAccount(bool isDark) async {
+    // Show confirmation dialog
+    final confirm = await Get.dialog<bool>(
+      AlertDialog(
+        backgroundColor: isDark ? AppColors.darkCard : Colors.white,
+        title: Text(
+          "Delete Account",
+          style: TextStyle(
+            color: isDark ? Colors.white : AppColors.text,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          "Are you sure you want to delete your account?\n\n"
+          "This will permanently delete:\n"
+          "• All your tasks\n"
+          "• Your profile data\n"
+          "• Your avatar\n\n"
+          "This action cannot be undone.",
+          style: TextStyle(
+            color: isDark ? Colors.grey[300] : Colors.grey[700],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: Text(
+              "Cancel",
+              style: TextStyle(
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Get.back(result: true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text("Delete Account"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    // Show loading dialog
+    Get.dialog(
+      PopScope(
+        canPop: false, // Prevent back button
+        child: Center(
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 40),
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkCard : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Loading indicator
+                CircularProgressIndicator(
+                  color: AppColors.blue,
+                ),
+                const SizedBox(height: 20),
+                // Text
+                Text(
+                  "Deleting account...",
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: isDark ? Colors.white : AppColors.text,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      barrierDismissible: false,
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+    );
+
+    try {
+      // 1. Delete account from Supabase (tasks, profile, avatar)
+      await _supabaseService.deleteAccount();
+
+      // 2. Clear all local storage
+      await AuthStorage.logout();
+      await AuthStorage.clearTasksOffline();
+      await AuthStorage.clearProfileOffline();
+
+      // 3. Clear controllers
+      final taskController = Get.find<TaskController>();
+      final profileController = Get.find<ProfileController>();
+      taskController.clearAllData();
+      profileController.clearAllData();
+
+      // 4. Close loading dialog
+      Get.back();
+
+      // 5. Show success message and navigate to login
+      Get.snackbar(
+        "Account Deleted",
+        "Your account has been successfully deleted.",
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 2),
+      );
+
+      // 6. Navigate to login screen
+      Future.delayed(const Duration(seconds: 1), () {
+        Get.offAllNamed(AppRoutes.login);
+      });
+    } catch (e) {
+      // Close loading dialog
+      Get.back();
+
+      // Show error message
+      Get.snackbar(
+        "Error",
+        "Failed to delete account: ${e.toString()}",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 4),
+      );
     }
   }
 
@@ -618,36 +750,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           "Delete Account",
           icon: Icons.delete_outline,
           textColor: Colors.red,
-          onTap: () {
-            Get.dialog(
-              AlertDialog(
-                title: const Text("Delete Account"),
-                content: const Text(
-                  "Are you sure you want to delete your account? This action cannot be undone.",
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Get.back(),
-                    child: const Text("Cancel"),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      Get.back();
-                      Get.snackbar(
-                        "Info",
-                        "Delete Account feature coming soon",
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text("Delete"),
-                  ),
-                ],
-              ),
-            );
-          },
+          onTap: () => _handleDeleteAccount(isDark),
           isDark: isDark,
           colorScheme: colorScheme,
         ),
