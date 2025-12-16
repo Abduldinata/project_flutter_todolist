@@ -297,6 +297,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     return GestureDetector(
       onTap: () {
+        SoundService().playSound(SoundType.tap);
         // Navigate to profile screen
         Get.to(() => const ProfileScreen());
       },
@@ -539,6 +540,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             trailing: Switch(
               value: _notificationsEnabled,
               onChanged: (value) {
+                SoundService().playSound(SoundType.switchToggle); // Add sound
                 setState(() => _notificationsEnabled = value);
                 _savePreference('notifications_enabled', value);
               },
@@ -674,7 +676,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required VoidCallback onTap,
   }) {
     return InkWell(
-      onTap: onTap,
+      onTap: () {
+        SoundService().playSound(SoundType.tap);
+        onTap();
+      },
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
@@ -703,7 +708,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildLogOutButton(bool isDark) {
     return GestureDetector(
-      onTap: _handleLogout,
+      onTap: () {
+        SoundService().playSound(SoundType.tap);
+        _handleLogout();
+      },
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 16),

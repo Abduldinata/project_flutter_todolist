@@ -10,6 +10,7 @@ import '../../utils/app_routes.dart';
 import '../../theme/theme_tokens.dart';
 import '../../controllers/task_controller.dart';
 import '../../controllers/profile_controller.dart';
+import '../../services/sound_service.dart';
 import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -54,11 +55,13 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleLogin() async {
     if (_emailController.text.trim().isEmpty ||
         _passwordController.text.isEmpty) {
+      SoundService().playSound(SoundType.error);
       _showError('Email and password are required');
       return;
     }
 
     if (!GetUtils.isEmail(_emailController.text.trim())) {
+      SoundService().playSound(SoundType.error);
       _showError('Invalid email format');
       return;
     }
@@ -73,6 +76,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (response.user != null) {
         if (mounted) {
+          SoundService().playSound(SoundType.success);
+          
           try {
             final taskController = Get.find<TaskController>();
             final profileController = Get.find<ProfileController>();
@@ -88,6 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       }
     } catch (e) {
+      SoundService().playSound(SoundType.error);
       _showError(_parseError(e.toString()));
     } finally {
       if (mounted) {
@@ -113,6 +119,8 @@ class _LoginScreenState extends State<LoginScreen> {
             debugPrint("Error refreshing controllers after Google login: $e");
           }
 
+          SoundService().playSound(SoundType.success);
+
           NeumorphicDialog.show(
             title: 'Success',
             message: 'Google sign in successful!',
@@ -124,6 +132,7 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       }
     } catch (e) {
+      SoundService().playSound(SoundType.error);
       String errorMessage = _parseGoogleError(e.toString());
 
       if (!errorMessage.toLowerCase().contains('cancelled') &&
@@ -365,7 +374,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       )
                     : ElevatedButton(
-                        onPressed: _handleLogin,
+                        onPressed: () {
+                          SoundService().playSound(SoundType.tap);
+                          _handleLogin();
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.blue,
                           foregroundColor: Colors.white,
@@ -553,7 +565,12 @@ class _LoginScreenState extends State<LoginScreen> {
     required String label,
   }) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        if (onTap != null) {
+          SoundService().playSound(SoundType.tap);
+          onTap();
+        }
+      },
       child: Container(
         height: 50,
         decoration: BoxDecoration(

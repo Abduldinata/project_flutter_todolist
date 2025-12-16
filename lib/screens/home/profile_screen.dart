@@ -13,6 +13,7 @@ import '../../utils/app_routes.dart';
 import '../../widgets/loading_widget.dart';
 import '../../auth_storage.dart';
 import '../auth/change_password_screen.dart';
+import '../../services/sound_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -108,6 +109,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       }
 
+      SoundService().playSound(SoundType.success);
       Get.snackbar("Success", "Avatar diperbarui");
     } catch (e) {
       Get.snackbar("Error", "$e");
@@ -137,6 +139,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
       setState(() => _isEditing = false);
       _updateControllers();
+      SoundService().playSound(SoundType.success);
       Get.snackbar("Sukses", "Profil diperbarui");
     } catch (e) {
       Get.snackbar("Error", "$e");
@@ -300,7 +303,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Row(
                   children: [
                     IconButton(
-                      onPressed: () => Get.back(),
+                      onPressed: () {
+                        SoundService().playSound(SoundType.undo);
+                        Get.back();
+                      },
                       icon: Icon(Icons.arrow_back),
                       color: isDark ? AppColors.darkText : AppColors.text,
                     ),
@@ -510,7 +516,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   )
                 else
                   GestureDetector(
-                    onTap: () => setState(() => _isEditing = true),
+                    onTap: () {
+                      SoundService().playSound(SoundType.tap);
+                      setState(() => _isEditing = true);
+                    },
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       width: double.infinity,
@@ -771,7 +780,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onTap,
+        onTap: onTap != null
+            ? () {
+                SoundService().playSound(SoundType.tap);
+                onTap();
+              }
+            : null,
         borderRadius: BorderRadius.circular(20),
         child: Container(
           width: double.infinity,

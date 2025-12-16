@@ -5,6 +5,7 @@ import '../../widgets/neumorphic_dialog.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/app_routes.dart';
 import '../../theme/theme_tokens.dart';
+import '../../services/sound_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -28,26 +29,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _handleRegister() async {
     if (_emailController.text.trim().isEmpty) {
+      SoundService().playSound(SoundType.error);
       _showError('Email address is required');
       return;
     }
 
     if (!GetUtils.isEmail(_emailController.text.trim())) {
+      SoundService().playSound(SoundType.error);
       _showError('Invalid email format');
       return;
     }
 
     if (_passwordController.text.length < 8) {
+      SoundService().playSound(SoundType.error);
       _showError('Password must be at least 8 characters');
       return;
     }
 
     if (_passwordController.text != _confirmPasswordController.text) {
+      SoundService().playSound(SoundType.error);
       _showError('Passwords do not match');
       return;
     }
 
     if (!_agreeToTerms) {
+      SoundService().playSound(SoundType.error);
       _showError('Please agree to the Terms of Service and Privacy Policy');
       return;
     }
@@ -66,6 +72,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       if (response.user != null) {
         if (mounted) {
+          SoundService().playSound(SoundType.success);
           NeumorphicDialog.show(
             title: 'Success',
             message:
@@ -80,6 +87,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         }
       }
     } catch (e) {
+      SoundService().playSound(SoundType.error);
       String errorMessage = _parseError(e.toString());
       _showError(errorMessage);
     } finally {
@@ -96,6 +104,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final response = await _service.signInWithGoogle();
 
       if (response.user != null && mounted) {
+        SoundService().playSound(SoundType.success);
         NeumorphicDialog.show(
           title: 'Success',
           message: 'Account created successfully!',
@@ -108,6 +117,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         }
       }
     } catch (e) {
+      SoundService().playSound(SoundType.error);
       String errorMessage = _parseGoogleError(e.toString());
       if (!errorMessage.toLowerCase().contains('cancelled') &&
           !errorMessage.toLowerCase().contains('dibatalkan')) {
@@ -306,6 +316,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 children: [
                   GestureDetector(
                     onTap: () {
+                      SoundService().playSound(SoundType.switchToggle); // Switch sound for checkbox
                       setState(() => _agreeToTerms = !_agreeToTerms);
                     },
                     child: Container(
@@ -414,7 +425,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       )
                     : ElevatedButton(
-                        onPressed: _handleRegister,
+                        onPressed: () {
+                          SoundService().playSound(SoundType.tap);
+                          _handleRegister();
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.blue,
                           foregroundColor: Colors.white,
@@ -603,7 +617,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
     required String label,
   }) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        if (onTap != null) {
+          SoundService().playSound(SoundType.tap);
+          onTap();
+        }
+      },
       child: Container(
         height: 50,
         decoration: BoxDecoration(

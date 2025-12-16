@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../theme/theme_tokens.dart';
+import '../../services/sound_service.dart';
 
 class HelpCenterScreen extends StatefulWidget {
   const HelpCenterScreen({super.key});
@@ -27,7 +28,10 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    onPressed: () => Get.back(),
+                    onPressed: () {
+                      SoundService().playSound(SoundType.undo);
+                      Get.back();
+                    },
                     icon: const Icon(Icons.arrow_back),
                     color: isDark ? Colors.white : AppColors.text,
                   ),
@@ -255,6 +259,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
         children: [
           InkWell(
             onTap: () {
+              SoundService().playSound(SoundType.tap);
               setState(() {
                 _expandedSections[question] = !isExpanded;
               });
@@ -377,7 +382,10 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
     required VoidCallback onTap,
   }) {
     return InkWell(
-      onTap: onTap,
+      onTap: () {
+        SoundService().playSound(SoundType.tap);
+        onTap();
+      },
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.all(16),

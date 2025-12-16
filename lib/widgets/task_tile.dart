@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:to_do_list_project/screens/edit_task/edit_task_screen.dart';
 import '../theme/theme_tokens.dart';
 import '../screens/task_detail/task_detail_screen.dart';
+import '../services/sound_service.dart';
 
 class TaskTile extends StatelessWidget {
   final Map<String, dynamic> task;
@@ -37,6 +38,7 @@ class TaskTile extends StatelessWidget {
       onTap:
           onTap ??
           () {
+            SoundService().playSound(SoundType.tap);
             Get.to(() => TaskDetailScreen(task: task));
           },
       child: Container(
@@ -252,8 +254,10 @@ class TaskTile extends StatelessWidget {
                 ],
                 onSelected: (value) {
                   if (value == 'detail') {
+                    SoundService().playSound(SoundType.tap);
                     Get.to(() => TaskDetailScreen(task: task));
                   } else if (value == 'edit') {
+                    SoundService().playSound(SoundType.tap);
                     Get.to(() => EditTaskScreen(task: task));
                   } else if (value == 'delete') {
                     onDelete(taskId, title);

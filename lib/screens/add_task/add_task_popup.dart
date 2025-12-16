@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/theme_tokens.dart';
+import '../../services/sound_service.dart';
 
 enum Priority { high, medium, low }
 
@@ -289,7 +290,10 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   GestureDetector(
-                    onTap: () => Navigator.pop(context),
+                    onTap: () {
+                       SoundService().playSound(SoundType.undo);
+                       Navigator.pop(context);
+                    },
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                         vertical: 14,

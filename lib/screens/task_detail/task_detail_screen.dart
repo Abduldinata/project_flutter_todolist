@@ -51,7 +51,13 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         await _taskService.updateCompleted(taskId, !currentStatus);
         _refreshTask();
         // Play sound effect
-        SoundService().playSound(SoundType.complete);
+        if (currentStatus) {
+          // Unchecking (Complete -> Incomplete)
+          SoundService().playSound(SoundType.undo);
+        } else {
+          // Checking (Incomplete -> Complete)
+          SoundService().playSound(SoundType.complete);
+        }
         Get.snackbar(
           "Success",
           currentStatus
@@ -97,7 +103,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               child: Row(
                 children: [
                   GestureDetector(
-                    onTap: () => Get.back(),
+                    onTap: () {
+                      SoundService().playSound(SoundType.undo);
+                      Get.back();
+                    },
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: isDark ? NeuDark.convex : Neu.convex,
@@ -119,6 +128,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                   ),
                   GestureDetector(
                     onTap: () {
+                      SoundService().playSound(SoundType.tap);
                       Get.to(() => EditTaskScreen(task: _task))?.then((
                         updated,
                       ) {

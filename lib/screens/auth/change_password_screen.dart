@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../services/supabase_service.dart';
 import '../../theme/theme_tokens.dart';
 import '../../widgets/loading_widget.dart';
+import '../../services/sound_service.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -81,6 +82,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
       if (mounted) {
         // Tampilkan snackbar success
+        SoundService().playSound(SoundType.success);
         Get.snackbar("Success", "Password berhasil diubah!");
 
         // Kembali ke halaman sebelumnya (Profile Screen)
@@ -129,7 +131,10 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            SoundService().playSound(SoundType.undo);
+            Navigator.pop(context);
+          },
           icon: Icon(
             Icons.arrow_back,
             color: isDark ? Colors.white : AppColors.text,
@@ -203,6 +208,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     isDark: isDark,
                     obscure: !_showCurrentPassword,
                     onIconTap: () {
+                      SoundService().playSound(SoundType.tap);
                       setState(
                         () => _showCurrentPassword = !_showCurrentPassword,
                       );

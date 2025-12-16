@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../theme/theme_tokens.dart';
+import '../../services/sound_service.dart';
 
 class PrivacyPolicyScreen extends StatefulWidget {
   const PrivacyPolicyScreen({super.key});
@@ -78,7 +79,10 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    onPressed: () => Get.back(),
+                    onPressed: () {
+                      SoundService().playSound(SoundType.undo);
+                      Get.back();
+                    },
                     icon: const Icon(Icons.arrow_back),
                     color: isDark ? Colors.white : AppColors.text,
                   ),
@@ -211,7 +215,10 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
     required VoidCallback onTap,
   }) {
     return InkWell(
-      onTap: onTap,
+      onTap: () {
+        SoundService().playSound(SoundType.tap);
+        onTap();
+      },
       borderRadius: BorderRadius.circular(15),
       child: Container(
         width: double.infinity,

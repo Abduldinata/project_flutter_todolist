@@ -4,6 +4,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import '../services/task_service.dart';
 import '../services/connectivity_service.dart';
 import '../services/sound_service.dart';
+import '../services/notification_service.dart';
 import '../auth_storage.dart';
 
 class TaskController extends GetxController {
@@ -219,6 +220,7 @@ class TaskController extends GetxController {
 
   Future<void> toggleTaskCompletion(String taskId, bool currentValue) async {
     if (isOfflineMode.value) {
+      SoundService().playSound(SoundType.error);
       Get.snackbar(
         "Offline Mode",
         "Cannot update tasks while offline. Please check your internet connection.",
@@ -238,10 +240,37 @@ class TaskController extends GetxController {
           'is_done': !currentValue,
         };
         await AuthStorage.saveTasksOffline(allTasks.toList());
-        SoundService().playSound(SoundType.complete);
+
+        // Play sound and handle notification
+        if (!currentValue) {
+          // Task completed
+          SoundService().playSound(SoundType.complete);
+          // Cancel notification for completed task
+          final taskIdInt = int.tryParse(taskId);
+          if (taskIdInt != null) {
+            await NotificationService().cancelNotification(taskIdInt);
+          }
+        } else {
+          // Task uncompleted - reschedule notification if date is in future
+          SoundService().playSound(SoundType.undo);
+          final task = allTasks[taskIndex];
+          final taskDate = _parseDate(task['date']);
+          if (taskDate != null && taskDate.isAfter(DateTime.now())) {
+            final taskIdInt = int.tryParse(taskId);
+            if (taskIdInt != null) {
+              await NotificationService().scheduleTaskNotification(
+                id: taskIdInt,
+                title: 'Task Reminder',
+                body: task['title'] ?? 'You have a task due',
+                scheduledDate: taskDate,
+              );
+            }
+          }
+        }
       }
     } catch (e) {
       debugPrint("Error toggling task: $e");
+      SoundService().playSound(SoundType.error);
       Get.snackbar(
         "Error",
         "Failed to update task: ${e.toString()}",
@@ -265,9 +294,34 @@ class TaskController extends GetxController {
         priority: priority,
       );
       await loadAllTasks(forceRefresh: true);
-      SoundService().playSound(SoundType.success);
+
+      // Play success sound
+      SoundService().playSound(SoundType.addTask);
+
+      // Schedule notification if date is in future
+      if (date.isAfter(DateTime.now()) && allTasks.isNotEmpty) {
+        final newTask = allTasks.firstWhere(
+          (task) => task['title'] == title,
+          orElse: () => {},
+        );
+        if (newTask.isNotEmpty) {
+          final taskId = newTask['id'];
+          if (taskId != null) {
+            final taskIdInt = int.tryParse(taskId.toString());
+            if (taskIdInt != null) {
+              await NotificationService().scheduleTaskNotification(
+                id: taskIdInt,
+                title: 'Task Reminder',
+                body: title,
+                scheduledDate: date,
+              );
+            }
+          }
+        }
+      }
     } catch (e) {
       debugPrint("Error adding task: $e");
+      SoundService().playSound(SoundType.error);
       Get.snackbar(
         "Error",
         "Failed to add task: ${e.toString()}",
@@ -285,6 +339,7 @@ class TaskController extends GetxController {
     String? priority,
   }) async {
     if (isOfflineMode.value) {
+      SoundService().playSound(SoundType.error);
       Get.snackbar(
         "Offline Mode",
         "Cannot update tasks while offline. Please check your internet connection.",
@@ -295,8 +350,23 @@ class TaskController extends GetxController {
 
     try {
       await loadAllTasks(forceRefresh: true);
+      SoundService().playSound(SoundType.success);
+
+      // Update notification if date changed and is in future
+      if (date != null && date.isAfter(DateTime.now())) {
+        final taskIdInt = int.tryParse(taskId);
+        if (taskIdInt != null) {
+          await NotificationService().scheduleTaskNotification(
+            id: taskIdInt,
+            title: 'Task Reminder',
+            body: title ?? 'You have a task due',
+            scheduledDate: date,
+          );
+        }
+      }
     } catch (e) {
       debugPrint("Error updating task: $e");
+      SoundService().playSound(SoundType.error);
       Get.snackbar(
         "Error",
         "Failed to update task: ${e.toString()}",
@@ -308,6 +378,7 @@ class TaskController extends GetxController {
 
   Future<void> deleteTask(String taskId) async {
     if (isOfflineMode.value) {
+      SoundService().playSound(SoundType.error);
       Get.snackbar(
         "Offline Mode",
         "Cannot delete tasks while offline. Please check your internet connection.",
@@ -320,9 +391,18 @@ class TaskController extends GetxController {
       await _taskService.deleteTask(taskId);
       allTasks.removeWhere((task) => task['id']?.toString() == taskId);
       await AuthStorage.saveTasksOffline(allTasks.toList());
+
+      // Play delete sound
       SoundService().playSound(SoundType.delete);
+
+      // Cancel notification for deleted task
+      final taskIdInt = int.tryParse(taskId);
+      if (taskIdInt != null) {
+        await NotificationService().cancelNotification(taskIdInt);
+      }
     } catch (e) {
       debugPrint("Error deleting task: $e");
+      SoundService().playSound(SoundType.error);
       Get.snackbar(
         "Error",
         "Failed to delete task: ${e.toString()}",

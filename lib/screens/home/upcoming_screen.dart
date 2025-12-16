@@ -6,6 +6,8 @@ import '../../widgets/loading_widget.dart';
 import '../../controllers/task_controller.dart';
 import '../add_task/add_task_popup.dart';
 import '../task_detail/task_detail_screen.dart';
+import '../../services/sound_service.dart';
+import '../../utils/app_routes.dart';
 
 class UpcomingScreen extends StatefulWidget {
   const UpcomingScreen({super.key});
@@ -443,51 +445,48 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
             ),
           ],
         ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () async {
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (ctx) => const AddTaskPopup()),
-                    );
+        floatingActionButton: AddTaskButton(
+          onTap: () async {
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (ctx) => const AddTaskPopup()),
+            );
 
-                    if (result != null &&
-                        result['text'] != null &&
-                        result['date'] != null) {
-                      try {
-                        await _taskController.addTask(
-                          title: result['text'].toString(),
-                          date: result['date'] as DateTime,
-                          description: result['description']?.toString(),
-                          priority: result['priority']?.toString(),
-                        );
-                        Get.snackbar(
-                          "Success",
-                          "Task added successfully",
-                          backgroundColor: Colors.green,
-                          colorText: Colors.white,
-                        );
-                      } catch (e) {
-                        Get.snackbar(
-                          "Error",
-                          "Failed to add task: ${e.toString()}",
-                          backgroundColor: Colors.red,
-                          colorText: Colors.white,
-                        );
-                      }
-                    }
-                  },
-          backgroundColor: AppColors.blue,
-          tooltip: 'Tambah Task',
-          child: const Icon(Icons.add, color: Colors.white),
+            if (result != null &&
+                result['text'] != null &&
+                result['date'] != null) {
+              try {
+                await _taskController.addTask(
+                  title: result['text'].toString(),
+                  date: result['date'] as DateTime,
+                  description: result['description']?.toString(),
+                  priority: result['priority']?.toString(),
+                );
+                Get.snackbar(
+                  "Success",
+                  "Task added successfully",
+                  backgroundColor: Colors.green,
+                  colorText: Colors.white,
+                );
+              } catch (e) {
+                Get.snackbar(
+                  "Error",
+                  "Failed to add task: ${e.toString()}",
+                  backgroundColor: Colors.red,
+                  colorText: Colors.white,
+                );
+              }
+            }
+          },
         ),
         bottomNavigationBar: BottomNav(
           index: navIndex,
           onTap: (i) {
             if (i == navIndex) return;
             setState(() => navIndex = i);
-            if (i == 0) Get.offAllNamed("/inbox");
-            if (i == 1) Get.offAllNamed("/today");
-            if (i == 3) Get.offAllNamed("/settings");
+            if (i == 0) Get.offAllNamed(AppRoutes.inbox, transition: Transition.none);
+            if (i == 1) Get.offAllNamed(AppRoutes.today, transition: Transition.none);
+            if (i == 3) Get.offAllNamed(AppRoutes.settings, transition: Transition.fadeIn);
           },
         ),
       );
@@ -625,6 +624,7 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
 
     return GestureDetector(
       onTap: () {
+        SoundService().playSound(SoundType.tap);
         Get.to(() => TaskDetailScreen(task: task));
       },
       child: Container(

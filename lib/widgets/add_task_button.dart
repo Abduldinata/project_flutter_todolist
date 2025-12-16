@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/theme_tokens.dart';
+import '../services/sound_service.dart';
 
 class AddTaskButton extends StatelessWidget {
   final VoidCallback onTap;
@@ -11,7 +12,10 @@ class AddTaskButton extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return FloatingActionButton(
-      onPressed: onTap,
+      onPressed: () {
+        SoundService().playSound(SoundType.tap);
+        onTap();
+      },
       tooltip: 'Tambah Task',
       elevation: 0,
       backgroundColor: Colors.transparent,

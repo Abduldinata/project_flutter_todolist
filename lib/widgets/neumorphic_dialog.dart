@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../theme/theme_tokens.dart';
+import '../services/sound_service.dart';
 
 class NeumorphicDialog extends StatelessWidget {
   final String title;
@@ -94,7 +95,10 @@ class NeumorphicDialog extends StatelessWidget {
                       label: 'Cancel',
                       isDark: isDark,
                       isPrimary: false,
-                      onTap: () => Get.back(),
+                      onTap: () {
+                        SoundService().playSound(SoundType.undo);
+                        Get.back();
+                      },
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -106,6 +110,7 @@ class NeumorphicDialog extends StatelessWidget {
                     isPrimary: true,
                     color: type.color,
                     onTap: () {
+                      SoundService().playSound(SoundType.tap);
                       Get.back();
                       if (onConfirm != null) onConfirm!();
                     },

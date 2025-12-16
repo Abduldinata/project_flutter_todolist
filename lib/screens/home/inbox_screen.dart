@@ -7,6 +7,8 @@ import '../../widgets/loading_widget.dart';
 import '../../controllers/task_controller.dart';
 import '../add_task/add_task_popup.dart';
 import '../task_detail/task_detail_screen.dart';
+import '../../services/sound_service.dart';
+import '../../utils/app_routes.dart';
 
 class InboxScreen extends StatefulWidget {
   const InboxScreen({super.key});
@@ -608,6 +610,7 @@ class _InboxScreenState extends State<InboxScreen> {
 
                           return GestureDetector(
                             onTap: () {
+                              SoundService().playSound(SoundType.tap);
                               setState(() {
                                 if (filter == 'All') {
                                   selectedStatusFilter = 'All';
@@ -618,7 +621,8 @@ class _InboxScreenState extends State<InboxScreen> {
                                       ? 'All'
                                       : 'History';
                                 } else {
-                                  selectedPriorityFilter == filter
+                                  selectedPriorityFilter =
+                                      selectedPriorityFilter == filter
                                       ? 'All'
                                       : filter;
                                 }
@@ -749,9 +753,9 @@ class _InboxScreenState extends State<InboxScreen> {
           onTap: (i) {
             if (i == navIndex) return;
             setState(() => navIndex = i);
-            if (i == 1) Get.offAllNamed("/today");
-            if (i == 2) Get.offAllNamed("/upcoming");
-            if (i == 3) Get.offAllNamed("/settings");
+            if (i == 1) Get.offAllNamed(AppRoutes.today, transition: Transition.none);
+            if (i == 2) Get.offAllNamed(AppRoutes.upcoming, transition: Transition.none);
+            if (i == 3) Get.offAllNamed(AppRoutes.settings, transition: Transition.fadeIn); // Settings boleh ada animasi sedikit
           },
         ),
       );
@@ -774,6 +778,7 @@ class _InboxScreenState extends State<InboxScreen> {
 
     return GestureDetector(
       onTap: () {
+        SoundService().playSound(SoundType.tap);
         Get.to(() => TaskDetailScreen(task: task));
       },
       child: Container(

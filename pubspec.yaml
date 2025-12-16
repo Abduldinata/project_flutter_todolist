@@ -37,6 +37,10 @@ dependencies:
   get: ^4.6.6
   get_storage: ^2.1.1
   connectivity_plus: ^6.0.5
+  audioplayers: ^6.1.0
+  flutter_local_notifications: ^18.0.1
+  permission_handler: ^11.3.1
+  timezone: ^0.9.4
   animated_bottom_navigation_bar: ^1.3.0
   google_nav_bar: ^5.0.7
   card_loading: ^0.3.2
@@ -78,6 +82,14 @@ flutter:
     - assets/images/icon_google.png
     - assets/images/icon_apple.png
     - assets/icon.png
+    - assets/sounds/complete.mp3
+    - assets/sounds/delete.mp3
+    - assets/sounds/error.mp3
+    - assets/sounds/success.mp3
+    - assets/sounds/switch.mp3
+    - assets/sounds/tap.mp3
+    - assets/sounds/add_task.mp3
+    - assets/sounds/undo.mp3
 
   # To add assets to your application, add an assets section, like this:
   # assets:

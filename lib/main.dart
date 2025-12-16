@@ -12,6 +12,7 @@ import 'theme/theme_controller.dart';
 import 'controllers/task_controller.dart';
 import 'controllers/profile_controller.dart';
 import 'services/connectivity_service.dart';
+import 'services/sound_service.dart';
 
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
@@ -29,6 +30,9 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await GetStorage.init();
   await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
+
+  // Initialize and preload sounds
+  SoundService().preloadAllSounds();
 
   final session = Supabase.instance.client.auth.currentSession;
   final initialRoute = (session != null) ? AppRoutes.inbox : AppRoutes.login;

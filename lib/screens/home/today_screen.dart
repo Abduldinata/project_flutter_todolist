@@ -8,6 +8,8 @@ import '../../controllers/task_controller.dart';
 import '../../controllers/profile_controller.dart';
 import '../add_task/add_task_popup.dart';
 import '../task_detail/task_detail_screen.dart';
+import '../../services/sound_service.dart';
+import '../../utils/app_routes.dart';
 
 class TodayScreen extends StatefulWidget {
   const TodayScreen({super.key});
@@ -536,16 +538,14 @@ class _TodayScreenState extends State<TodayScreen> {
             setState(() => navIndex = i);
             switch (i) {
               case 0:
-                Get.offAllNamed("/inbox");
+                Get.offAllNamed(AppRoutes.inbox, transition: Transition.none);
                 break;
               case 2:
-                Get.offAllNamed("/upcoming");
+                Get.offAllNamed(AppRoutes.upcoming, transition: Transition.none);
                 break;
               case 3:
-                Get.offAllNamed("/settings");
+                Get.offAllNamed(AppRoutes.settings, transition: Transition.fadeIn);
                 break;
-              default:
-                Get.offAllNamed("/today");
             }
           },
         ),
@@ -573,6 +573,7 @@ class _TodayScreenState extends State<TodayScreen> {
 
     return GestureDetector(
       onTap: () {
+        SoundService().playSound(SoundType.tap);
         Get.to(() => TaskDetailScreen(task: task));
       },
       child: Container(

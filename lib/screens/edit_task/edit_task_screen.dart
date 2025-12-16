@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../theme/theme_tokens.dart';
 import '../../services/task_service.dart';
 import '../../widgets/loading_widget.dart';
+import '../../services/sound_service.dart';
 
 enum Priority { high, medium, low }
 
@@ -99,6 +100,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
         priority: _priorityToString(_selectedPriority),
       );
 
+      SoundService().playSound(SoundType.success);
       Get.back(result: true); // Kirim signal bahwa task diupdate
       Get.snackbar("Success", "Task berhasil diupdate");
     } catch (e) {
@@ -186,7 +188,10 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
               Row(
                 children: [
                   GestureDetector(
-                    onTap: () => Get.back(),
+                    onTap: () {
+                      SoundService().playSound(SoundType.undo);
+                      Get.back();
+                    },
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: isDark ? NeuDark.convex : Neu.convex,
@@ -383,7 +388,10 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                           children: [
                             // Cancel
                             GestureDetector(
-                              onTap: () => Get.back(),
+                              onTap: () {
+                                SoundService().playSound(SoundType.undo);
+                                Get.back();
+                              },
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 14,

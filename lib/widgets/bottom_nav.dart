@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import '../theme/theme_tokens.dart';
+import '../services/sound_service.dart';
 
 class BottomNav extends StatelessWidget {
   final int index;
@@ -29,7 +30,10 @@ class BottomNav extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: GNav(
           selectedIndex: index,
-          onTabChange: onTap,
+          onTabChange: (value) {
+            SoundService().playSound(SoundType.switchToggle); // Sound effect added
+            onTap(value);
+          },
           backgroundColor: Colors.transparent,
           color: isDark ? Colors.grey[400] : AppColors.gray,
           activeColor: AppColors.blue,

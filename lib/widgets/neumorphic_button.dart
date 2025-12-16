@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/theme_tokens.dart';
+import '../services/sound_service.dart';
 
 class NeumorphicButton extends StatelessWidget {
   final String label;
@@ -12,7 +13,10 @@ class NeumorphicButton extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        SoundService().playSound(SoundType.tap);
+        onTap();
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 26),
         decoration: isDark
