@@ -538,13 +538,13 @@ class _TodayScreenState extends State<TodayScreen> {
             setState(() => navIndex = i);
             switch (i) {
               case 0:
-                Get.offAllNamed(AppRoutes.inbox, transition: Transition.none);
+                Get.offAllNamed(AppRoutes.inbox);
                 break;
               case 2:
-                Get.offAllNamed(AppRoutes.upcoming, transition: Transition.none);
+                Get.offAllNamed(AppRoutes.upcoming);
                 break;
               case 3:
-                Get.offAllNamed(AppRoutes.settings, transition: Transition.fadeIn);
+                Get.offAllNamed(AppRoutes.settings);
                 break;
             }
           },

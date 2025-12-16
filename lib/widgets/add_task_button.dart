@@ -13,7 +13,7 @@ class AddTaskButton extends StatelessWidget {
 
     return FloatingActionButton(
       onPressed: () {
-        SoundService().playSound(SoundType.tap);
+        SoundService().playSound(SoundType.addTask);
         onTap();
       },
       tooltip: 'Tambah Task',

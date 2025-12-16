@@ -126,10 +126,10 @@ class MyApp extends StatelessWidget {
             },
           ),
 
-          GetPage(name: AppRoutes.inbox, page: () => const InboxScreen()),
-          GetPage(name: AppRoutes.today, page: () => const TodayScreen()),
-          GetPage(name: AppRoutes.upcoming, page: () => const UpcomingScreen()),
-          GetPage(name: AppRoutes.settings, page: () => const SettingsScreen()),
+          GetPage(name: AppRoutes.inbox, page: () => const InboxScreen(), transition: Transition.noTransition),
+          GetPage(name: AppRoutes.today, page: () => const TodayScreen(), transition: Transition.noTransition),
+          GetPage(name: AppRoutes.upcoming, page: () => const UpcomingScreen(), transition: Transition.noTransition),
+          GetPage(name: AppRoutes.settings, page: () => const SettingsScreen(), transition: Transition.fadeIn), // Settings boleh pakai fade
           GetPage(name: AppRoutes.helpCenter, page: () => const HelpCenterScreen()),
           GetPage(name: AppRoutes.privacyPolicy, page: () => const PrivacyPolicyScreen()),
           GetPage(name: AppRoutes.termsOfService, page: () => const TermsOfServiceScreen()),

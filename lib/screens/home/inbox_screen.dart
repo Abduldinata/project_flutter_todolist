@@ -753,9 +753,9 @@ class _InboxScreenState extends State<InboxScreen> {
           onTap: (i) {
             if (i == navIndex) return;
             setState(() => navIndex = i);
-            if (i == 1) Get.offAllNamed(AppRoutes.today, transition: Transition.none);
-            if (i == 2) Get.offAllNamed(AppRoutes.upcoming, transition: Transition.none);
-            if (i == 3) Get.offAllNamed(AppRoutes.settings, transition: Transition.fadeIn); // Settings boleh ada animasi sedikit
+            if (i == 1) Get.offAllNamed(AppRoutes.today);
+            if (i == 2) Get.offAllNamed(AppRoutes.upcoming);
+            if (i == 3) Get.offAllNamed(AppRoutes.settings);
           },
         ),
       );

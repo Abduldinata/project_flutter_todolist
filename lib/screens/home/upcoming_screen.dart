@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../theme/theme_tokens.dart';
 import '../../widgets/bottom_nav.dart';
 import '../../widgets/loading_widget.dart';
+import '../../widgets/add_task_button.dart';
 import '../../controllers/task_controller.dart';
 import '../add_task/add_task_popup.dart';
 import '../task_detail/task_detail_screen.dart';
@@ -484,9 +485,9 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
           onTap: (i) {
             if (i == navIndex) return;
             setState(() => navIndex = i);
-            if (i == 0) Get.offAllNamed(AppRoutes.inbox, transition: Transition.none);
-            if (i == 1) Get.offAllNamed(AppRoutes.today, transition: Transition.none);
-            if (i == 3) Get.offAllNamed(AppRoutes.settings, transition: Transition.fadeIn);
+            if (i == 0) Get.offAllNamed(AppRoutes.inbox);
+            if (i == 1) Get.offAllNamed(AppRoutes.today);
+            if (i == 3) Get.offAllNamed(AppRoutes.settings);
           },
         ),
       );
