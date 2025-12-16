@@ -7,8 +7,6 @@ import 'package:flutter/foundation.dart';
 class SupabaseService {
   final SupabaseClient _client = Supabase.instance.client;
 
-  // ⚠️ DIAMBIL DARI FILE JSON ANDA (Tipe: Web Application)
-  // Ini digunakan sebagai 'clientId' di Web, dan 'serverClientId' di Android.
   static const String _webClientId =
       '465634447182-gkgen1p8fj7bottaj291ip1g9c23fhkp.apps.googleusercontent.com';
 
@@ -21,22 +19,14 @@ class SupabaseService {
     );
   }
 
-  // ===============================
-  // 🚀 GOOGLE SIGN IN (FIXED)
-  // ===============================
-
   Future<AuthResponse> signInWithGoogle() async {
     try {
-      // --- FLOW MOBILE (Native) ---
-
-      // 1. Trigger Google Sign In Native
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
       if (googleUser == null) {
         throw 'Login dibatalkan oleh user';
       }
 
-      // 2. Ambil token dari Google
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
 
@@ -47,7 +37,6 @@ class SupabaseService {
         throw 'Tidak dapat mengambil ID Token dari Google. Pastikan Web Client ID benar.';
       }
 
-      // 3. Tukar token Google dengan Session Supabase
       final AuthResponse response = await _client.auth.signInWithIdToken(
         provider: OAuthProvider.google,
         idToken: idToken,
@@ -68,10 +57,6 @@ class SupabaseService {
     }
     await _client.auth.signOut();
   }
-
-  // ===============================
-  // 👤 PROFILE FUNCTIONS
-  // ===============================
 
   Future<Map<String, dynamic>?> getProfile() async {
     final user = _client.auth.currentUser;
@@ -102,17 +87,16 @@ class SupabaseService {
       if (hobby != null) 'hobby': hobby,
       if (bio != null) 'bio': bio,
       if (avatarUrl != null) 'avatar_url': avatarUrl,
-      if (dateOfBirth != null) 'date_of_birth': dateOfBirth.toIso8601String().split('T')[0], // Format: YYYY-MM-DD
+      if (dateOfBirth != null)
+        'date_of_birth': dateOfBirth.toIso8601String().split(
+          'T',
+        )[0], // Format: YYYY-MM-DD
       if (phone != null) 'phone': phone,
       'updated_at': DateTime.now().toIso8601String(),
     };
 
     await _client.from('profiles').update(updates).eq('id', user.id);
   }
-
-  // ===============================
-  // 🖼️ STORAGE FUNCTIONS
-  // ===============================
 
   Future<String> uploadImage(File file, String bucket, String fileName) async {
     final storage = _client.storage.from(bucket);
@@ -137,10 +121,6 @@ class SupabaseService {
     return storage.getPublicUrl(fileName);
   }
 
-  // ===============================
-  // 🔐 AUTH FUNCTIONS (EMAIL)
-  // ===============================
-
   Future<AuthResponse> signUp(
     String email,
     String password,
@@ -152,16 +132,12 @@ class SupabaseService {
       data: {'username': username},
     );
 
-    // Fallback: Jika trigger gagal, buat profile secara manual
     if (response.user != null) {
       try {
-        // Tunggu sebentar untuk trigger selesai
         await Future.delayed(const Duration(milliseconds: 500));
-        
-        // Cek apakah profile sudah dibuat oleh trigger
+
         final profile = await getProfile();
         if (profile == null) {
-          // Jika profile belum ada, buat secara manual
           await _client.from('profiles').insert({
             'id': response.user!.id,
             'username': username,
@@ -175,8 +151,6 @@ class SupabaseService {
           });
         }
       } catch (e) {
-        // Jika gagal membuat profile, log error tapi tidak throw
-        // User sudah terdaftar, profile bisa dibuat nanti
         debugPrint('Warning: Failed to create profile: $e');
       }
     }
@@ -195,68 +169,42 @@ class SupabaseService {
     await signOutGoogle();
   }
 
-  // ===============================
-  // 🔑 PASSWORD FUNCTIONS
-  // ===============================
-
-  /// Update password user yang sedang login
-  /// Membutuhkan password lama untuk verifikasi (opsional di Supabase)
   Future<void> updatePassword(String newPassword) async {
     final user = _client.auth.currentUser;
     if (user == null) throw Exception('User belum login.');
 
-    // Validasi password baru
     if (newPassword.length < 8) {
       throw Exception('Password harus minimal 8 karakter');
     }
 
-    // Update password melalui Supabase Auth
-    await _client.auth.updateUser(
-      UserAttributes(password: newPassword),
-    );
+    await _client.auth.updateUser(UserAttributes(password: newPassword));
   }
 
-  /// Reset password dengan token dari email link
-  /// Digunakan setelah user klik link reset password dari email
   Future<void> resetPasswordWithToken(String newPassword) async {
-    // Validasi password baru
     if (newPassword.length < 8) {
       throw Exception('Password harus minimal 8 karakter');
     }
 
-    // Update password - Supabase akan otomatis memverifikasi token dari session
-    // Token sudah diverifikasi saat deep link dibuka
-    await _client.auth.updateUser(
-      UserAttributes(password: newPassword),
-    );
+    await _client.auth.updateUser(UserAttributes(password: newPassword));
   }
 
-  /// Reset password dengan mengirim email reset link
-  /// User akan menerima email dengan link untuk reset password
   Future<void> resetPassword(String email) async {
     if (email.trim().isEmpty) {
       throw Exception('Email harus diisi');
     }
 
-    // Validasi format email
     final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
     if (!emailRegex.hasMatch(email.trim())) {
       throw Exception('Format email tidak valid');
     }
 
-    // Kirim email reset password dengan redirect URL untuk mobile app
-    // Format: scheme://host
     const redirectUrl = 'todolist://reset-password';
-    
+
     await _client.auth.resetPasswordForEmail(
       email.trim(),
       redirectTo: redirectUrl,
     );
   }
-
-  // ===============================
-  // 📝 TASK FUNCTIONS
-  // ===============================
 
   Future<List<Task>> getTasks() async {
     final user = _client.auth.currentUser;
@@ -291,63 +239,43 @@ class SupabaseService {
     await _client.from('tasks').delete().eq('id', id);
   }
 
-  // ===============================
-  // 🗑️ DELETE ACCOUNT FUNCTIONS
-  // ===============================
-
-  /// Delete user account and all associated data
-  /// This will:
-  /// 1. Delete all user tasks
-  /// 2. Delete user profile
-  /// 3. Delete user avatar from storage (if exists)
-  /// 4. Sign out the user
-  /// Note: To completely remove user from auth, user needs to contact admin
-  /// or use Supabase dashboard
   Future<void> deleteAccount() async {
     final user = _client.auth.currentUser;
     if (user == null) throw Exception('User belum login.');
 
     try {
-      // 1. Delete all user tasks
       await _client.from('tasks').delete().eq('user_id', user.id);
-
-      // 2. Delete user avatar from storage (if exists)
       try {
         final profile = await getProfile();
         if (profile != null && profile['avatar_url'] != null) {
           final avatarUrl = profile['avatar_url'] as String;
-          // Extract file name from URL
           final fileName = avatarUrl.split('/').last.split('?').first;
           if (fileName.isNotEmpty) {
             try {
               await _client.storage.from('avatars').remove([fileName]);
             } catch (e) {
               debugPrint('Warning: Failed to delete avatar: $e');
-              // Continue even if avatar deletion fails
             }
           }
         }
       } catch (e) {
         debugPrint('Warning: Failed to delete avatar: $e');
-        // Continue even if avatar deletion fails
       }
 
-      // 3. Delete user profile
       await _client.from('profiles').delete().eq('id', user.id);
 
-      // 4. Try to delete user from auth using RPC function
-      // This requires a database function to be created in Supabase
       try {
         await _client.rpc('delete_user_account', params: {'user_id': user.id});
         debugPrint('User account deleted from auth successfully');
       } catch (e) {
         debugPrint('Warning: Could not delete user from auth: $e');
-        debugPrint('Note: User data has been deleted, but auth account may still exist.');
-        debugPrint('Please create the delete_user_account function in Supabase or contact admin.');
-        // Continue even if RPC fails - data is already deleted
+        debugPrint(
+          'Note: User data has been deleted, but auth account may still exist.',
+        );
+        debugPrint(
+          'Please create the delete_user_account function in Supabase or contact admin.',
+        );
       }
-
-      // 5. Sign out the user
       await signOut();
     } catch (e) {
       debugPrint('Error deleting account: $e');

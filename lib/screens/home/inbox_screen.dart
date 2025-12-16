@@ -23,10 +23,7 @@ class _InboxScreenState extends State<InboxScreen> {
   String selectedPriorityFilter = 'All'; // All, High, Medium, Low
   String searchQuery = '';
 
-  // Filter buttons (satu baris seperti sebelumnya)
   final List<String> filters = ['All', 'High', 'Medium', 'Low', 'History'];
-
-  // Filter tanggal
   DateTime? selectedStartDate;
   DateTime? selectedEndDate;
   bool isDateFilterActive = false;
@@ -34,7 +31,6 @@ class _InboxScreenState extends State<InboxScreen> {
   @override
   void initState() {
     super.initState();
-    // Pastikan tasks di-load (akan skip jika cache masih valid)
     _taskController.loadAllTasks();
     _searchController.addListener(() {
       setState(() {
@@ -103,7 +99,6 @@ class _InboxScreenState extends State<InboxScreen> {
     if (priority == null) return 'Medium';
     final p = priority.toLowerCase();
 
-    // Return priority directly (High, Medium, Low)
     if (p == 'high' || p == 'urgent') {
       return 'High';
     } else if (p == 'medium') {
@@ -129,11 +124,8 @@ class _InboxScreenState extends State<InboxScreen> {
   }
 
   List<Map<String, dynamic>> _getFilteredTasks() {
-    // Start with all tasks from controller
     List<Map<String, dynamic>> result = List.from(_taskController.allTasks);
 
-    // Apply search filter FIRST if search query exists
-    // This ensures search works on all tasks before other filters
     if (searchQuery.isNotEmpty && searchQuery.trim().isNotEmpty) {
       final query = searchQuery.toLowerCase().trim();
       result = result.where((task) {
@@ -142,7 +134,6 @@ class _InboxScreenState extends State<InboxScreen> {
             .toLowerCase();
         final priority = (task['priority']?.toString() ?? '').toLowerCase();
 
-        // Search in title, description, and priority
         final matches =
             title.contains(query) ||
             description.contains(query) ||
@@ -151,7 +142,6 @@ class _InboxScreenState extends State<InboxScreen> {
       }).toList();
     }
 
-    // Apply date filter if active
     if (isDateFilterActive && selectedStartDate != null) {
       result = result.where((task) {
         final taskDateStr = task['date']?.toString();
@@ -161,7 +151,6 @@ class _InboxScreenState extends State<InboxScreen> {
           final taskDate = DateTime.parse("${taskDateStr}T00:00:00Z");
 
           if (selectedEndDate != null) {
-            // Date range filter
             return taskDate.isAfter(
                   selectedStartDate!.subtract(const Duration(days: 1)),
                 ) &&
@@ -169,7 +158,6 @@ class _InboxScreenState extends State<InboxScreen> {
                   selectedEndDate!.add(const Duration(days: 1)),
                 );
           } else {
-            // Single date filter
             return taskDate.year == selectedStartDate!.year &&
                 taskDate.month == selectedStartDate!.month &&
                 taskDate.day == selectedStartDate!.day;
@@ -180,27 +168,21 @@ class _InboxScreenState extends State<InboxScreen> {
       }).toList();
     }
 
-    // Apply status filter (All atau History)
     List<Map<String, dynamic>> statusFilteredTasks;
     if (selectedStatusFilter == 'History') {
-      // Filter completed tasks
       statusFilteredTasks = result
           .where((task) => (task['is_done'] ?? false) == true)
           .toList();
     } else {
-      // selectedStatusFilter == 'All'
-      // Show incomplete tasks only (if no search)
       if (searchQuery.isEmpty) {
         statusFilteredTasks = result
             .where((task) => (task['is_done'] ?? false) == false)
             .toList();
       } else {
-        // If search is active, show all matching tasks
         statusFilteredTasks = result;
       }
     }
 
-    // Apply priority filter (All, High, Medium, Low)
     if (selectedPriorityFilter == 'All') {
       return statusFilteredTasks;
     }
@@ -277,7 +259,6 @@ class _InboxScreenState extends State<InboxScreen> {
         backgroundColor: isDark ? AppColors.darkBg : AppColors.bg,
         body: Column(
           children: [
-            // Offline indicator banner
             Obx(() {
               if (_taskController.isOfflineMode.value) {
                 return Container(
@@ -310,7 +291,6 @@ class _InboxScreenState extends State<InboxScreen> {
               child: SafeArea(
                 child: Column(
                   children: [
-                    // Header
                     Padding(
                       padding: const EdgeInsets.all(20),
                       child: Column(
@@ -350,7 +330,6 @@ class _InboxScreenState extends State<InboxScreen> {
                       ),
                     ),
 
-                    // Search Bar
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: Container(
@@ -410,7 +389,6 @@ class _InboxScreenState extends State<InboxScreen> {
 
                     const SizedBox(height: 16),
 
-                    // Date Filter
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: Row(
@@ -608,7 +586,6 @@ class _InboxScreenState extends State<InboxScreen> {
 
                     const SizedBox(height: 16),
 
-                    // Filter Buttons (satu baris seperti sebelumnya)
                     SizedBox(
                       height: 40,
                       child: ListView.builder(
@@ -618,7 +595,6 @@ class _InboxScreenState extends State<InboxScreen> {
                         itemBuilder: (context, index) {
                           final filter = filters[index];
 
-                          // Tentukan apakah filter ini selected
                           bool isSelected = false;
                           if (filter == 'All') {
                             isSelected =
@@ -627,7 +603,6 @@ class _InboxScreenState extends State<InboxScreen> {
                           } else if (filter == 'History') {
                             isSelected = selectedStatusFilter == 'History';
                           } else {
-                            // High, Medium, Low
                             isSelected = selectedPriorityFilter == filter;
                           }
 
@@ -635,23 +610,17 @@ class _InboxScreenState extends State<InboxScreen> {
                             onTap: () {
                               setState(() {
                                 if (filter == 'All') {
-                                  // Reset semua filter
                                   selectedStatusFilter = 'All';
                                   selectedPriorityFilter = 'All';
                                 } else if (filter == 'History') {
-                                  // Toggle History (status filter)
                                   selectedStatusFilter =
                                       selectedStatusFilter == 'History'
                                       ? 'All'
                                       : 'History';
-                                  // Priority filter tetap (jika sudah dipilih sebelumnya)
                                 } else {
-                                  // High, Medium, Low (priority filter)
-                                  selectedPriorityFilter =
-                                      selectedPriorityFilter == filter
+                                  selectedPriorityFilter == filter
                                       ? 'All'
                                       : filter;
-                                  // Status filter tetap (jika History sudah dipilih sebelumnya)
                                 }
                               });
                             },
@@ -691,7 +660,6 @@ class _InboxScreenState extends State<InboxScreen> {
 
                     const SizedBox(height: 20),
 
-                    // Task List
                     Expanded(
                       child: _taskController.isLoading.value
                           ? TaskCardLoading(isDark: isDark)
@@ -814,7 +782,6 @@ class _InboxScreenState extends State<InboxScreen> {
         decoration: isDark ? NeuDark.concave : Neu.concave,
         child: Row(
           children: [
-            // Checkbox
             GestureDetector(
               onTap: () {
                 if (taskId.isNotEmpty) {
@@ -840,12 +807,10 @@ class _InboxScreenState extends State<InboxScreen> {
               ),
             ),
             const SizedBox(width: 16),
-            // Task Content
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Title with Priority and Due Date on the right
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -866,7 +831,6 @@ class _InboxScreenState extends State<InboxScreen> {
                         ),
                       ),
                       const SizedBox(width: 6),
-                      // Priority Tag
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 10,
@@ -886,7 +850,6 @@ class _InboxScreenState extends State<InboxScreen> {
                         ),
                       ),
                       const SizedBox(width: 6),
-                      // Date/Status Info
                       if (isToday)
                         Text(
                           'Due Today',
@@ -928,7 +891,6 @@ class _InboxScreenState extends State<InboxScreen> {
                         ),
                     ],
                   ),
-                  // Description below title
                   if (description != null && description.isNotEmpty) ...[
                     const SizedBox(height: 6),
                     Text(
@@ -947,7 +909,6 @@ class _InboxScreenState extends State<InboxScreen> {
                 ],
               ),
             ),
-            // Flag/Icon
             Icon(
               isHighPriority ? Icons.flag : Icons.flag_outlined,
               color: isHighPriority

@@ -3,7 +3,7 @@ class Task {
   final String userId;
   final String title;
   final String? description;
-  final DateTime date;  // ✅ TAMBAHKAN
+  final DateTime date;
   final bool isDone;
   final DateTime createdAt;
   final DateTime? updatedAt;
@@ -13,7 +13,7 @@ class Task {
     required this.userId,
     required this.title,
     this.description,
-    required this.date,  // ✅ TAMBAHKAN
+    required this.date,
     required this.isDone,
     required this.createdAt,
     this.updatedAt,
@@ -23,9 +23,9 @@ class Task {
     return Task(
       id: json['id'],
       userId: json['user_id'],
-      title: json['title'] ?? '',  // ✅ DEFAULT VALUE
+      title: json['title'] ?? '',
       description: json['description'],
-      date: DateTime.parse(json['date']),  // ✅ PARSE DATE
+      date: DateTime.parse(json['date']),
       isDone: json['is_done'] ?? false,
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: json['updated_at'] != null
@@ -40,7 +40,7 @@ class Task {
       'user_id': userId,
       'title': title,
       'description': description,
-      'date': date.toIso8601String().split('T')[0],  // ✅ Format YYYY-MM-DD
+      'date': date.toIso8601String().split('T')[0],
       'is_done': isDone,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),

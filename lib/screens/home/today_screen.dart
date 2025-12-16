@@ -25,9 +25,7 @@ class _TodayScreenState extends State<TodayScreen> {
   @override
   void initState() {
     super.initState();
-    // Pastikan tasks di-load (akan skip jika cache masih valid)
     _taskController.loadAllTasks();
-    // Hanya load profile jika data belum ada atau cache sudah expired
     if (_profileController.profile.value == null) {
       _profileController.loadProfile();
     }
@@ -140,7 +138,6 @@ class _TodayScreenState extends State<TodayScreen> {
         backgroundColor: isDark ? AppColors.darkBg : AppColors.bg,
         body: Column(
           children: [
-            // Offline indicator banner
             Obx(() {
               if (_taskController.isOfflineMode.value) {
                 return Container(
@@ -176,7 +173,6 @@ class _TodayScreenState extends State<TodayScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Header with Avatar and Greeting
                       Obx(() {
                         final profile = _profileController.profile.value;
                         return Row(
@@ -184,7 +180,6 @@ class _TodayScreenState extends State<TodayScreen> {
                           children: [
                             Row(
                               children: [
-                                // Avatar
                                 CircleAvatar(
                                   radius: 24,
                                   backgroundColor: AppColors.blue.withValues(
@@ -247,7 +242,6 @@ class _TodayScreenState extends State<TodayScreen> {
 
                       const SizedBox(height: 24),
 
-                      // Title
                       Text(
                         'Today',
                         style: AppStyle.title.copyWith(
@@ -265,7 +259,6 @@ class _TodayScreenState extends State<TodayScreen> {
 
                       const SizedBox(height: 24),
 
-                      // Daily Progress Card
                       if (tasks.isNotEmpty && !_taskController.isLoading.value)
                         Container(
                           padding: const EdgeInsets.all(20),
@@ -356,11 +349,9 @@ class _TodayScreenState extends State<TodayScreen> {
                       if (tasks.isNotEmpty && !_taskController.isLoading.value)
                         const SizedBox(height: 24),
 
-                      // Loading State - hanya task cards
                       if (_taskController.isLoading.value) ...[
                         TodayTaskLoading(isDark: isDark),
                       ] else ...[
-                        // High Priority Section
                         if (highPriorityTasks.isNotEmpty) ...[
                           Row(
                             children: [
@@ -397,7 +388,6 @@ class _TodayScreenState extends State<TodayScreen> {
                           const SizedBox(height: 24),
                         ],
 
-                        // Upcoming Section
                         if (upcomingTasks.isNotEmpty) ...[
                           Row(
                             children: [
@@ -433,7 +423,6 @@ class _TodayScreenState extends State<TodayScreen> {
                           ),
                         ],
 
-                        // History Section
                         if (completedTasks.isNotEmpty) ...[
                           const SizedBox(height: 24),
                           Row(
@@ -472,7 +461,6 @@ class _TodayScreenState extends State<TodayScreen> {
                           ),
                         ],
 
-                        // Empty State
                         if (tasks.isEmpty) ...[
                           const SizedBox(height: 40),
                           Center(
@@ -593,7 +581,6 @@ class _TodayScreenState extends State<TodayScreen> {
         decoration: isDark ? NeuDark.concave : Neu.concave,
         child: Row(
           children: [
-            // Checkbox
             GestureDetector(
               onTap: () {
                 if (taskId.isNotEmpty) {
@@ -619,12 +606,10 @@ class _TodayScreenState extends State<TodayScreen> {
               ),
             ),
             const SizedBox(width: 16),
-            // Task Content
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Title with Priority and Due Date on the right
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -645,7 +630,6 @@ class _TodayScreenState extends State<TodayScreen> {
                         ),
                       ),
                       const SizedBox(width: 6),
-                      // Priority Tag
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 10,
@@ -665,7 +649,6 @@ class _TodayScreenState extends State<TodayScreen> {
                         ),
                       ),
                       const SizedBox(width: 6),
-                      // Date/Status Info
                       if (isToday)
                         Text(
                           'Due Today',
@@ -707,7 +690,6 @@ class _TodayScreenState extends State<TodayScreen> {
                         ),
                     ],
                   ),
-                  // Description below title
                   if (description != null && description.isNotEmpty) ...[
                     const SizedBox(height: 6),
                     Text(
@@ -726,7 +708,6 @@ class _TodayScreenState extends State<TodayScreen> {
                 ],
               ),
             ),
-            // Flag/Icon
             Icon(
               isHighPriorityTask ? Icons.flag : Icons.flag_outlined,
               color: isHighPriorityTask
@@ -783,7 +764,6 @@ class _TodayScreenState extends State<TodayScreen> {
     if (priority == null) return 'Medium';
     final p = priority.toLowerCase();
 
-    // Return priority directly (High, Medium, Low)
     if (p == 'high' || p == 'urgent') {
       return 'High';
     } else if (p == 'medium') {

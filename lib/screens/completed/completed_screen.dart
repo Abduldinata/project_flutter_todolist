@@ -1,4 +1,3 @@
-// screens/completed/completed_screen.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../theme/theme_tokens.dart';
@@ -18,15 +17,9 @@ class _CompletedScreenState extends State<CompletedScreen> {
   List<Map<String, dynamic>> tasks = [];
   bool loading = true;
 
-  // completed_screen.dart - Update line 25
   Future<void> loadTasks() async {
     setState(() => loading = true);
     try {
-      // COBA DUA OPTION INI:
-      // Option 1: Jika fungsi namanya getCompletedTasks
-      // final fetchedTasks = await _taskService.getCompletedTasks();
-
-      // Option 2: Jika fungsi namanya getCompleted (yang ada di kode sebelumnya)
       final fetchedTasks = await _taskService.getCompleted();
 
       setState(() => tasks = fetchedTasks);
@@ -152,7 +145,6 @@ class _CompletedScreenState extends State<CompletedScreen> {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            // Stats
             Container(
               padding: const EdgeInsets.all(16),
               margin: const EdgeInsets.only(bottom: 20),
@@ -178,7 +170,6 @@ class _CompletedScreenState extends State<CompletedScreen> {
               ),
             ),
 
-            // Task List
             Expanded(child: _buildTaskList()),
           ],
         ),
@@ -244,7 +235,6 @@ class _CompletedScreenState extends State<CompletedScreen> {
           onToggleCompletion: (taskId, currentValue) =>
               _toggleTaskCompletion(taskId, currentValue),
           onDelete: (taskId, title) => _deleteTask(taskId, title),
-          // ✅ Biarkan null untuk default behavior
           onTap: null,
         );
       },

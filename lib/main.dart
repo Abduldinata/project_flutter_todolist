@@ -13,7 +13,6 @@ import 'controllers/task_controller.dart';
 import 'controllers/profile_controller.dart';
 import 'services/connectivity_service.dart';
 
-// screens
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/auth/change_password_screen.dart';
@@ -31,11 +30,9 @@ Future<void> main() async {
   await GetStorage.init();
   await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
 
-  // ✅ cek session supabase: kalau ada berarti login masih aktif
   final session = Supabase.instance.client.auth.currentSession;
   final initialRoute = (session != null) ? AppRoutes.inbox : AppRoutes.login;
 
-  // Setup deep link handler
   _setupDeepLinkHandler();
 
   runApp(MyApp(initialRoute: initialRoute));
@@ -44,21 +41,15 @@ Future<void> main() async {
 void _setupDeepLinkHandler() {
   final appLinks = AppLinks();
 
-  // Listen untuk deep links
   appLinks.uriLinkStream.listen(
     (uri) {
       debugPrint('Deep link received: $uri');
 
-      // Handle reset password deep link
       if (uri.host == 'reset-password') {
-        // Extract token dan type dari query parameters
         final token = uri.queryParameters['token'];
         final type = uri.queryParameters['type'];
 
         debugPrint('Reset password deep link - token: $token, type: $type');
-
-        // Navigate ke reset password screen
-        // Supabase akan otomatis memverifikasi token dari URL
         Get.toNamed(
           AppRoutes.resetPassword,
           arguments: {'token': token, 'type': type},
@@ -70,7 +61,6 @@ void _setupDeepLinkHandler() {
     },
   );
 
-  // Handle initial deep link (jika app dibuka dari deep link)
   appLinks.getInitialLink().then((uri) {
     if (uri != null) {
       debugPrint('Initial deep link: $uri');
@@ -78,7 +68,6 @@ void _setupDeepLinkHandler() {
         final token = uri.queryParameters['token'];
         final type = uri.queryParameters['type'];
 
-        // Delay sedikit untuk memastikan app sudah siap
         Future.delayed(const Duration(milliseconds: 500), () {
           Get.toNamed(
             AppRoutes.resetPassword,
@@ -113,11 +102,9 @@ class MyApp extends StatelessWidget {
         defaultTransition: Transition.fadeIn,
         transitionDuration: const Duration(milliseconds: 300),
 
-        // ✅ route awal sesuai session
         initialRoute: initialRoute,
 
         getPages: [
-          // AUTH
           GetPage(name: AppRoutes.login, page: () => const LoginScreen()),
           GetPage(name: AppRoutes.register, page: () => const RegisterScreen()),
           GetPage(
@@ -135,7 +122,6 @@ class MyApp extends StatelessWidget {
             },
           ),
 
-          // HOME PAGES
           GetPage(name: AppRoutes.inbox, page: () => const InboxScreen()),
           GetPage(name: AppRoutes.today, page: () => const TodayScreen()),
           GetPage(name: AppRoutes.upcoming, page: () => const UpcomingScreen()),

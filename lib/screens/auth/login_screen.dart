@@ -20,11 +20,8 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  // Controllers
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-
-  // Service & State Variables
   late final SupabaseService _service;
   late final StreamSubscription<AuthState> _authSubscription;
 
@@ -76,7 +73,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (response.user != null) {
         if (mounted) {
-          // Force refresh controllers untuk memastikan data baru dimuat
           try {
             final taskController = Get.find<TaskController>();
             final profileController = Get.find<ProfileController>();
@@ -108,7 +104,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!kIsWeb && response.user != null) {
         if (mounted) {
-          // Force refresh controllers untuk memastikan data baru dimuat
           try {
             final taskController = Get.find<TaskController>();
             final profileController = Get.find<ProfileController>();
@@ -145,7 +140,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleAppleSignIn() async {
-    // Apple Sign In - can be implemented later
     _showError('Apple Sign In coming soon');
   }
 
@@ -208,7 +202,6 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               const SizedBox(height: 40),
 
-              // Logo
               Container(
                 width: 80,
                 height: 80,
@@ -241,7 +234,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 40),
 
-              // Welcome Text
               RichText(
                 textAlign: TextAlign.center,
                 text: TextSpan(
@@ -275,7 +267,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 40),
 
-              // Email Field
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -299,7 +290,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 20),
 
-              // Password Field
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -329,7 +319,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 12),
 
-              // Forgot Password Link
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
@@ -350,7 +339,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 30),
 
-              // Log In Button
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -398,7 +386,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 30),
 
-              // Or continue with
               Row(
                 children: [
                   Expanded(
@@ -428,10 +415,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 20),
 
-              // Social Login Buttons
               Row(
                 children: [
-                  // Google Button
                   Expanded(
                     child: _buildSocialButton(
                       onTap: _isGoogleLoading ? null : _handleGoogleSignIn,
@@ -449,7 +434,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  // Apple Button
                   Expanded(
                     child: _buildSocialButton(
                       onTap: _isAppleLoading ? null : _handleAppleSignIn,
@@ -475,7 +459,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 30),
 
-              // Sign Up Link
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

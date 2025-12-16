@@ -27,7 +27,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _agreeToTerms = false;
 
   Future<void> _handleRegister() async {
-    // Validasi input
     if (_emailController.text.trim().isEmpty) {
       _showError('Email address is required');
       return;
@@ -56,7 +55,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Extract username from email (before @)
       final email = _emailController.text.trim();
       final username = email.split('@')[0];
 
@@ -123,31 +121,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _handleAppleSignIn() async {
-    // Apple Sign In - can be implemented later
     _showError('Apple Sign In coming soon');
   }
 
   String _parseError(String error) {
-    // Network errors
     if (error.contains('SocketException') ||
         error.contains('Failed host lookup') ||
         error.contains('Network is unreachable')) {
       return '❌ No internet connection';
     }
 
-    // Timeout errors
     if (error.contains('TimeoutException') || error.contains('timed out')) {
       return '⏱️ Connection timeout';
     }
 
-    // Database errors (trigger/profile creation)
     if (error.contains('Database error') ||
         error.contains('unexpected_failure') ||
         error.contains('saving new')) {
       return '⚠️ Database error\n\nPlease try again or contact support if the problem persists.';
     }
 
-    // Auth errors
     if (error.contains('User already registered') ||
         error.contains('already been registered')) {
       return '👤 Email already registered\n\nUse a different email or sign in';
@@ -161,7 +154,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return '📧 Invalid email format\n\nPlease check your email address';
     }
 
-    // Generic error
     return '⚠️ Registration failed\n\n${error.length > 100 ? "${error.substring(0, 100)}..." : error}';
   }
 
@@ -197,7 +189,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
             children: [
               const SizedBox(height: 20),
 
-              // Back Button
               IconButton(
                 onPressed: () => Get.back(),
                 icon: Icon(
@@ -208,7 +199,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               const SizedBox(height: 20),
 
-              // Title
               Text(
                 'Create Account',
                 style: TextStyle(
@@ -228,7 +218,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               const SizedBox(height: 40),
 
-              // Email Address Field
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -252,7 +241,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               const SizedBox(height: 20),
 
-              // Password Field
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -282,7 +270,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               const SizedBox(height: 20),
 
-              // Confirm Password Field
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -314,7 +301,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               const SizedBox(height: 24),
 
-              // Terms and Privacy Agreement
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -402,7 +388,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               const SizedBox(height: 30),
 
-              // Create Account Button
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -450,7 +435,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               const SizedBox(height: 30),
 
-              // OR REGISTER WITH
               Row(
                 children: [
                   Expanded(
@@ -482,10 +466,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               const SizedBox(height: 20),
 
-              // Social Login Buttons
               Row(
                 children: [
-                  // Google Button
                   Expanded(
                     child: _buildSocialButton(
                       onTap: _isGoogleLoading ? null : _handleGoogleSignIn,

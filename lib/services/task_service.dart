@@ -18,12 +18,11 @@ class TaskService {
     return (response as List).cast<Map<String, dynamic>>();
   }
 
-  // task_service.dart - Update insertTask function
   Future insertTask({
     required String title,
     required DateTime date,
-    String? description, // ✅ Tambah parameter
-    String? priority, // ✅ Tambah parameter
+    String? description,
+    String? priority,
   }) async {
     final userId = client.auth.currentUser?.id;
     if (userId == null) throw "User tidak login";
@@ -31,13 +30,12 @@ class TaskService {
     final formattedDate =
         "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
 
-    // ✅ Data lengkap dengan description dan priority
     final data = {
       'user_id': userId,
       'title': title,
       'date': formattedDate,
-      'description': description, // ✅ Simpan description
-      'priority': priority ?? 'medium', // ✅ Simpan priority
+      'description': description,
+      'priority': priority ?? 'medium',
       'is_done': false,
       'created_at': DateTime.now().toIso8601String(),
     };
@@ -45,7 +43,6 @@ class TaskService {
     return await client.from('tasks').insert(data);
   }
 
-  // ✅ TAMBAH FUNGSI UPDATE TASK
   Future updateTask({
     required String taskId,
     String? title,
@@ -74,7 +71,6 @@ class TaskService {
     final userId = client.auth.currentUser?.id;
     if (userId == null) throw "User tidak login";
 
-    // ✅ Format date query
     final formattedDate =
         "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
 
@@ -82,7 +78,7 @@ class TaskService {
         .from('tasks')
         .select()
         .eq('user_id', userId)
-        .eq('date', formattedDate) // ✅ Query dengan date
+        .eq('date', formattedDate)
         .order('created_at');
 
     return (response as List).cast<Map<String, dynamic>>();
@@ -92,7 +88,6 @@ class TaskService {
     final userId = client.auth.currentUser?.id;
     if (userId == null) throw "User tidak login";
 
-    // ✅ Format today's date
     final today = DateTime.now();
     final formattedToday =
         "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
@@ -101,13 +96,12 @@ class TaskService {
         .from('tasks')
         .select()
         .eq('user_id', userId)
-        .gt('date', formattedToday) // ✅ Date > today
+        .gt('date', formattedToday)
         .order('date');
 
     return (response as List).cast<Map<String, dynamic>>();
   }
 
-  // task_service.dart
   Future<Map<String, dynamic>?> getTaskById(String taskId) async {
     try {
       final response = await client
@@ -123,7 +117,6 @@ class TaskService {
     }
   }
 
-  // task_service.dart - Tambah fungsi getCompletedTasks
 
   Future<List<Map<String, dynamic>>> getCompletedTasks() async {
     final userId = client.auth.currentUser?.id;
@@ -139,7 +132,6 @@ class TaskService {
     return (response as List).cast<Map<String, dynamic>>();
   }
 
-  // Jika masih error, coba ganti dengan ini (nama fungsi lama mungkin berbeda):
   Future<List<Map<String, dynamic>>> getCompleted() async {
     final userId = client.auth.currentUser?.id;
     if (userId == null) throw "User tidak login";
@@ -157,7 +149,7 @@ class TaskService {
   Future updateCompleted(String id, bool value) async {
     return await client
         .from('tasks')
-        .update({'is_done': value}) // ✅ Pakai is_done
+        .update({'is_done': value})
         .eq('id', id);
   }
 

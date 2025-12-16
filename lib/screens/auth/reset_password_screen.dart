@@ -32,32 +32,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   }
 
   Future<void> _checkTokenValidity() async {
-    // Ketika user klik link Supabase verify:
-    // 1. Supabase verify token di URL
-    // 2. Supabase create recovery session
-    // 3. Supabase redirect ke deep link: todolist://reset-password
-    // 4. App terbuka dan cek session recovery
-
-    // Cek apakah ada session recovery dari Supabase
-    // Session recovery akan dibuat setelah Supabase verify token
     final session = Supabase.instance.client.auth.currentSession;
 
     if (session != null) {
-      // Cek apakah ini recovery session (bukan normal login session)
-      // Recovery session biasanya memiliki access_token yang berbeda
       setState(() {
         _isTokenValid = true;
       });
       debugPrint('Recovery session found, token is valid');
     } else {
-      // Jika tidak ada session, mungkin:
-      // 1. Token belum diverifikasi (user belum klik link Supabase verify)
-      // 2. Link sudah kedaluwarsa
-      // 3. Token sudah digunakan
-
       debugPrint('No recovery session found');
-
-      // Tunggu sebentar, mungkin session masih loading
       await Future.delayed(const Duration(milliseconds: 500));
 
       final sessionAfterDelay = Supabase.instance.client.auth.currentSession;
@@ -88,7 +71,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   }
 
   Future<void> _resetPassword() async {
-    // Validasi token
     if (!_isTokenValid) {
       Get.snackbar(
         "Error",
@@ -97,7 +79,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       return;
     }
 
-    // Validasi input
     if (_newPasswordController.text.length < 8) {
       Get.snackbar("Validasi", "Password baru harus minimal 8 karakter");
       return;
@@ -111,19 +92,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Reset password dengan token dari deep link
-      // Supabase akan otomatis memverifikasi token dari session recovery
       await _service.resetPasswordWithToken(_newPasswordController.text);
 
       if (mounted) {
         Get.snackbar("Success", "Password berhasil direset!");
 
-        // Sign out dari recovery session
         await Supabase.instance.client.auth.signOut();
 
         await Future.delayed(const Duration(milliseconds: 1500));
         if (mounted) {
-          // Navigate ke login screen
           Get.offAllNamed('/login');
         }
       }
@@ -187,7 +164,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             children: [
               const SizedBox(height: 20),
 
-              // Info
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: (isDark ? NeuDark.concave : Neu.concave).copyWith(
@@ -217,7 +193,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
               const SizedBox(height: 32),
 
-              // New Password
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -247,7 +222,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
               const SizedBox(height: 20),
 
-              // Confirm Password
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -279,7 +253,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
               const SizedBox(height: 32),
 
-              // Reset Password Button
               SizedBox(
                 width: double.infinity,
                 height: 50,

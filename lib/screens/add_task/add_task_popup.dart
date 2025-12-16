@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/theme_tokens.dart';
 
-// Enum untuk Prioritas Tugas
 enum Priority { high, medium, low }
 
 class AddTaskPopup extends StatefulWidget {
@@ -20,7 +19,6 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
 
   String _formatDate(DateTime date) => "${date.day}/${date.month}/${date.year}";
 
-  // Helper untuk convert Priority ke String (buat disimpan ke DB)
   String _priorityToString(Priority priority) {
     switch (priority) {
       case Priority.high:
@@ -43,7 +41,6 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
     }
   }
 
-  // ✅ Prioritas mengikuti theme (seperti FilterScreen)
   Widget _buildPriorityButton(BuildContext context, Priority priority) {
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -149,7 +146,6 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
               ),
               const SizedBox(height: 20),
 
-              // 1) Nama Tugas (REQUIRED)
               Container(
                 clipBehavior: Clip.antiAlias,
                 decoration: (isDark ? NeuDark.convex : Neu.convex).copyWith(
@@ -177,7 +173,6 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
               ),
               const SizedBox(height: 18),
 
-              // 2) Deskripsi (OPTIONAL)
               Container(
                 clipBehavior: Clip.antiAlias,
                 decoration: (isDark ? NeuDark.convex : Neu.convex).copyWith(
@@ -206,7 +201,6 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
               ),
               const SizedBox(height: 18),
 
-              // 3) Prioritas (Theme-based)
               Text(
                 "Prioritas:",
                 style: AppStyle.subtitle.copyWith(color: textColor),
@@ -222,7 +216,6 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
               ),
               const SizedBox(height: 18),
 
-              // 4) Date Selector (REQUIRED)
               GestureDetector(
                 onTap: () async {
                   final picked = await showDatePicker(
@@ -292,11 +285,9 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
               ),
               const SizedBox(height: 26),
 
-              // Buttons
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Cancel
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
                     child: Container(
@@ -325,7 +316,6 @@ class _AddTaskPopupState extends State<AddTaskPopup> {
                     ),
                   ),
 
-                  // Save
                   GestureDetector(
                     onTap: _saveTask,
                     child: Container(

@@ -23,7 +23,6 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
   @override
   void initState() {
     super.initState();
-    // Pastikan tasks di-load (akan skip jika cache masih valid)
     _taskController.loadAllTasks();
   }
 
@@ -66,7 +65,6 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
     if (priority == null) return 'Medium';
     final p = priority.toLowerCase();
 
-    // Return priority directly (High, Medium, Low)
     if (p == 'high' || p == 'urgent') {
       return 'High';
     } else if (p == 'medium') {
@@ -190,7 +188,6 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
       grouped[key]!.add(task);
     }
 
-    // Sort tasks within each group
     grouped.forEach((key, taskList) {
       taskList.sort((a, b) {
         final dateA = _parseDate(a['date']);
@@ -235,7 +232,6 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
     return Obx(() {
       final tasks = _taskController.getUpcomingTasks();
 
-      // Set selected date jika belum ada dan tasks tidak kosong
       if (tasks.isNotEmpty && selectedDate == null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           final firstDate = _parseDate(tasks[0]['date']);
@@ -251,7 +247,6 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
         backgroundColor: isDark ? AppColors.darkBg : AppColors.bg,
         body: Column(
           children: [
-            // Offline indicator banner
             Obx(() {
               if (_taskController.isOfflineMode.value) {
                 return Container(
@@ -284,7 +279,6 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
               child: SafeArea(
                 child: Column(
                   children: [
-                    // Header
                     Padding(
                       padding: const EdgeInsets.all(20),
                       child: Row(
@@ -305,7 +299,6 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
                       ),
                     ),
 
-                    // Date Selector
                     SizedBox(
                       height: 80,
                       child: ListView.builder(
@@ -414,7 +407,6 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
 
                     const SizedBox(height: 20),
 
-                    // Task List
                     Expanded(
                       child: _taskController.isLoading.value
                           ? TaskCardLoading(isDark: isDark)
@@ -522,7 +514,6 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
       itemCount: sortedKeys.length + 1, // +1 for next week summary
       itemBuilder: (context, index) {
         if (index == sortedKeys.length) {
-          // Next Week Summary Card
           final nextWeekCount = _getNextWeekTaskCount(tasks);
           if (nextWeekCount == 0) return const SizedBox.shrink();
 
@@ -530,7 +521,6 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
             padding: const EdgeInsets.only(top: 24, bottom: 20),
             child: GestureDetector(
               onTap: () {
-                // Scroll to next week section or show next week tasks
               },
               child: Container(
                 padding: const EdgeInsets.all(16),
@@ -597,7 +587,6 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (index > 0) const SizedBox(height: 24),
-            // Section Header
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Text(
@@ -613,7 +602,6 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
                 ),
               ),
             ),
-            // Task Cards
             ...taskList.map((task) => _buildTaskCard(task, isDark)),
           ],
         );
@@ -645,7 +633,6 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
         decoration: isDark ? NeuDark.concave : Neu.concave,
         child: Row(
           children: [
-            // Checkbox
             GestureDetector(
               onTap: () {
                 if (taskId.isNotEmpty) {
@@ -671,12 +658,10 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
               ),
             ),
             const SizedBox(width: 16),
-            // Task Content
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Title with Priority and Due Date on the right
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -697,7 +682,6 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
                         ),
                       ),
                       const SizedBox(width: 6),
-                      // Priority Tag
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 10,
@@ -717,7 +701,6 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
                         ),
                       ),
                       const SizedBox(width: 6),
-                      // Date/Status Info
                       if (isToday)
                         Text(
                           'Due Today',
@@ -759,7 +742,6 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
                         ),
                     ],
                   ),
-                  // Description below title
                   if (description != null && description.isNotEmpty) ...[
                     const SizedBox(height: 6),
                     Text(
@@ -778,7 +760,6 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
                 ],
               ),
             ),
-            // Flag/Icon
             Icon(
               isHighPriority ? Icons.flag : Icons.flag_outlined,
               color: isHighPriority
