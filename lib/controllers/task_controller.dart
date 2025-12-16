@@ -6,6 +6,7 @@ import '../services/connectivity_service.dart';
 import '../services/sound_service.dart';
 import '../services/notification_service.dart';
 import '../auth_storage.dart';
+import '../utils/safe_snackbar.dart';
 
 class TaskController extends GetxController {
   final TaskService _taskService = TaskService();
