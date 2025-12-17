@@ -4,10 +4,10 @@ import '../../theme/theme_tokens.dart';
 import '../../widgets/add_task_button.dart';
 import '../../widgets/bottom_nav.dart';
 import '../../widgets/loading_widget.dart';
+import '../../widgets/task_card.dart';
 import '../../controllers/task_controller.dart';
 import '../../controllers/profile_controller.dart';
 import '../add_task/add_task_popup.dart';
-import '../task_detail/task_detail_screen.dart';
 
 class TodayScreen extends StatefulWidget {
   const TodayScreen({super.key});
@@ -379,10 +379,9 @@ class _TodayScreenState extends State<TodayScreen> {
                           ),
                           const SizedBox(height: 12),
                           ...highPriorityTasks.map(
-                            (task) => _buildTaskCard(
-                              task,
-                              isDark,
-                              isHighPriority: true,
+                            (task) => TaskCard(
+                              task: task,
+                              onToggleCompletion: _toggleTaskCompletion,
                             ),
                           ),
                           const SizedBox(height: 24),
@@ -415,10 +414,9 @@ class _TodayScreenState extends State<TodayScreen> {
                           ),
                           const SizedBox(height: 12),
                           ...upcomingTasks.map(
-                            (task) => _buildTaskCard(
-                              task,
-                              isDark,
-                              isHighPriority: false,
+                            (task) => TaskCard(
+                              task: task,
+                              onToggleCompletion: _toggleTaskCompletion,
                             ),
                           ),
                         ],
@@ -453,10 +451,9 @@ class _TodayScreenState extends State<TodayScreen> {
                           ),
                           const SizedBox(height: 12),
                           ...completedTasks.map(
-                            (task) => _buildTaskCard(
-                              task,
-                              isDark,
-                              isHighPriority: false,
+                            (task) => TaskCard(
+                              task: task,
+                              onToggleCompletion: _toggleTaskCompletion,
                             ),
                           ),
                         ],
@@ -553,238 +550,4 @@ class _TodayScreenState extends State<TodayScreen> {
     });
   }
 
-  Widget _buildTaskCard(
-    Map<String, dynamic> task,
-    bool isDark, {
-    required bool isHighPriority,
-  }) {
-    final taskId = task['id']?.toString() ?? '';
-    final title = task['title']?.toString() ?? 'No Title';
-    final description = task['description']?.toString();
-    final isDone = task['is_done'] ?? false;
-    final priority = task['priority']?.toString() ?? 'medium';
-    final category = _getCategoryFromPriority(priority);
-    final isToday = _isTodayTask(task);
-    final isNextWeek = _isNextWeekTask(task);
-    final isHighPriorityTask =
-        priority.toLowerCase() == 'high' || priority.toLowerCase() == 'urgent';
-
-    final categoryColor = _getCategoryColor(category);
-
-    return GestureDetector(
-      onTap: () {
-        Get.to(() => TaskDetailScreen(task: task));
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: isDark ? NeuDark.concave : Neu.concave,
-        child: Row(
-          children: [
-            GestureDetector(
-              onTap: () {
-                if (taskId.isNotEmpty) {
-                  _toggleTaskCompletion(taskId, isDone);
-                }
-              },
-              child: Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: isDone ? AppColors.blue : Colors.transparent,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: isDone
-                        ? AppColors.blue
-                        : (isDark ? Colors.grey[600]! : Colors.grey[400]!),
-                    width: 2,
-                  ),
-                ),
-                child: isDone
-                    ? const Icon(Icons.check, size: 16, color: Colors.white)
-                    : null,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Flexible(
-                        child: Text(
-                          title,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: isDone
-                                ? (isDark ? Colors.grey[600] : Colors.grey[400])
-                                : (isDark ? Colors.white : AppColors.text),
-                            decoration: isDone
-                                ? TextDecoration.lineThrough
-                                : null,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: categoryColor.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          category,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: categoryColor,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      if (isToday)
-                        Text(
-                          'Due Today',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isDark ? Colors.grey[400] : Colors.grey[600],
-                          ),
-                        )
-                      else if (isNextWeek)
-                        Text(
-                          'Next Week',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isDark ? Colors.grey[400] : Colors.grey[600],
-                          ),
-                        )
-                      else if (isHighPriorityTask)
-                        Row(
-                          children: [
-                            Container(
-                              width: 6,
-                              height: 6,
-                              decoration: const BoxDecoration(
-                                color: Colors.orange,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'High Priority',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: isDark
-                                    ? Colors.grey[400]
-                                    : Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
-                    ],
-                  ),
-                  if (description != null && description.isNotEmpty) ...[
-                    const SizedBox(height: 6),
-                    Text(
-                      description,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: isDone
-                            ? (isDark ? Colors.grey[600] : Colors.grey[400])
-                            : (isDark ? Colors.grey[400] : Colors.grey[600]),
-                        height: 1.4,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            Icon(
-              isHighPriorityTask ? Icons.flag : Icons.flag_outlined,
-              color: isHighPriorityTask
-                  ? Colors.orange
-                  : (isDark ? Colors.grey[600] : Colors.grey[400]),
-              size: 20,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  bool _isTodayTask(Map<String, dynamic> task) {
-    final taskDate = _parseDate(task['date']);
-    if (taskDate == null) return false;
-
-    final now = DateTime.now();
-    return taskDate.year == now.year &&
-        taskDate.month == now.month &&
-        taskDate.day == now.day;
-  }
-
-  bool _isNextWeekTask(Map<String, dynamic> task) {
-    final taskDate = _parseDate(task['date']);
-    if (taskDate == null) return false;
-
-    final now = DateTime.now();
-    final nextWeek = now.add(const Duration(days: 7));
-    return taskDate.year == nextWeek.year &&
-        taskDate.month == nextWeek.month &&
-        taskDate.day == nextWeek.day;
-  }
-
-  DateTime? _parseDate(dynamic dateValue) {
-    if (dateValue == null) return null;
-    try {
-      final dateStr = dateValue.toString().split('T')[0];
-      final parts = dateStr.split('-');
-      if (parts.length == 3) {
-        return DateTime(
-          int.parse(parts[0]),
-          int.parse(parts[1]),
-          int.parse(parts[2]),
-        );
-      }
-    } catch (e) {
-      debugPrint("Error parsing date: $e");
-    }
-    return null;
-  }
-
-  String _getCategoryFromPriority(String? priority) {
-    if (priority == null) return 'Medium';
-    final p = priority.toLowerCase();
-
-    if (p == 'high' || p == 'urgent') {
-      return 'High';
-    } else if (p == 'medium') {
-      return 'Medium';
-    } else if (p == 'low') {
-      return 'Low';
-    }
-    return 'Medium';
-  }
-
-  Color _getCategoryColor(String category) {
-    switch (category.toLowerCase()) {
-      case 'high':
-      case 'urgent':
-        return Colors.red;
-      case 'medium':
-        return AppColors.blue;
-      case 'low':
-        return Colors.green;
-      default:
-        return Colors.grey;
-    }
-  }
 }
