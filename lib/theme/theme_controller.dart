@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'theme_tokens.dart';
 
 class ThemeController extends GetxController {
   final _box = GetStorage();
   final _key = 'themeMode';
+  final _accentColorKey = 'accent_color';
   Rx<ThemeMode> themeMode = ThemeMode.system.obs;
+  Rx<Color> accentColor = AppColors.blue.obs;
 
   @override
   void onInit() {
     super.onInit();
     themeMode.value = _loadTheme();
+    accentColor.value = _loadAccentColor();
   }
 
   /// Dipakai di GetMaterialApp.themeMode
@@ -53,5 +57,27 @@ class ThemeController extends GetxController {
           : false;
     }
     return current == ThemeMode.dark;
+  }
+
+  Color _loadAccentColor() {
+    final saved = _box.read(_accentColorKey);
+    if (saved == null) return AppColors.blue;
+    return Color(saved as int);
+  }
+
+  void _saveAccentColor(Color color) {
+    _box.write(_accentColorKey, color.toARGB32());
+  }
+
+  void setAccentColor(Color color) {
+    _saveAccentColor(color);
+    accentColor.value = color;
+    // Note: AppColors.blue is const and can't be changed at runtime
+    // The accentColor.value will be used throughout the app via Obx
+  }
+
+  // Helper method untuk mendapatkan accent color yang sedang aktif
+  Color getAccentColor() {
+    return accentColor.value;
   }
 }

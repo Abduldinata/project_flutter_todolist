@@ -231,11 +231,11 @@ class SupabaseService {
     });
   }
 
-  Future<void> updateTaskStatus(int id, bool isDone) async {
+  Future<void> updateTaskStatus(String id, bool isDone) async {
     await _client.from('tasks').update({'is_done': isDone}).eq('id', id);
   }
 
-  Future<void> deleteTask(int id) async {
+  Future<void> deleteTask(String id) async {
     await _client.from('tasks').delete().eq('id', id);
   }
 

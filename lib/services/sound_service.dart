@@ -42,9 +42,8 @@ class SoundService {
 
       debugPrint('Playing sound: $soundPath');
       
-      // Stop current sound to play new one immediately
-      await _audioPlayer.stop();
-      await _audioPlayer.play(AssetSource(soundPath));
+      // Play sound immediately tanpa stop, let them overlap if needed
+      _audioPlayer.play(AssetSource(soundPath));
       
     } catch (e, stackTrace) {
       // Catch any error tanpa crash aplikasi

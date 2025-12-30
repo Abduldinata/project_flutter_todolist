@@ -6,7 +6,6 @@ import '../services/connectivity_service.dart';
 import '../services/sound_service.dart';
 import '../services/notification_service.dart';
 import '../auth_storage.dart';
-import '../utils/safe_snackbar.dart';
 
 class TaskController extends GetxController {
   final TaskService _taskService = TaskService();
@@ -24,9 +23,7 @@ class TaskController extends GetxController {
   void onInit() {
     super.onInit();
     _initConnectivityService();
-    Future.delayed(const Duration(milliseconds: 300), () {
-      loadAllTasks();
-    });
+    loadAllTasks(); // Load immediately, no delay
   }
 
   void _initConnectivityService() {
@@ -35,14 +32,7 @@ class TaskController extends GetxController {
       debugPrint("ConnectivityService found");
     } catch (e) {
       debugPrint("ConnectivityService not found, will check manually");
-      Future.delayed(const Duration(milliseconds: 200), () {
-        try {
-          _connectivityService = Get.find<ConnectivityService>();
-          debugPrint("ConnectivityService found on retry");
-        } catch (e2) {
-          debugPrint("ConnectivityService still not found after retry");
-        }
-      });
+      // No retry delay, try to find it when needed
     }
   }
 
@@ -150,7 +140,7 @@ class TaskController extends GetxController {
 
   Future<bool> _checkConnection() async {
     if (_connectivityService != null) {
-      await Future.delayed(const Duration(milliseconds: 100));
+      // No delay, check immediately
       return _connectivityService!.isConnected.value;
     }
     try {
@@ -350,6 +340,16 @@ class TaskController extends GetxController {
     }
 
     try {
+      // Update task di server
+      await _taskService.updateTask(
+        taskId: taskId,
+        title: title,
+        date: date,
+        description: description,
+        priority: priority,
+      );
+
+      // Reload tasks after update
       await loadAllTasks(forceRefresh: true);
       SoundService().playSound(SoundType.success);
 
@@ -363,6 +363,12 @@ class TaskController extends GetxController {
             body: title ?? 'You have a task due',
             scheduledDate: date,
           );
+        }
+      } else if (date != null && date.isBefore(DateTime.now())) {
+        // Cancel notification if date is in the past
+        final taskIdInt = int.tryParse(taskId);
+        if (taskIdInt != null) {
+          await NotificationService().cancelNotification(taskIdInt);
         }
       }
     } catch (e) {

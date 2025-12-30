@@ -5,6 +5,7 @@ import '../../services/supabase_service.dart';
 import '../../theme/theme_tokens.dart';
 import '../../widgets/loading_widget.dart';
 import '../../services/sound_service.dart';
+import '../../utils/constants.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -63,16 +64,20 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         throw Exception('User tidak ditemukan');
       }
 
-      // Cek password saat ini dengan sign in (tanpa logout session saat ini)
-      // Kita buat client baru untuk verifikasi tanpa mempengaruhi session
+      // Coba sign in dengan email dan password saat ini untuk verifikasi
+      // Kita perlu membuat instance baru agar tidak logout dari session saat ini
+      final SupabaseClient tempClient = SupabaseClient(
+        supabaseUrl,
+        supabaseAnonKey,
+      );
+      
       try {
-        final testClient = Supabase.instance.client;
-        await testClient.auth.signInWithPassword(
+        await tempClient.auth.signInWithPassword(
           email: user!.email!,
           password: _currentPasswordController.text,
         );
-        // Setelah verifikasi, restore session asli
-        // (Supabase akan tetap maintain session yang sama)
+        // Sign out dari temp client
+        await tempClient.auth.signOut();
       } catch (e) {
         throw Exception('Password saat ini salah');
       }

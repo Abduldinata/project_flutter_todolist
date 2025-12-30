@@ -3,7 +3,6 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:flutter/foundation.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -45,6 +44,9 @@ class NotificationService {
         debugPrint('Notification tapped: ${response.payload}');
       },
     );
+
+    // Request permissions automatically on first initialization
+    await requestPermissions();
 
     _initialized = true;
   }

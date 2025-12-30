@@ -189,7 +189,11 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                 children: [
                   GestureDetector(
                     onTap: () {
-                      SoundService().playSound(SoundType.undo);
+                      try {
+                        SoundService().playSound(SoundType.undo);
+                      } catch (e) {
+                         debugPrint("Sound error: $e");
+                      }
                       Get.back();
                     },
                     child: Container(
@@ -389,7 +393,9 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                             // Cancel
                             GestureDetector(
                               onTap: () {
-                                SoundService().playSound(SoundType.undo);
+                                try {
+                                  SoundService().playSound(SoundType.undo);
+                                } catch (_) {}
                                 Get.back();
                               },
                               child: Container(

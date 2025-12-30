@@ -13,6 +13,7 @@ import '../../controllers/task_controller.dart';
 import '../../auth_storage.dart';
 import '../home/profile_screen.dart';
 import '../../services/sound_service.dart';
+import '../../services/notification_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -64,9 +65,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _loadPreferences() {
-    _notificationsEnabled = _box.read('notifications_enabled') ?? true;
+    _notificationsEnabled = NotificationService().areNotificationsEnabled();
     _startOfWeek = _box.read('start_of_week') ?? 'Monday';
-    _soundEffectsEnabled = _box.read('sound_effects_enabled') ?? false;
+    _soundEffectsEnabled = SoundService().isEnabled;
   }
 
   void _savePreference(String key, dynamic value) {
@@ -153,6 +154,82 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   : null,
             );
           }).toList(),
+        ),
+      ),
+    );
+  }
+
+  void _showAccentColorPicker() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colors = [
+      {'name': 'Blue', 'color': const Color(0xFF4A90E2)},
+      {'name': 'Purple', 'color': const Color(0xFF9B59B6)},
+      {'name': 'Green', 'color': const Color(0xFF27AE60)},
+      {'name': 'Orange', 'color': const Color(0xFFE67E22)},
+      {'name': 'Red', 'color': const Color(0xFFE74C3C)},
+      {'name': 'Teal', 'color': const Color(0xFF1ABC9C)},
+      {'name': 'Pink', 'color': const Color(0xFFE91E63)},
+      {'name': 'Indigo', 'color': const Color(0xFF3F51B5)},
+    ];
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkCard : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'Choose Accent Color',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : AppColors.text,
+                ),
+              ),
+            ),
+            ...colors.map((item) {
+              final color = item['color'] as Color;
+              final name = item['name'] as String;
+              return Obx(() => ListTile(
+                    leading: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                    title: Text(
+                      name,
+                      style: TextStyle(
+                        color: isDark ? Colors.white : AppColors.text,
+                      ),
+                    ),
+                    onTap: () {
+                      _themeController.setAccentColor(color);
+                      SoundService().playSound(SoundType.success);
+                      Get.back();
+                      // Refresh UI
+                      setState(() {});
+                    },
+                    trailing: _themeController.accentColor.value == color
+                        ? Icon(Icons.check, color: color)
+                        : null,
+                  ));
+            }),
+            const SizedBox(height: 16),
+          ],
         ),
       ),
     );
@@ -485,40 +562,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const Divider(height: 1),
           // Accent Color
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Icon(Icons.palette, color: Colors.purple[400], size: 24),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Accent Color',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: isDark ? Colors.white : AppColors.text,
-                      fontWeight: FontWeight.w500,
+          InkWell(
+            onTap: () {
+              SoundService().playSound(SoundType.tap);
+              _showAccentColorPicker();
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Icon(Icons.palette, color: Colors.purple[400], size: 24),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Accent Color',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: isDark ? Colors.white : AppColors.text,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
-                ),
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: AppColors.blue,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
-                      width: 2,
-                    ),
+                  Obx(() => Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: _themeController.accentColor.value,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
+                            width: 2,
+                          ),
+                        ),
+                      )),
+                  const SizedBox(width: 8),
+                  Icon(
+                    Icons.chevron_right,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
                   ),
-                ),
-                const SizedBox(width: 8),
-                Icon(
-                  Icons.chevron_right,
-                  color: isDark ? Colors.grey[400] : Colors.grey[600],
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
@@ -539,10 +622,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             isDark: isDark,
             trailing: Switch(
               value: _notificationsEnabled,
-              onChanged: (value) {
-                SoundService().playSound(SoundType.switchToggle); // Add sound
+              onChanged: (value) async {
+                SoundService().playSound(SoundType.switchToggle);
                 setState(() => _notificationsEnabled = value);
-                _savePreference('notifications_enabled', value);
+                await NotificationService().setNotificationsEnabled(value);
               },
               activeThumbColor: AppColors.blue,
             ),
@@ -584,9 +667,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               value: _soundEffectsEnabled,
               onChanged: (value) {
                 setState(() => _soundEffectsEnabled = value);
-                _savePreference('sound_effects_enabled', value);
-                // Play sound when toggling
-                SoundService().playSound(SoundType.switchToggle);
+                SoundService().setSoundEnabled(value);
+                // Play sound when toggling if enabled
+                if (value) {
+                  SoundService().playSound(SoundType.switchToggle);
+                }
               },
               activeThumbColor: AppColors.blue,
             ),

@@ -13,6 +13,7 @@ import 'controllers/task_controller.dart';
 import 'controllers/profile_controller.dart';
 import 'services/connectivity_service.dart';
 import 'services/sound_service.dart';
+import 'services/notification_service.dart';
 
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
@@ -33,6 +34,9 @@ Future<void> main() async {
 
   // Initialize and preload sounds
   SoundService().preloadAllSounds();
+
+  // Initialize notification service
+  await NotificationService().initialize();
 
   final session = Supabase.instance.client.auth.currentSession;
   final initialRoute = (session != null) ? AppRoutes.inbox : AppRoutes.login;
@@ -130,25 +134,25 @@ class MyApp extends StatelessWidget {
             name: AppRoutes.inbox, 
             page: () => const InboxScreen(), 
             transition: Transition.fadeIn,
-            transitionDuration: const Duration(milliseconds: 200), // Quick fade
+            transitionDuration: const Duration(milliseconds: 250),
           ),
           GetPage(
             name: AppRoutes.today, 
             page: () => const TodayScreen(), 
             transition: Transition.fadeIn,
-            transitionDuration: const Duration(milliseconds: 200),
+            transitionDuration: const Duration(milliseconds: 250),
           ),
           GetPage(
             name: AppRoutes.upcoming, 
             page: () => const UpcomingScreen(), 
             transition: Transition.fadeIn,
-            transitionDuration: const Duration(milliseconds: 200),
+            transitionDuration: const Duration(milliseconds: 250),
           ),
           GetPage(
             name: AppRoutes.settings, 
             page: () => const SettingsScreen(), 
             transition: Transition.fadeIn,
-            transitionDuration: const Duration(milliseconds: 250), // Sedikit lebih lambat untuk settings
+            transitionDuration: const Duration(milliseconds: 250),
           ),
           GetPage(name: AppRoutes.helpCenter, page: () => const HelpCenterScreen()),
           GetPage(name: AppRoutes.privacyPolicy, page: () => const PrivacyPolicyScreen()),

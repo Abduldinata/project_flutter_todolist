@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import '../../theme/theme_tokens.dart';
 import '../../widgets/bottom_nav.dart';
 import '../../widgets/loading_widget.dart';
@@ -19,6 +20,7 @@ class UpcomingScreen extends StatefulWidget {
 
 class _UpcomingScreenState extends State<UpcomingScreen> {
   final TaskController _taskController = Get.find<TaskController>();
+  final _box = GetStorage();
 
   int navIndex = 2;
   DateTime? selectedDate;
@@ -59,8 +61,29 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
   bool _isNextWeekTask(Map<String, dynamic> task) {
     final taskDate = _parseDate(task['date']);
     if (taskDate == null) return false;
+    
     final now = DateTime.now();
-    final nextWeekStart = now.add(Duration(days: 7 - now.weekday));
+    final startOfWeek = _box.read('start_of_week') ?? 'Monday';
+    
+    // Get start day index
+    int startDayIndex = 1;
+    switch (startOfWeek) {
+      case 'Monday': startDayIndex = 1; break;
+      case 'Tuesday': startDayIndex = 2; break;
+      case 'Wednesday': startDayIndex = 3; break;
+      case 'Thursday': startDayIndex = 4; break;
+      case 'Friday': startDayIndex = 5; break;
+      case 'Saturday': startDayIndex = 6; break;
+      case 'Sunday': startDayIndex = 7; break;
+    }
+    
+    // Calculate next week start
+    int daysToNextWeek = ((startDayIndex - now.weekday) % 7) + 7;
+    if (daysToNextWeek == 7 && now.weekday == startDayIndex) {
+      daysToNextWeek = 7;
+    }
+    final nextWeekStart = now.add(Duration(days: daysToNextWeek));
+    
     return taskDate.isAfter(nextWeekStart.subtract(const Duration(days: 1)));
   }
 
@@ -90,9 +113,28 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
 
   List<DateTime> _getDateRange() {
     final now = DateTime.now();
+    final startOfWeek = _box.read('start_of_week') ?? 'Monday';
+    
+    // Get start day index (1 = Monday, 7 = Sunday)
+    int startDayIndex = 1; // Default Monday
+    switch (startOfWeek) {
+      case 'Monday': startDayIndex = 1; break;
+      case 'Tuesday': startDayIndex = 2; break;
+      case 'Wednesday': startDayIndex = 3; break;
+      case 'Thursday': startDayIndex = 4; break;
+      case 'Friday': startDayIndex = 5; break;
+      case 'Saturday': startDayIndex = 6; break;
+      case 'Sunday': startDayIndex = 7; break;
+    }
+    
+    // Calculate days to add based on start of week
+    int daysToAdd = (startDayIndex - now.weekday) % 7;
+    if (daysToAdd > 0) daysToAdd -= 7; // Go back to start of week
+    
+    final weekStart = now.add(Duration(days: daysToAdd));
     final dates = <DateTime>[];
     for (int i = 0; i < 7; i++) {
-      dates.add(now.add(Duration(days: i)));
+      dates.add(weekStart.add(Duration(days: i)));
     }
     return dates;
   }
@@ -137,7 +179,27 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
 
   String _getNextWeekRange() {
     final now = DateTime.now();
-    final nextWeekStart = now.add(Duration(days: 7 - now.weekday));
+    final startOfWeek = _box.read('start_of_week') ?? 'Monday';
+    
+    // Get start day index
+    int startDayIndex = 1;
+    switch (startOfWeek) {
+      case 'Monday': startDayIndex = 1; break;
+      case 'Tuesday': startDayIndex = 2; break;
+      case 'Wednesday': startDayIndex = 3; break;
+      case 'Thursday': startDayIndex = 4; break;
+      case 'Friday': startDayIndex = 5; break;
+      case 'Saturday': startDayIndex = 6; break;
+      case 'Sunday': startDayIndex = 7; break;
+    }
+    
+    // Calculate next week start
+    int daysToNextWeek = ((startDayIndex - now.weekday) % 7) + 7;
+    if (daysToNextWeek == 7 && now.weekday == startDayIndex) {
+      daysToNextWeek = 7; // If today is start of week, next week is in 7 days
+    }
+    
+    final nextWeekStart = now.add(Duration(days: daysToNextWeek));
     final nextWeekEnd = nextWeekStart.add(const Duration(days: 6));
 
     const months = [
@@ -162,6 +224,19 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
     List<Map<String, dynamic>> tasks,
   ) {
     final grouped = <String, List<Map<String, dynamic>>>{};
+    final startOfWeek = _box.read('start_of_week') ?? 'Monday';
+    
+    // Get start day index
+    int startDayIndex = 1;
+    switch (startOfWeek) {
+      case 'Monday': startDayIndex = 1; break;
+      case 'Tuesday': startDayIndex = 2; break;
+      case 'Wednesday': startDayIndex = 3; break;
+      case 'Thursday': startDayIndex = 4; break;
+      case 'Friday': startDayIndex = 5; break;
+      case 'Saturday': startDayIndex = 6; break;
+      case 'Sunday': startDayIndex = 7; break;
+    }
 
     for (final task in tasks) {
       final date = _parseDate(task['date']);
@@ -169,7 +244,13 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
 
       final now = DateTime.now();
       final tomorrow = now.add(const Duration(days: 1));
-      final nextWeekStart = now.add(Duration(days: 7 - now.weekday));
+      
+      // Calculate next week start based on start_of_week preference
+      int daysToNextWeek = ((startDayIndex - now.weekday) % 7) + 7;
+      if (daysToNextWeek == 7 && now.weekday == startDayIndex) {
+        daysToNextWeek = 7;
+      }
+      final nextWeekStart = now.add(Duration(days: daysToNextWeek));
 
       String key;
       if (date.year == tomorrow.year &&

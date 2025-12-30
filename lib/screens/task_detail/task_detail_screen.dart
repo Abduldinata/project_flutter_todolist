@@ -106,7 +106,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                   GestureDetector(
                     onTap: () {
                       debugPrint("Back Button Tapped");
-                      Navigator.of(context).pop();
+                      Get.back();
                       SoundService().playSound(SoundType.undo);
                     },
                     child: Container(
@@ -131,7 +131,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                   GestureDetector(
                     onTap: () async {
                       debugPrint("Edit Button Tapped");
-                      SoundService().playSound(SoundType.tap);
+                      try {
+                        SoundService().playSound(SoundType.tap);
+                      } catch (_) {}
                       final updated = await Get.to(() => EditTaskScreen(task: _task));
                       if (updated == true) {
                          _refreshTask();
@@ -342,7 +344,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                         const SizedBox(width: 16),
                         GestureDetector(
                           onTap: () async {
-                            final confirm = await Get.dialog(
+                            final confirm = await Get.dialog<bool>(
                               AlertDialog(
                                 title: const Text("Hapus Task"),
                                 content: Text("Yakin hapus '$title'?"),
@@ -367,82 +369,57 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
                             if (confirm == true) {
                               debugPrint("=== DELETE TASK START ===");
+                              try {
+                                SoundService().playSound(SoundType.delete);
+                              } catch (_) {}
                               
-                              // Play sound SEGERA saat user konfirmasi (sebelum operasi async)
-                              SoundService().playSound(SoundType.delete);
-                              
-                              // Variabel untuk track loading dialog
-                              bool loadingShown = false;
+                              // Show Loading Dialog
+                              Get.dialog(
+                                const Center(child: CircularProgressIndicator()),
+                                barrierDismissible: false,
+                              );
                               
                               try {
-                                debugPrint("Showing loading dialog...");
-                                showDialog(
-                                  context: context,
-                                  barrierDismissible: false,
-                                  builder: (c) => const Center(
-                                    child: CircularProgressIndicator(),
-                                  ),
-                                );
-                                loadingShown = true;
-
                                 debugPrint("Calling deleteTask API...");
-                                
-                                // Tambahkan timeout 10 detik untuk mencegah hang selamanya
                                 await _taskService.deleteTask(
                                   _task['id'].toString(),
                                 ).timeout(
                                   const Duration(seconds: 10),
                                   onTimeout: () {
-                                    debugPrint("DELETE TIMEOUT!");
-                                    throw TimeoutException('Penghapusan task timeout setelah 10 detik');
+                                    throw TimeoutException('Penghapusan task timeout');
                                   },
                                 );
                                 
                                 debugPrint("Delete successful!");
                                 
-                                // Tutup loading
-                                if (loadingShown && context.mounted) {
-                                  debugPrint("Closing loading dialog...");
-                                  Navigator.of(context).pop();
-                                  loadingShown = false;
-                                }
+                                // Close Loading Dialog
+                                if (Get.isDialogOpen == true) Get.back();
 
-                                // Tutup Detail Screen
-                                if (context.mounted) {
-                                  debugPrint("Closing detail screen...");
-                                  Navigator.of(context).pop(); 
-                                }
+                                // Close Detail Screen
+                                Get.back(); 
                                 
-                                // Snackbar ditunda agar tidak crash setelah pop
-                                Future.microtask(() {
-                                  debugPrint("Showing success snackbar...");
-                                  Get.snackbar(
-                                    "Success",
-                                    "Task berhasil dihapus",
-                                    backgroundColor: Colors.green,
-                                    colorText: Colors.white,
-                                  );
-                                });
-                                
-                                debugPrint("=== DELETE TASK COMPLETE ===");
-                                
+                                // Show Success Snackbar langsung tanpa delay
+                                Get.snackbar(
+                                  "Success",
+                                  "Task berhasil dihapus",
+                                  backgroundColor: Colors.green,
+                                  colorText: Colors.white,
+                                  snackPosition: SnackPosition.BOTTOM,
+                                );
                               } catch (e) {
                                 debugPrint("=== DELETE TASK ERROR: $e ===");
                                 
-                                // Tutup loading jika masih terbuka
-                                if (loadingShown && context.mounted) {
-                                  debugPrint("Closing loading dialog (error)...");
-                                  Navigator.of(context).pop();
-                                }
+                                // Close Loading Dialog if open
+                                if (Get.isDialogOpen == true) Get.back();
                                 
                                 Get.snackbar(
                                   "Error", 
                                   "Gagal menghapus: ${e.toString()}",
                                   backgroundColor: Colors.red,
                                   colorText: Colors.white,
+                                  snackPosition: SnackPosition.BOTTOM,
                                 );
                               }
-
                             }
                           },
                           child: Container(
