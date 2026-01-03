@@ -2,13 +2,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../theme/theme_tokens.dart';
-import '../../services/task_service.dart';
+import '../../controllers/task_controller.dart';
+import '../../models/task_model.dart';
 import '../../widgets/loading_widget.dart';
 
 enum Priority { high, medium, low }
 
 class EditTaskScreen extends StatefulWidget {
-  final Map<String, dynamic> task;
+  final Task task;
 
   const EditTaskScreen({super.key, required this.task});
 
@@ -21,7 +22,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
   late TextEditingController _descCtrl;
   late DateTime _selectedDate;
   late Priority _selectedPriority;
-  final TaskService _taskService = TaskService();
+  final TaskController _taskController = Get.find<TaskController>();
   bool _loading = false;
 
   @override
@@ -29,29 +30,14 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
     super.initState();
 
     // Initialize controllers dengan data task
-    _titleCtrl = TextEditingController(
-      text: widget.task['title']?.toString() ?? '',
-    );
-    _descCtrl = TextEditingController(
-      text: widget.task['description']?.toString() ?? '',
-    );
+    _titleCtrl = TextEditingController(text: widget.task.title);
+    _descCtrl = TextEditingController(text: widget.task.description ?? '');
 
     // Parse date
-    try {
-      final dateStr = widget.task['date']?.toString();
-      if (dateStr != null) {
-        _selectedDate = DateTime.parse(dateStr);
-      } else {
-        _selectedDate = DateTime.now();
-      }
-    } catch (e) {
-      _selectedDate = DateTime.now();
-    }
+    _selectedDate = widget.task.date;
 
     // Parse priority
-    final priorityStr =
-        widget.task['priority']?.toString().toLowerCase() ?? 'medium';
-    _selectedPriority = _stringToPriority(priorityStr);
+    _selectedPriority = _stringToPriority(widget.task.priority.toLowerCase());
   }
 
   Priority _stringToPriority(String str) {
@@ -88,10 +74,11 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
 
     setState(() => _loading = true);
     try {
-      final taskId = widget.task['id']?.toString();
-      if (taskId == null) throw "Task ID tidak valid";
+      final taskId = widget.task.id.toString();
 
-      await _taskService.updateTask(
+      // Gunakan TaskController untuk update, bukan TaskService langsung
+      // Ini akan update allTasks reactive list dan trigger UI refresh
+      await _taskController.updateTask(
         taskId: taskId,
         title: _titleCtrl.text,
         description: _descCtrl.text.isEmpty ? null : _descCtrl.text,

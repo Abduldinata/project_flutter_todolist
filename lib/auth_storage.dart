@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/task_model.dart';
 
 class AuthStorage {
   static const _kLoggedIn = 'logged_in';
@@ -42,10 +43,10 @@ class AuthStorage {
   // ===============================
 
   /// Simpan tasks ke local storage untuk offline access
-  static Future<void> saveTasksOffline(List<Map<String, dynamic>> tasks) async {
+  static Future<void> saveTasksOffline(List<Task> tasks) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final tasksJson = jsonEncode(tasks);
+      final tasksJson = jsonEncode(tasks.map((task) => task.toJson()).toList());
       await prefs.setString(_kTasks, tasksJson);
       await prefs.setString(_kTasksLastSync, DateTime.now().toIso8601String());
     } catch (e) {
@@ -54,14 +55,14 @@ class AuthStorage {
   }
 
   /// Load tasks dari local storage
-  static Future<List<Map<String, dynamic>>> loadTasksOffline() async {
+  static Future<List<Task>> loadTasksOffline() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final tasksJson = prefs.getString(_kTasks);
       if (tasksJson != null && tasksJson.isNotEmpty) {
         final List<dynamic> tasksList = jsonDecode(tasksJson);
         return tasksList
-            .map((task) => Map<String, dynamic>.from(task))
+            .map((json) => Task.fromJson(json as Map<String, dynamic>))
             .toList();
       }
     } catch (e) {
@@ -76,7 +77,8 @@ class AuthStorage {
       final prefs = await SharedPreferences.getInstance();
       final lastSyncStr = prefs.getString(_kTasksLastSync);
       if (lastSyncStr != null) {
-        return DateTime.parse(lastSyncStr);
+        // Fix: Gunakan tryParse untuk menghindari crash jika format tidak valid
+        return DateTime.tryParse(lastSyncStr);
       }
     } catch (e) {
       debugPrint("Error getting last sync time: $e");

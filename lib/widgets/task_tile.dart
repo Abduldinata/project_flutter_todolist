@@ -3,9 +3,10 @@ import 'package:get/get.dart';
 import 'package:to_do_list_project/screens/edit_task/edit_task_screen.dart';
 import '../theme/theme_tokens.dart';
 import '../screens/task_detail/task_detail_screen.dart';
+import '../models/task_model.dart';
 
 class TaskTile extends StatelessWidget {
-  final Map<String, dynamic> task;
+  final Task task;
   final Function(String taskId, bool currentValue) onToggleCompletion;
   final Function(String taskId, String title) onDelete;
   final VoidCallback? onTap;
@@ -27,11 +28,11 @@ class TaskTile extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final scheme = theme.colorScheme;
-    final taskId = task['id']?.toString() ?? '';
-    final title = task['title']?.toString() ?? 'No Title';
-    final isDone = task['is_done'] ?? false;
-    final description = task['description']?.toString();
-    final date = task['date']?.toString();
+    final taskId = task.id.toString();
+    final title = task.title;
+    final isDone = task.isDone;
+    final description = task.description;
+    final date = task.date.toIso8601String().split('T')[0];
 
     return GestureDetector(
       onTap:
@@ -162,7 +163,7 @@ class TaskTile extends StatelessWidget {
                         ),
                       ),
 
-                    if (date != null && date.isNotEmpty && showDate)
+                    if (showDate)
                       Padding(
                         padding: const EdgeInsets.only(top: 6),
                         child: Row(

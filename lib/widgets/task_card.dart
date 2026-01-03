@@ -3,9 +3,10 @@ import 'package:get/get.dart';
 import '../theme/theme_tokens.dart';
 import '../controllers/task_controller.dart';
 import '../screens/task_detail/task_detail_screen.dart';
+import '../models/task_model.dart';
 
 class TaskCard extends StatelessWidget {
-  final Map<String, dynamic> task;
+  final Task task;
   final Function(String taskId, bool currentValue) onToggleCompletion;
   final VoidCallback? onTap;
 
@@ -16,38 +17,16 @@ class TaskCard extends StatelessWidget {
     this.onTap,
   });
 
-  DateTime? _parseDate(dynamic dateValue) {
-    if (dateValue == null) return null;
-    try {
-      final dateStr = dateValue.toString().split('T')[0];
-      final parts = dateStr.split('-');
-      if (parts.length == 3) {
-        return DateTime(
-          int.parse(parts[0]),
-          int.parse(parts[1]),
-          int.parse(parts[2]),
-        );
-      }
-    } catch (e) {
-      debugPrint("Error parsing date: $e");
-    }
-    return null;
-  }
-
-  bool _isTodayTask(Map<String, dynamic> task) {
-    final taskDate = _parseDate(task['date']);
-    if (taskDate == null) return false;
-
+  bool _isTodayTask(Task task) {
+    final taskDate = task.date;
     final now = DateTime.now();
     return taskDate.year == now.year &&
         taskDate.month == now.month &&
         taskDate.day == now.day;
   }
 
-  bool _isNextWeekTask(Map<String, dynamic> task) {
-    final taskDate = _parseDate(task['date']);
-    if (taskDate == null) return false;
-
+  bool _isNextWeekTask(Task task) {
+    final taskDate = task.date;
     final now = DateTime.now();
     final nextWeekStart = now.add(Duration(days: 7 - now.weekday));
     return taskDate.isAfter(nextWeekStart.subtract(const Duration(days: 1)));
@@ -83,21 +62,31 @@ class TaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      final theme = Theme.of(context);
-      final isDark = theme.brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final taskController = Get.find<TaskController>();
+    final currentTaskId = task.id.toString();
 
-      final taskController = Get.find<TaskController>();
-      final updatedTask = taskController.allTasks.firstWhere(
-        (t) => t['id']?.toString() == task['id']?.toString(),
-        orElse: () => task,
+    // Optimasi: Gunakan Obx dengan selector yang lebih spesifik
+    // Obx akan hanya rebuild jika task dengan ID ini berubah di allTasks
+    // Dengan mengakses task spesifik via indexWhere, GetX akan track perubahan
+    // pada task tersebut, bukan seluruh list
+    return Obx(() {
+      // Cari task di list - GetX akan track perubahan pada elemen ini
+      final taskIndex = taskController.allTasks.indexWhere(
+        (t) => t.id.toString() == currentTaskId,
       );
 
-      final taskId = updatedTask['id']?.toString() ?? '';
-      final title = updatedTask['title']?.toString() ?? 'No Title';
-      final description = updatedTask['description']?.toString();
-      final isDone = updatedTask['is_done'] ?? false;
-      final priority = updatedTask['priority']?.toString() ?? 'medium';
+      // Gunakan task dari controller jika ada update, jika tidak gunakan task awal
+      final updatedTask = taskIndex != -1
+          ? taskController.allTasks[taskIndex]
+          : task;
+
+      final updatedTaskId = updatedTask.id.toString();
+      final title = updatedTask.title;
+      final description = updatedTask.description;
+      final isDone = updatedTask.isDone;
+      final priority = updatedTask.priority;
       final category = _getCategoryFromPriority(priority);
       final isToday = _isTodayTask(updatedTask);
       final isNextWeek = _isNextWeekTask(updatedTask);
@@ -121,8 +110,8 @@ class TaskCard extends StatelessWidget {
             children: [
               GestureDetector(
                 onTap: () {
-                  if (taskId.isNotEmpty) {
-                    onToggleCompletion(taskId, isDone);
+                  if (updatedTaskId.isNotEmpty) {
+                    onToggleCompletion(updatedTaskId, isDone);
                   }
                 },
                 child: Container(
@@ -152,6 +141,7 @@ class TaskCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Flexible(
+                          flex: 3,
                           child: Text(
                             title,
                             style: TextStyle(
@@ -167,9 +157,11 @@ class TaskCard extends StatelessWidget {
                                   : null,
                             ),
                             overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
                         ),
                         const SizedBox(width: 6),
+                        // Category badge - tidak perlu Flexible karena ukuran fixed
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 10,
@@ -189,48 +181,61 @@ class TaskCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 6),
+                        // Labels - wrap dengan Flexible untuk prevent overflow
                         if (isToday)
-                          Text(
-                            'Due Today',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: isDark
-                                  ? Colors.grey[400]
-                                  : Colors.grey[600],
+                          Flexible(
+                            child: Text(
+                              'Due Today',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           )
                         else if (isNextWeek)
-                          Text(
-                            'Next Week',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: isDark
-                                  ? Colors.grey[400]
-                                  : Colors.grey[600],
+                          Flexible(
+                            child: Text(
+                              'Next Week',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           )
                         else if (isHighPriority)
-                          Row(
-                            children: [
-                              Container(
-                                width: 6,
-                                height: 6,
-                                decoration: const BoxDecoration(
-                                  color: Colors.orange,
-                                  shape: BoxShape.circle,
+                          Flexible(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 6,
+                                  height: 6,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.orange,
+                                    shape: BoxShape.circle,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                'High Priority',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: isDark
-                                      ? Colors.grey[400]
-                                      : Colors.grey[600],
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    'High Priority',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: isDark
+                                          ? Colors.grey[400]
+                                          : Colors.grey[600],
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                       ],
                     ),

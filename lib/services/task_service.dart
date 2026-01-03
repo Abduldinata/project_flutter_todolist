@@ -1,10 +1,11 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart';
+import '../models/task_model.dart';
 
 class TaskService {
   final client = Supabase.instance.client;
 
-  Future<List<Map<String, dynamic>>> getAllTasks() async {
+  Future<List<Task>> getAllTasks() async {
     final userId = client.auth.currentUser?.id;
     if (userId == null) throw "User tidak login";
 
@@ -15,7 +16,9 @@ class TaskService {
         .order('date', ascending: true)
         .order('created_at', ascending: false);
 
-    return (response as List).cast<Map<String, dynamic>>();
+    return (response as List)
+        .map((json) => Task.fromJson(json as Map<String, dynamic>))
+        .toList();
   }
 
   Future insertTask({
@@ -67,7 +70,7 @@ class TaskService {
     return await client.from('tasks').update(updates).eq('id', taskId);
   }
 
-  Future<List<Map<String, dynamic>>> getTasksByDate(DateTime date) async {
+  Future<List<Task>> getTasksByDate(DateTime date) async {
     final userId = client.auth.currentUser?.id;
     if (userId == null) throw "User tidak login";
 
@@ -81,10 +84,12 @@ class TaskService {
         .eq('date', formattedDate)
         .order('created_at');
 
-    return (response as List).cast<Map<String, dynamic>>();
+    return (response as List)
+        .map((json) => Task.fromJson(json as Map<String, dynamic>))
+        .toList();
   }
 
-  Future<List<Map<String, dynamic>>> getUpcomingTasks() async {
+  Future<List<Task>> getUpcomingTasks() async {
     final userId = client.auth.currentUser?.id;
     if (userId == null) throw "User tidak login";
 
@@ -99,10 +104,12 @@ class TaskService {
         .gt('date', formattedToday)
         .order('date');
 
-    return (response as List).cast<Map<String, dynamic>>();
+    return (response as List)
+        .map((json) => Task.fromJson(json as Map<String, dynamic>))
+        .toList();
   }
 
-  Future<Map<String, dynamic>?> getTaskById(String taskId) async {
+  Future<Task?> getTaskById(String taskId) async {
     try {
       final response = await client
           .from('tasks')
@@ -110,15 +117,17 @@ class TaskService {
           .eq('id', taskId)
           .maybeSingle();
 
-      return response; // 👈 cast dihapus
+      if (response != null) {
+        return Task.fromJson(Map<String, dynamic>.from(response));
+      }
+      return null;
     } catch (e) {
       debugPrint("Error getting task by ID: $e");
       return null;
     }
   }
 
-
-  Future<List<Map<String, dynamic>>> getCompletedTasks() async {
+  Future<List<Task>> getCompletedTasks() async {
     final userId = client.auth.currentUser?.id;
     if (userId == null) throw "User tidak login";
 
@@ -129,28 +138,13 @@ class TaskService {
         .eq('is_done', true) // Hanya task yang selesai
         .order('updated_at', ascending: false); // Urutkan dari yang terbaru
 
-    return (response as List).cast<Map<String, dynamic>>();
-  }
-
-  Future<List<Map<String, dynamic>>> getCompleted() async {
-    final userId = client.auth.currentUser?.id;
-    if (userId == null) throw "User tidak login";
-
-    final response = await client
-        .from('tasks')
-        .select()
-        .eq('user_id', userId)
-        .eq('is_done', true)
-        .order('updated_at', ascending: false);
-
-    return (response as List).cast<Map<String, dynamic>>();
+    return (response as List)
+        .map((json) => Task.fromJson(json as Map<String, dynamic>))
+        .toList();
   }
 
   Future updateCompleted(String id, bool value) async {
-    return await client
-        .from('tasks')
-        .update({'is_done': value})
-        .eq('id', id);
+    return await client.from('tasks').update({'is_done': value}).eq('id', id);
   }
 
   Future deleteTask(String id) async {

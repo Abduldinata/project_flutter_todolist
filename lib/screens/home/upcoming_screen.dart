@@ -4,7 +4,9 @@ import '../../theme/theme_tokens.dart';
 import '../../widgets/bottom_nav.dart';
 import '../../widgets/loading_widget.dart';
 import '../../widgets/task_card.dart';
+import '../../widgets/add_task_button.dart';
 import '../../controllers/task_controller.dart';
+import '../../models/task_model.dart';
 import '../add_task/add_task_popup.dart';
 
 class UpcomingScreen extends StatefulWidget {
@@ -25,25 +27,6 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
     super.initState();
     _taskController.loadAllTasks();
   }
-
-  DateTime? _parseDate(dynamic dateValue) {
-    if (dateValue == null) return null;
-    try {
-      final dateStr = dateValue.toString().split('T')[0];
-      final parts = dateStr.split('-');
-      if (parts.length == 3) {
-        return DateTime(
-          int.parse(parts[0]),
-          int.parse(parts[1]),
-          int.parse(parts[2]),
-        );
-      }
-    } catch (e) {
-      debugPrint("Error parsing date: $e");
-    }
-    return null;
-  }
-
 
   List<DateTime> _getDateRange() {
     final now = DateTime.now();
@@ -115,14 +98,11 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
     return '${months[nextWeekStart.month - 1]} ${nextWeekStart.day} - ${months[nextWeekEnd.month - 1]} ${nextWeekEnd.day}';
   }
 
-  Map<String, List<Map<String, dynamic>>> _groupTasksByDate(
-    List<Map<String, dynamic>> tasks,
-  ) {
-    final grouped = <String, List<Map<String, dynamic>>>{};
+  Map<String, List<Task>> _groupTasksByDate(List<Task> tasks) {
+    final grouped = <String, List<Task>>{};
 
     for (final task in tasks) {
-      final date = _parseDate(task['date']);
-      if (date == null) continue;
+      final date = task.date;
 
       final now = DateTime.now();
       final tomorrow = now.add(const Duration(days: 1));
@@ -150,24 +130,19 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
 
     grouped.forEach((key, taskList) {
       taskList.sort((a, b) {
-        final dateA = _parseDate(a['date']);
-        final dateB = _parseDate(b['date']);
-        if (dateA == null || dateB == null) return 0;
-        return dateA.compareTo(dateB);
+        return a.date.compareTo(b.date);
       });
     });
 
     return grouped;
   }
 
-  int _getNextWeekTaskCount(List<Map<String, dynamic>> tasks) {
+  int _getNextWeekTaskCount(List<Task> tasks) {
     final now = DateTime.now();
     final nextWeekStart = now.add(Duration(days: 7 - now.weekday));
 
     return tasks.where((task) {
-      final date = _parseDate(task['date']);
-      if (date == null) return false;
-      return date.isAfter(nextWeekStart.subtract(const Duration(days: 1)));
+      return task.date.isAfter(nextWeekStart.subtract(const Duration(days: 1)));
     }).length;
   }
 
@@ -194,12 +169,10 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
 
       if (tasks.isNotEmpty && selectedDate == null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          final firstDate = _parseDate(tasks[0]['date']);
-          if (firstDate != null) {
-            setState(() {
-              selectedDate = firstDate;
-            });
-          }
+          final firstDate = tasks[0].date;
+          setState(() {
+            selectedDate = firstDate;
+          });
         });
       }
 
@@ -273,9 +246,8 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
                               selectedDate!.month == date.month &&
                               selectedDate!.day == date.day;
                           final hasTasks = tasks.any((task) {
-                            final taskDate = _parseDate(task['date']);
-                            return taskDate != null &&
-                                taskDate.year == date.year &&
+                            final taskDate = task.date;
+                            return taskDate.year == date.year &&
                                 taskDate.month == date.month &&
                                 taskDate.day == date.day;
                           });
@@ -403,42 +375,39 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
             ),
           ],
         ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () async {
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (ctx) => const AddTaskPopup()),
-                    );
+        floatingActionButton: AddTaskButton(
+          onTap: () async {
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (ctx) => const AddTaskPopup()),
+            );
 
-                    if (result != null &&
-                        result['text'] != null &&
-                        result['date'] != null) {
-                      try {
-                        await _taskController.addTask(
-                          title: result['text'].toString(),
-                          date: result['date'] as DateTime,
-                          description: result['description']?.toString(),
-                          priority: result['priority']?.toString(),
-                        );
-                        Get.snackbar(
-                          "Success",
-                          "Task added successfully",
-                          backgroundColor: Colors.green,
-                          colorText: Colors.white,
-                        );
-                      } catch (e) {
-                        Get.snackbar(
-                          "Error",
-                          "Failed to add task: ${e.toString()}",
-                          backgroundColor: Colors.red,
-                          colorText: Colors.white,
-                        );
-                      }
-                    }
-                  },
-          backgroundColor: AppColors.blue,
-          tooltip: 'Tambah Task',
-          child: const Icon(Icons.add, color: Colors.white),
+            if (result != null &&
+                result['text'] != null &&
+                result['date'] != null) {
+              try {
+                await _taskController.addTask(
+                  title: result['text'].toString(),
+                  date: result['date'] as DateTime,
+                  description: result['description']?.toString(),
+                  priority: result['priority']?.toString(),
+                );
+                Get.snackbar(
+                  "Success",
+                  "Task added successfully",
+                  backgroundColor: Colors.green,
+                  colorText: Colors.white,
+                );
+              } catch (e) {
+                Get.snackbar(
+                  "Error",
+                  "Failed to add task: ${e.toString()}",
+                  backgroundColor: Colors.red,
+                  colorText: Colors.white,
+                );
+              }
+            }
+          },
         ),
         bottomNavigationBar: BottomNav(
           index: navIndex,
@@ -454,7 +423,7 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
     });
   }
 
-  Widget _buildTaskList(bool isDark, List<Map<String, dynamic>> tasks) {
+  Widget _buildTaskList(bool isDark, List<Task> tasks) {
     final grouped = _groupTasksByDate(tasks);
     final sortedKeys = grouped.keys.toList()
       ..sort((a, b) {
@@ -480,8 +449,7 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
           return Padding(
             padding: const EdgeInsets.only(top: 24, bottom: 20),
             child: GestureDetector(
-              onTap: () {
-              },
+              onTap: () {},
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: isDark ? NeuDark.concave : Neu.concave,
@@ -540,8 +508,7 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
         final key = sortedKeys[index];
         final taskList = grouped[key]!;
         final firstTask = taskList.first;
-        final taskDate = _parseDate(firstTask['date']);
-        if (taskDate == null) return const SizedBox.shrink();
+        final taskDate = firstTask.date;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -562,14 +529,15 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
                 ),
               ),
             ),
-            ...taskList.map((task) => TaskCard(
-                  task: task,
-                  onToggleCompletion: _toggleTaskCompletion,
-                )),
+            ...taskList.map(
+              (task) => TaskCard(
+                task: task,
+                onToggleCompletion: _toggleTaskCompletion,
+              ),
+            ),
           ],
         );
       },
     );
   }
-
 }

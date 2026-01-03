@@ -6,6 +6,7 @@ import '../../widgets/bottom_nav.dart';
 import '../../widgets/loading_widget.dart';
 import '../../widgets/task_card.dart';
 import '../../controllers/task_controller.dart';
+import '../../models/task_model.dart';
 import '../add_task/add_task_popup.dart';
 
 class InboxScreen extends StatefulWidget {
@@ -72,16 +73,23 @@ class _InboxScreenState extends State<InboxScreen> {
     return 'Medium';
   }
 
-  List<Map<String, dynamic>> _getFilteredTasks() {
-    List<Map<String, dynamic>> result = List.from(_taskController.allTasks);
+  // Helper function untuk cek apakah task sudah lewat tanggal hari ini (overdue)
+  bool _isTaskOverdue(Task task) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final taskDate = DateTime(task.date.year, task.date.month, task.date.day);
+    return taskDate.isBefore(today);
+  }
+
+  List<Task> _getFilteredTasks() {
+    List<Task> result = List.from(_taskController.allTasks);
 
     if (searchQuery.isNotEmpty && searchQuery.trim().isNotEmpty) {
       final query = searchQuery.toLowerCase().trim();
       result = result.where((task) {
-        final title = (task['title']?.toString() ?? '').toLowerCase();
-        final description = (task['description']?.toString() ?? '')
-            .toLowerCase();
-        final priority = (task['priority']?.toString() ?? '').toLowerCase();
+        final title = (task.title).toLowerCase();
+        final description = (task.description ?? '').toLowerCase();
+        final priority = task.priority.toLowerCase();
 
         final matches =
             title.contains(query) ||
@@ -93,39 +101,32 @@ class _InboxScreenState extends State<InboxScreen> {
 
     if (isDateFilterActive && selectedStartDate != null) {
       result = result.where((task) {
-        final taskDateStr = task['date']?.toString();
-        if (taskDateStr == null) return false;
+        final taskDate = task.date;
 
-        try {
-          final taskDate = DateTime.parse("${taskDateStr}T00:00:00Z");
-
-          if (selectedEndDate != null) {
-            return taskDate.isAfter(
-                  selectedStartDate!.subtract(const Duration(days: 1)),
-                ) &&
-                taskDate.isBefore(
-                  selectedEndDate!.add(const Duration(days: 1)),
-                );
-          } else {
-            return taskDate.year == selectedStartDate!.year &&
-                taskDate.month == selectedStartDate!.month &&
-                taskDate.day == selectedStartDate!.day;
-          }
-        } catch (e) {
-          return false;
+        if (selectedEndDate != null) {
+          return taskDate.isAfter(
+                selectedStartDate!.subtract(const Duration(days: 1)),
+              ) &&
+              taskDate.isBefore(selectedEndDate!.add(const Duration(days: 1)));
+        } else {
+          return taskDate.year == selectedStartDate!.year &&
+              taskDate.month == selectedStartDate!.month &&
+              taskDate.day == selectedStartDate!.day;
         }
       }).toList();
     }
 
-    List<Map<String, dynamic>> statusFilteredTasks;
+    List<Task> statusFilteredTasks;
     if (selectedStatusFilter == 'History') {
+      // History: Task yang sudah selesai ATAU task yang sudah lewat tanggal hari ini
       statusFilteredTasks = result
-          .where((task) => (task['is_done'] ?? false) == true)
+          .where((task) => task.isDone == true || _isTaskOverdue(task))
           .toList();
     } else {
       if (searchQuery.isEmpty) {
+        // All: Task yang belum selesai DAN belum lewat tanggal (belum overdue)
         statusFilteredTasks = result
-            .where((task) => (task['is_done'] ?? false) == false)
+            .where((task) => task.isDone == false && !_isTaskOverdue(task))
             .toList();
       } else {
         statusFilteredTasks = result;
@@ -137,8 +138,7 @@ class _InboxScreenState extends State<InboxScreen> {
     }
 
     return statusFilteredTasks.where((task) {
-      final priority = task['priority']?.toString() ?? 'medium';
-      final category = _getCategoryFromPriority(priority);
+      final category = _getCategoryFromPriority(task.priority);
       return category.toLowerCase() == selectedPriorityFilter.toLowerCase();
     }).toList();
   }
@@ -174,7 +174,7 @@ class _InboxScreenState extends State<InboxScreen> {
 
   int _getRemainingTasksCount() {
     return _taskController.allTasks
-        .where((task) => (task['is_done'] ?? false) == false)
+        .where((task) => task.isDone == false)
         .length;
   }
 
@@ -269,6 +269,8 @@ class _InboxScreenState extends State<InboxScreen> {
                                             ? Colors.grey[400]
                                             : Colors.grey[600],
                                       ),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
                                     ),
                                   ],
                                 ),
@@ -492,14 +494,18 @@ class _InboxScreenState extends State<InboxScreen> {
                                       color: AppColors.blue,
                                     ),
                                     const SizedBox(width: 8),
-                                    Text(
-                                      selectedEndDate == null
-                                          ? 'End Date'
-                                          : _formatDate(selectedEndDate!),
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: AppColors.blue,
-                                        fontWeight: FontWeight.w600,
+                                    Flexible(
+                                      child: Text(
+                                        selectedEndDate == null
+                                            ? 'End Date'
+                                            : _formatDate(selectedEndDate!),
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: AppColors.blue,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
                                       ),
                                     ),
                                   ],
@@ -567,7 +573,8 @@ class _InboxScreenState extends State<InboxScreen> {
                                       ? 'All'
                                       : 'History';
                                 } else {
-                                  selectedPriorityFilter == filter
+                                  selectedPriorityFilter =
+                                      selectedPriorityFilter == filter
                                       ? 'All'
                                       : filter;
                                 }

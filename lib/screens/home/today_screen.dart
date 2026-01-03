@@ -7,6 +7,7 @@ import '../../widgets/loading_widget.dart';
 import '../../widgets/task_card.dart';
 import '../../controllers/task_controller.dart';
 import '../../controllers/profile_controller.dart';
+import '../../models/task_model.dart';
 import '../add_task/add_task_popup.dart';
 
 class TodayScreen extends StatefulWidget {
@@ -80,41 +81,29 @@ class _TodayScreenState extends State<TodayScreen> {
     return '${days[now.weekday - 1]}, ${months[now.month - 1]} ${now.day}';
   }
 
-  List<Map<String, dynamic>> _getHighPriorityTasks(
-    List<Map<String, dynamic>> tasks,
-  ) {
+  List<Task> _getHighPriorityTasks(List<Task> tasks) {
     return tasks.where((task) {
-      if ((task['is_done'] ?? false) == true) return false;
-      final priority = task['priority']?.toString() ?? 'medium';
-      return priority.toLowerCase() == 'high' ||
-          priority.toLowerCase() == 'urgent';
+      if (task.isDone == true) return false;
+      final priority = task.priority.toLowerCase();
+      return priority == 'high' || priority == 'urgent';
     }).toList();
   }
 
-  List<Map<String, dynamic>> _getUpcomingTasks(
-    List<Map<String, dynamic>> tasks,
-  ) {
+  List<Task> _getUpcomingTasks(List<Task> tasks) {
     return tasks.where((task) {
-      if ((task['is_done'] ?? false) == true) return false;
-      final priority = task['priority']?.toString() ?? 'medium';
-      return priority.toLowerCase() != 'high' &&
-          priority.toLowerCase() != 'urgent';
+      if (task.isDone == true) return false;
+      final priority = task.priority.toLowerCase();
+      return priority != 'high' && priority != 'urgent';
     }).toList();
   }
 
-  List<Map<String, dynamic>> _getCompletedTasks(
-    List<Map<String, dynamic>> tasks,
-  ) {
-    return tasks.where((task) {
-      return (task['is_done'] ?? false) == true;
-    }).toList();
+  List<Task> _getCompletedTasks(List<Task> tasks) {
+    return tasks.where((task) => task.isDone == true).toList();
   }
 
-  double _getProgressPercentage(List<Map<String, dynamic>> tasks) {
+  double _getProgressPercentage(List<Task> tasks) {
     if (tasks.isEmpty) return 0.0;
-    final completed = tasks
-        .where((task) => (task['is_done'] ?? false) == true)
-        .length;
+    final completed = tasks.where((task) => task.isDone == true).length;
     return completed / tasks.length;
   }
 
@@ -129,9 +118,7 @@ class _TodayScreenState extends State<TodayScreen> {
       final upcomingTasks = _getUpcomingTasks(tasks);
       final completedTasks = _getCompletedTasks(tasks);
       final progress = _getProgressPercentage(tasks);
-      final completedCount = tasks
-          .where((task) => (task['is_done'] ?? false) == true)
-          .length;
+      final completedCount = tasks.where((task) => task.isDone == true).length;
       final remainingCount = tasks.length - completedCount;
 
       return Scaffold(
@@ -186,16 +173,14 @@ class _TodayScreenState extends State<TodayScreen> {
                                     alpha: 0.1,
                                   ),
                                   backgroundImage:
-                                      profile?.avatarUrl != null &&
-                                          profile!.avatarUrl!.isNotEmpty
-                                      ? NetworkImage(profile.avatarUrl!)
+                                      (profile?.avatarUrl?.isNotEmpty ?? false)
+                                      ? NetworkImage(profile!.avatarUrl!)
                                       : null,
-                                  child:
-                                      profile?.avatarUrl == null ||
-                                          profile!.avatarUrl!.isEmpty
+                                  child: (profile?.avatarUrl?.isEmpty ?? true)
                                       ? Text(
-                                          profile?.username.isNotEmpty == true
-                                              ? profile!.username[0]
+                                          profile?.username != null &&
+                                                  profile!.username.isNotEmpty
+                                              ? profile.username[0]
                                                     .toUpperCase()
                                               : 'U',
                                           style: TextStyle(
@@ -207,32 +192,38 @@ class _TodayScreenState extends State<TodayScreen> {
                                       : null,
                                 ),
                                 const SizedBox(width: 12),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      _getGreeting(),
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                        color: isDark
-                                            ? Colors.grey[400]
-                                            : Colors.grey[600],
-                                        letterSpacing: 1.2,
+                                Flexible(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        _getGreeting(),
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                          color: isDark
+                                              ? Colors.grey[400]
+                                              : Colors.grey[600],
+                                          letterSpacing: 1.2,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      profile?.username ?? 'User',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: isDark
-                                            ? Colors.white
-                                            : AppColors.text,
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        profile?.username ?? 'User',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: isDark
+                                              ? Colors.white
+                                              : AppColors.text,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
@@ -549,5 +540,4 @@ class _TodayScreenState extends State<TodayScreen> {
       );
     });
   }
-
 }

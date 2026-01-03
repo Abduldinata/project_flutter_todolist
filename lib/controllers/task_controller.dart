@@ -5,18 +5,20 @@ import '../services/task_service.dart';
 import '../services/connectivity_service.dart';
 import '../services/sound_service.dart';
 import '../auth_storage.dart';
+import '../models/task_model.dart';
 
 class TaskController extends GetxController {
   final TaskService _taskService = TaskService();
   ConnectivityService? _connectivityService;
 
-  final RxList<Map<String, dynamic>> allTasks = <Map<String, dynamic>>[].obs;
+  final RxList<Task> allTasks = <Task>[].obs;
   final RxBool isLoading = false.obs;
   final RxBool isOfflineMode = false.obs;
   final RxString lastRefreshTime = ''.obs;
 
   DateTime? _lastLoadTime;
   static const Duration cacheDuration = Duration(minutes: 5);
+  bool _isLoadingTasks = false; // Fix: Guard untuk race condition
 
   @override
   void onInit() {
@@ -45,6 +47,12 @@ class TaskController extends GetxController {
   }
 
   Future<void> loadAllTasks({bool forceRefresh = false}) async {
+    // Fix: Guard untuk race condition - skip jika sedang loading
+    if (_isLoadingTasks) {
+      debugPrint("Already loading tasks, skipping duplicate call...");
+      return;
+    }
+
     if (allTasks.isEmpty) {
       debugPrint("allTasks is empty, forcing load...");
       forceRefresh = true;
@@ -57,6 +65,7 @@ class TaskController extends GetxController {
       return;
     }
 
+    _isLoadingTasks = true; // Set flag untuk prevent concurrent calls
     _initConnectivityService();
     final isConnected = await _checkConnection();
     isOfflineMode.value = !isConnected;
@@ -106,6 +115,7 @@ class TaskController extends GetxController {
       await _loadFromOffline();
     } finally {
       isLoading.value = false;
+      _isLoadingTasks = false; // Reset flag
     }
   }
 
@@ -175,46 +185,25 @@ class TaskController extends GetxController {
     return now.difference(_lastLoadTime!) < cacheDuration;
   }
 
-  List<Map<String, dynamic>> getInboxTasks() {
+  List<Task> getInboxTasks() {
     return allTasks.toList();
   }
 
-  List<Map<String, dynamic>> getTodayTasks() {
+  List<Task> getTodayTasks() {
     final now = DateTime.now();
     return allTasks.where((task) {
-      final taskDate = _parseDate(task['date']);
-      if (taskDate == null) return false;
+      final taskDate = task.date;
       return taskDate.year == now.year &&
           taskDate.month == now.month &&
           taskDate.day == now.day;
     }).toList();
   }
 
-  List<Map<String, dynamic>> getUpcomingTasks() {
+  List<Task> getUpcomingTasks() {
     final now = DateTime.now();
     return allTasks.where((task) {
-      final taskDate = _parseDate(task['date']);
-      if (taskDate == null) return false;
-      return taskDate.isAfter(now.subtract(const Duration(days: 1)));
+      return task.date.isAfter(now.subtract(const Duration(days: 1)));
     }).toList();
-  }
-
-  DateTime? _parseDate(dynamic dateValue) {
-    if (dateValue == null) return null;
-    try {
-      final dateStr = dateValue.toString().split('T')[0];
-      final parts = dateStr.split('-');
-      if (parts.length == 3) {
-        return DateTime(
-          int.parse(parts[0]),
-          int.parse(parts[1]),
-          int.parse(parts[2]),
-        );
-      }
-    } catch (e) {
-      debugPrint("Error parsing date: $e");
-    }
-    return null;
   }
 
   Future<void> toggleTaskCompletion(String taskId, bool currentValue) async {
@@ -230,13 +219,21 @@ class TaskController extends GetxController {
     try {
       await _taskService.updateCompleted(taskId, !currentValue);
       final taskIndex = allTasks.indexWhere(
-        (task) => task['id']?.toString() == taskId,
+        (task) => task.id.toString() == taskId,
       );
       if (taskIndex != -1) {
-        allTasks[taskIndex] = {
-          ...allTasks[taskIndex],
-          'is_done': !currentValue,
-        };
+        final task = allTasks[taskIndex];
+        allTasks[taskIndex] = Task(
+          id: task.id,
+          userId: task.userId,
+          title: task.title,
+          description: task.description,
+          date: task.date,
+          priority: task.priority,
+          isDone: !currentValue,
+          createdAt: task.createdAt,
+          updatedAt: DateTime.now(),
+        );
         await AuthStorage.saveTasksOffline(allTasks.toList());
         SoundService().playSound(SoundType.complete);
       }
@@ -294,14 +291,45 @@ class TaskController extends GetxController {
     }
 
     try {
-      await loadAllTasks(forceRefresh: true);
+      await _taskService.updateTask(
+        taskId: taskId,
+        title: title,
+        date: date,
+        description: description,
+        priority: priority,
+      );
+
+      // Update local data secara langsung untuk immediate UI update
+      final taskIndex = allTasks.indexWhere(
+        (task) => task.id.toString() == taskId,
+      );
+      if (taskIndex != -1) {
+        final task = allTasks[taskIndex];
+        // Update task di list - ini akan trigger reactive update
+        allTasks[taskIndex] = Task(
+          id: task.id,
+          userId: task.userId,
+          title: title ?? task.title,
+          description: description ?? task.description,
+          date: date ?? task.date,
+          priority: priority ?? task.priority,
+          isDone: task.isDone,
+          createdAt: task.createdAt,
+          updatedAt: DateTime.now(),
+        );
+        await AuthStorage.saveTasksOffline(allTasks.toList());
+      }
+
+      // Reload dari server di background untuk sync (tidak blocking UI)
+      // UI sudah update dari perubahan lokal di atas
+      Future.microtask(() {
+        loadAllTasks(forceRefresh: true).catchError((e) {
+          debugPrint("Error refreshing tasks after update: $e");
+        });
+      });
     } catch (e) {
       debugPrint("Error updating task: $e");
-      Get.snackbar(
-        "Error",
-        "Failed to update task: ${e.toString()}",
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      Get.snackbar("Error", "Failed to update task: ${e.toString()}");
       rethrow;
     }
   }
@@ -318,7 +346,7 @@ class TaskController extends GetxController {
 
     try {
       await _taskService.deleteTask(taskId);
-      allTasks.removeWhere((task) => task['id']?.toString() == taskId);
+      allTasks.removeWhere((task) => task.id.toString() == taskId);
       await AuthStorage.saveTasksOffline(allTasks.toList());
       SoundService().playSound(SoundType.delete);
     } catch (e) {

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/task_controller.dart';
+import '../models/task_model.dart';
 import 'task_card.dart';
 
 class ReactiveTaskList extends StatelessWidget {
-  final List<Map<String, dynamic>> tasks;
+  final List<Task> tasks;
   final Function(String taskId, bool currentValue) onToggleCompletion;
   final VoidCallback? onTaskTap;
   final EdgeInsets? padding;
@@ -37,7 +38,7 @@ class ReactiveTaskList extends StatelessWidget {
         itemBuilder: (context, index) {
           final task = tasks[index];
           final updatedTask = taskController.allTasks.firstWhere(
-            (t) => t['id']?.toString() == task['id']?.toString(),
+            (t) => t.id.toString() == task.id.toString(),
             orElse: () => task,
           );
           

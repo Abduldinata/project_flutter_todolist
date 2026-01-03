@@ -4,10 +4,12 @@ import 'package:get/get.dart';
 import '../../theme/theme_tokens.dart';
 import '../../services/task_service.dart';
 import '../../services/sound_service.dart';
+import '../../controllers/task_controller.dart';
+import '../../models/task_model.dart';
 import '../edit_task/edit_task_screen.dart';
 
 class TaskDetailScreen extends StatefulWidget {
-  final Map<String, dynamic> task;
+  final Task task;
 
   const TaskDetailScreen({super.key, required this.task});
 
@@ -17,7 +19,8 @@ class TaskDetailScreen extends StatefulWidget {
 
 class _TaskDetailScreenState extends State<TaskDetailScreen> {
   final TaskService _taskService = TaskService();
-  late Map<String, dynamic> _task;
+  final TaskController _taskController = Get.find<TaskController>();
+  late Task _task;
 
   @override
   void initState() {
@@ -27,15 +30,13 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
   void _refreshTask() async {
     try {
-      final taskId = _task['id']?.toString();
-      if (taskId != null) {
-        // Fetch task terbaru dari database
-        final response = await _taskService.getTaskById(taskId);
-        if (response != null) {
-          setState(() {
-            _task = response;
-          });
-        }
+      final taskId = _task.id.toString();
+      // Fetch task terbaru dari database
+      final response = await _taskService.getTaskById(taskId);
+      if (response != null) {
+        setState(() {
+          _task = response;
+        });
       }
     } catch (e) {
       debugPrint("Error refreshing task: $e");
@@ -44,23 +45,20 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
   Future<void> _toggleCompletion() async {
     try {
-      final taskId = _task['id']?.toString();
-      final currentStatus = _task['is_done'] ?? false;
+      final taskId = _task.id.toString();
+      final currentStatus = _task.isDone;
 
-      if (taskId != null) {
-        await _taskService.updateCompleted(taskId, !currentStatus);
-        _refreshTask();
-        // Play sound effect
-        SoundService().playSound(SoundType.complete);
-        Get.snackbar(
-          "Success",
-          currentStatus
-              ? "Task ditandai belum selesai"
-              : "Task ditandai selesai",
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-        );
-      }
+      // Fix: Gunakan TaskController untuk sync dengan reactive state
+      await _taskController.toggleTaskCompletion(taskId, currentStatus);
+      _refreshTask();
+      // Play sound effect
+      SoundService().playSound(SoundType.complete);
+      Get.snackbar(
+        "Success",
+        currentStatus ? "Task ditandai belum selesai" : "Task ditandai selesai",
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
     } catch (e) {
       Get.snackbar("Error", "Gagal update status: $e");
     }
@@ -69,22 +67,13 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final title = _task['title']?.toString() ?? 'No Title';
-    final description = _task['description']?.toString();
-    final dateStr = _task['date']?.toString();
-    final priority = _task['priority']?.toString() ?? 'medium';
-    final isDone = _task['is_done'] ?? false;
-    final createdAt = _task['created_at']?.toString();
-    final updatedAt = _task['updated_at']?.toString();
-
-    DateTime? taskDate;
-    if (dateStr != null && dateStr.isNotEmpty) {
-      try {
-        taskDate = DateTime.parse("${dateStr}T00:00:00Z");
-      } catch (e) {
-        debugPrint("Error parsing date: $e");
-      }
-    }
+    final title = _task.title;
+    final description = _task.description;
+    final taskDate = _task.date;
+    final priority = _task.priority;
+    final isDone = _task.isDone;
+    final createdAt = _task.createdAt;
+    final updatedAt = _task.updatedAt;
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBg : AppColors.bg,
@@ -119,12 +108,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                   ),
                   GestureDetector(
                     onTap: () {
-                      Get.to(() => EditTaskScreen(task: _task))?.then((
-                        updated,
-                      ) {
-                        if (updated == true) {
-                          _refreshTask();
-                        }
+                      // Fix: Selalu refresh setelah kembali dari edit screen
+                      Get.to(() => EditTaskScreen(task: _task))?.then((_) {
+                        _refreshTask();
                       });
                     },
                     child: Container(
@@ -258,17 +244,13 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                           _buildInfoRow(
                             icon: Icons.calendar_today,
                             label: "Tanggal Jatuh Tempo:",
-                            value: taskDate != null
-                                ? _formatDateDisplay(taskDate)
-                                : "Tidak ditentukan",
+                            value: _formatDateDisplay(taskDate),
                           ),
                           const SizedBox(height: 12),
                           _buildInfoRow(
                             icon: Icons.timelapse,
                             label: "Dibuat pada:",
-                            value: createdAt != null
-                                ? _formatDateTime(createdAt)
-                                : "-",
+                            value: _formatDateTime(createdAt),
                           ),
                           if (updatedAt != null) ...[
                             const SizedBox(height: 12),
@@ -357,8 +339,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
                             if (confirm == true) {
                               try {
-                                await _taskService.deleteTask(
-                                  _task['id'].toString(),
+                                // Fix: Gunakan TaskController untuk sync dengan reactive state
+                                await _taskController.deleteTask(
+                                  _task.id.toString(),
                                 );
                                 // Play sound effect
                                 SoundService().playSound(SoundType.delete);
@@ -526,12 +509,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     }
   }
 
-  String _formatDateTime(String dateTimeStr) {
-    try {
-      final dateTime = DateTime.parse(dateTimeStr);
-      return "${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}";
-    } catch (e) {
-      return dateTimeStr;
-    }
+  String _formatDateTime(DateTime dateTime) {
+    return "${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}";
   }
 }

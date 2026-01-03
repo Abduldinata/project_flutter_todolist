@@ -25,17 +25,17 @@ class Profile {
     return Profile(
       id: json['id'] as String,
       username: json['username'] ?? '',
-      email: json['email'] ?? '',
-      hobby: json['hobby'] ?? '',
-      avatarUrl: json['avatar_url'] ?? '',
+      email: json['email'],
+      hobby: json['hobby'],
+      avatarUrl: json['avatar_url'],
       updatedAt: json['updated_at'] != null
           ? DateTime.tryParse(json['updated_at'])
           : null,
-      bio: json['bio'] ?? '',
+      bio: json['bio'],
       dateOfBirth: json['date_of_birth'] != null
           ? DateTime.tryParse(json['date_of_birth'])
           : null,
-      phone: json['phone'] ?? '',
+      phone: json['phone'],
     );
   }
 

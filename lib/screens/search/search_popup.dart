@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../theme/theme_tokens.dart';
 import '../../services/task_service.dart';
+import '../../models/task_model.dart';
 import '../../widgets/task_tile.dart';
 import '../../widgets/loading_widget.dart';
 
@@ -16,7 +17,7 @@ class _SearchPopupState extends State<SearchPopup> {
   final TextEditingController _searchCtrl = TextEditingController();
   final TaskService _taskService = TaskService();
 
-  List<Map<String, dynamic>> searchResults = [];
+  List<Task> searchResults = [];
   bool searching = false;
   bool hasSearched = false;
   String? _searchQuery;
@@ -42,8 +43,8 @@ class _SearchPopupState extends State<SearchPopup> {
 
       final searchLower = query.toLowerCase();
       final results = allTasks.where((task) {
-        final title = task['title']?.toString().toLowerCase() ?? '';
-        final description = task['description']?.toString().toLowerCase() ?? '';
+        final title = task.title.toLowerCase();
+        final description = (task.description ?? '').toLowerCase();
         return title.contains(searchLower) || description.contains(searchLower);
       }).toList();
 

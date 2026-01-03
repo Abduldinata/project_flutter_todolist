@@ -4,6 +4,7 @@ class Task {
   final String title;
   final String? description;
   final DateTime date;
+  final String priority;
   final bool isDone;
   final DateTime createdAt;
   final DateTime? updatedAt;
@@ -14,6 +15,7 @@ class Task {
     required this.title,
     this.description,
     required this.date,
+    required this.priority,
     required this.isDone,
     required this.createdAt,
     this.updatedAt,
@@ -25,11 +27,14 @@ class Task {
       userId: json['user_id'],
       title: json['title'] ?? '',
       description: json['description'],
-      date: DateTime.parse(json['date']),
+      // Fix: Gunakan tryParse dengan fallback untuk menghindari crash
+      date: DateTime.tryParse(json['date'] ?? '') ?? DateTime.now(),
+      priority: json['priority'] ?? 'medium',
       isDone: json['is_done'] ?? false,
-      createdAt: DateTime.parse(json['created_at']),
+      // Fix: Gunakan tryParse dengan fallback untuk menghindari crash
+      createdAt: DateTime.tryParse(json['created_at'] ?? '') ?? DateTime.now(),
       updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'])
+          ? DateTime.tryParse(json['updated_at'])
           : null,
     );
   }
@@ -41,6 +46,7 @@ class Task {
       'title': title,
       'description': description,
       'date': date.toIso8601String().split('T')[0],
+      'priority': priority,
       'is_done': isDone,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),

@@ -162,9 +162,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           "• Your profile data\n"
           "• Your avatar\n\n"
           "This action cannot be undone.",
-          style: TextStyle(
-            color: isDark ? Colors.grey[300] : Colors.grey[700],
-          ),
+          style: TextStyle(color: isDark ? Colors.grey[300] : Colors.grey[700]),
         ),
         actions: [
           TextButton(
@@ -206,9 +204,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 // Loading indicator
-                CircularProgressIndicator(
-                  color: AppColors.blue,
-                ),
+                CircularProgressIndicator(color: AppColors.blue),
                 const SizedBox(height: 20),
                 // Text
                 Text(
@@ -330,17 +326,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         padding: const EdgeInsets.all(8),
                         child: CircleAvatar(
                           radius: 60,
-                          backgroundImage:
-                              (p?.avatarUrl != null &&
-                                  (p!.avatarUrl ?? '').isNotEmpty)
-                              ? NetworkImage(p.avatarUrl!)
+                          backgroundImage: (p?.avatarUrl?.isNotEmpty ?? false)
+                              ? NetworkImage(p!.avatarUrl!)
                               : null,
                           backgroundColor: isDark
                               ? AppColors.darkCard
                               : Colors.white,
-                          child:
-                              (p?.avatarUrl == null ||
-                                  (p!.avatarUrl ?? '').isEmpty)
+                          child: (p?.avatarUrl?.isEmpty ?? true)
                               ? Icon(
                                   Icons.person,
                                   size: 60,

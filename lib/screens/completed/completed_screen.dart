@@ -4,6 +4,7 @@ import '../../theme/theme_tokens.dart';
 import '../../widgets/task_tile.dart';
 import '../../widgets/loading_widget.dart';
 import '../../services/task_service.dart';
+import '../../models/task_model.dart';
 
 class CompletedScreen extends StatefulWidget {
   const CompletedScreen({super.key});
@@ -14,13 +15,13 @@ class CompletedScreen extends StatefulWidget {
 
 class _CompletedScreenState extends State<CompletedScreen> {
   final TaskService _taskService = TaskService();
-  List<Map<String, dynamic>> tasks = [];
+  List<Task> tasks = [];
   bool loading = true;
 
   Future<void> loadTasks() async {
     setState(() => loading = true);
     try {
-      final fetchedTasks = await _taskService.getCompleted();
+      final fetchedTasks = await _taskService.getCompletedTasks();
 
       setState(() => tasks = fetchedTasks);
     } catch (e) {
@@ -99,10 +100,8 @@ class _CompletedScreenState extends State<CompletedScreen> {
     if (confirm == true) {
       try {
         for (var task in tasks) {
-          final taskId = task['id']?.toString();
-          if (taskId != null) {
-            await _taskService.deleteTask(taskId);
-          }
+          final taskId = task.id.toString();
+          await _taskService.deleteTask(taskId);
         }
         await loadTasks();
         Get.snackbar("Success", "Semua task selesai dihapus");
@@ -246,16 +245,9 @@ class _CompletedScreenState extends State<CompletedScreen> {
 
     DateTime? oldestDate;
     for (var task in tasks) {
-      final dateStr = task['updated_at'] ?? task['created_at'];
-      if (dateStr != null) {
-        try {
-          final date = DateTime.parse(dateStr);
-          if (oldestDate == null || date.isBefore(oldestDate)) {
-            oldestDate = date;
-          }
-        } catch (e) {
-          continue;
-        }
+      final date = task.updatedAt ?? task.createdAt;
+      if (oldestDate == null || date.isBefore(oldestDate)) {
+        oldestDate = date;
       }
     }
 
